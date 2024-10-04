@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+    </style>
+  </defs>
+  <g id="home-icon-silhouette" transform="translate(0 -17.047)">
+    <g id="Group_291" data-name="Group 291" transform="translate(0.001 17.047)">
+      <g id="Group_290" data-name="Group 290" transform="translate(0)">
+        <path id="Path_81" data-name="Path 81" class="cls-1" d="M23.6,27.892,19.96,23.986V19.474a1.379,1.379,0,1,0-2.751,0v1.558L14.5,18.123a3.442,3.442,0,0,0-5,0L.4,27.892a1.556,1.556,0,0,0,0,2.089,1.31,1.31,0,0,0,1.946,0l9.094-9.767a.772.772,0,0,1,1.113,0l9.1,9.768a1.311,1.311,0,0,0,1.946,0A1.556,1.556,0,0,0,23.6,27.892Z" transform="translate(-0.001 -17.047)"/>
+        <path id="Path_82" data-name="Path 82" class="cls-1" d="M77.78,127.96a.643.643,0,0,0-.955,0l-8,8.588a.755.755,0,0,0-.2.514v6.264a2.575,2.575,0,0,0,2.478,2.662h3.961V139.4h4.472v6.587H83.5a2.575,2.575,0,0,0,2.478-2.662v-6.264a.752.752,0,0,0-.2-.514Z" transform="translate(-65.302 -121.988)"/>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10.668 10.668">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #515b6e;
+      }
+    </style>
+  </defs>
+  <g id="copyright" transform="translate(0 0)">
+    <g id="Group_550" data-name="Group 550">
+      <g id="Group_549" data-name="Group 549">
+        <path id="Path_202" data-name="Path 202" class="cls-1" d="M9.105,1.562A5.334,5.334,0,0,0,1.562,9.105,5.334,5.334,0,0,0,9.105,1.562Zm-3.772,8.48a4.709,4.709,0,1,1,4.709-4.709A4.714,4.714,0,0,1,5.334,10.043Z"/>
+      </g>
+    </g>
+    <g id="Group_552" data-name="Group 552" transform="translate(2.496 2.511)">
+      <g id="Group_551" data-name="Group 551">
+        <path id="Path_203" data-name="Path 203" class="cls-1" d="M125.065,124.041a.312.312,0,0,0-.412.161,2.2,2.2,0,1,1,0-1.769.313.313,0,1,0,.571-.253,2.823,2.823,0,1,0,.006,2.272A.313.313,0,0,0,125.065,124.041Z" transform="translate(-119.815 -120.5)"/>
+      </g>
+    </g>
+  </g>
+</svg>
