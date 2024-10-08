@@ -8,7 +8,6 @@ import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
-import 'package:planetcombo/screens/find/find_place.dart';
 import 'package:planetcombo/screens/messages/message_list.dart';
 import 'package:planetcombo/screens/payments/payment_dashboard.dart';
 import 'package:planetcombo/screens/policy.dart';
@@ -430,7 +429,9 @@ class _DashboardState extends State<Dashboard> {
               padding: const EdgeInsets.symmetric(horizontal: 21),
               child: GestureDetector(
                 onTap: (){
-                  yesOrNoDialog(context: context, dialogMessage: 'Are you sure you want to logout?', cancelText: 'No', okText: 'Yes', okAction: () async{
+                  yesOrNoDialog(
+                      cancelAction: (){},
+                      context: context, dialogMessage: 'Are you sure you want to logout?', cancelText: 'No', okText: 'Yes', okAction: () async{
                     SharedPreferences prefs = await SharedPreferences.getInstance();
                     await prefs.remove('UserInfo');
                     appLoadController.userValue.value = false;

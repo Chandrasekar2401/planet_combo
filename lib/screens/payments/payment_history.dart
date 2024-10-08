@@ -93,15 +93,15 @@ class _PaymentHistoryState extends State<PaymentHistory> {
                   title: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      commonText(text: 'Invoice date : ${formatDateTime(applicationBaseController.paymentHistory[index].invoicedate!)}', color: Colors.grey, fontSize: 13),
-                      SizedBox(height: 7),
-                      commonText(text: 'Requested Amount : \$ ${applicationBaseController.paymentHistory[index].paymentrequest}', color: Colors.grey, fontSize: 13),
-                      SizedBox(height: 7),
-                      commonText(text: 'Total Invoice Amount : \$ ${applicationBaseController.paymentHistory[index].totalinvocieamount}', color: Colors.grey, fontSize: 13),
+                      // commonText(text: 'Invoice date : ${formatDateTime(applicationBaseController.paymentHistory[index].invoiceNumber!)}', color: Colors.grey, fontSize: 13),
+                      // SizedBox(height: 7),
+                      commonBoldText(text: 'Name : ${applicationBaseController.paymentHistory[index].name ?? ""}', color: Colors.black87, fontSize: 13),
+                      const SizedBox(height: 7),
+                      commonText(text: 'Total Invoice Amount : ${applicationBaseController.paymentHistory[index].currency}' ' ${applicationBaseController.paymentHistory[index].totalAmount}', color: Colors.grey, fontSize: 13),
                       SizedBox(height: 7),
                       commonText(
-                          text: 'Paid Status : ${paymentStatus(applicationBaseController.paymentHistory[index].paidstatus!)}',
-                          color: applicationBaseController.paymentHistory[index].paidstatus == 'N' ? Colors.grey : Colors.blueGrey,
+                          text: 'Paid Status : ${paymentStatus(applicationBaseController.paymentHistory[index].isPaid!.toString())}',
+                          color: applicationBaseController.paymentHistory[index].paidStatus == 'N' ? Colors.grey : Colors.blueGrey,
                           fontSize: 13),
                     ],
                   ),
@@ -111,20 +111,20 @@ class _PaymentHistoryState extends State<PaymentHistory> {
                   expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
                   childrenPadding: EdgeInsets.fromLTRB(15, 0, 0, 0),
                   children: [
-                    commonText(text: 'Paypal reference number : ${applicationBaseController.paymentHistory[index].pprefnumber}', color: Colors.grey, fontSize: 13),
+                    commonText(text: 'Paypal reference number : ${applicationBaseController.paymentHistory[index].paymentReference}', color: Colors.grey, fontSize: 13),
                     SizedBox(height: 7),
-                    commonText(text: 'Taxes : \$ ${applicationBaseController.paymentHistory[index].paidamount}', color: Colors.grey, fontSize: 13),
+                    commonText(text: 'Taxes : \$ ${applicationBaseController.paymentHistory[index].tax1Amount}', color: Colors.grey, fontSize: 13),
                     SizedBox(height: 7),
-                    commonText(text: 'Service Charge : & ${applicationBaseController.paymentHistory[index].paidamount}', color: Colors.grey, fontSize: 13),
+                    commonText(text: 'Service Charge : & ${applicationBaseController.paymentHistory[index].amount}', color: Colors.grey, fontSize: 13),
                     SizedBox(height: 7),
-                    commonText(text: 'Paid date :  ${formatDateTime(applicationBaseController.paymentHistory[index].invoicedate!)}', color: Colors.grey, fontSize: 13),
-                    SizedBox(height: 7),
+                    // commonText(text: 'Paid date :  ${formatDateTime(applicationBaseController.paymentHistory[index].paidDate!.toString())}', color: Colors.grey, fontSize: 13),
+                    // SizedBox(height: 7),
                     commonText(text: 'Payment link reference number : ', color: Colors.grey, fontSize: 13),
                     GestureDetector(
                       onTap: (){
-                        launchUrl(Uri.parse(applicationBaseController.paymentHistory[index].paymentlinkrefnumber!));
+                        launchUrl(Uri.parse(applicationBaseController.paymentHistory[index].invoiceUrl!));
                       },
-                      child: commonText(fontSize: 12, text: '${applicationBaseController.paymentHistory[index].paymentlinkrefnumber}', color: Colors.blue),
+                      child: commonText(fontSize: 12, text: '${applicationBaseController.paymentHistory[index].requestType}', color: Colors.blue),
                     )
                   ],
                   onExpansionChanged: (bool expanded) {

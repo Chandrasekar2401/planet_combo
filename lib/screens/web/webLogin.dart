@@ -38,31 +38,35 @@ class _WebLoginState extends State<WebLogin> {
   Constants constants = Constants();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: '488939796804-7sg8h4gm8oda4qrqvca1cmd2eo91jq9r.apps.googleusercontent.com',
   );
 
+  final List<DropdownItem> countries = [
+    DropdownItem(title: "India", iconUrl: "assets/icon/india_flag.png"),
+    DropdownItem(title: "UAE", iconUrl: "assets/svg/uae_flag.png"),
+    DropdownItem(title: "REST", iconUrl: "assets/svg/world.png"),
+  ];
+
+
   String getCurrentDateTime() {
     DateTime now = DateTime.now();
-    String formattedDate = DateFormat('ddMMyyHHmmss').format(now);
+    String formattedDate = DateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(now);
     return formattedDate;
   }
 
   Future<void> _handleSignIn() async {
     try {
       showWebLoadingDialog(context, "Signing in with Google...");
-
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-
       if (googleUser != null) {
         final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
         final AuthCredential credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
           idToken: googleAuth.idToken,
         );
-
         await _auth.signInWithCredential(credential);
-
         var response = await apiCallingsController.socialLogin(
           _auth.currentUser!.email,
           constants.mediumGmail,
@@ -70,9 +74,9 @@ class _WebLoginState extends State<WebLogin> {
           _auth.currentUser!.providerData[0].uid,
           context,
         );
-
         dismissWebLoadingDialog(context);
-
+        print('the response Profile from the User of google login ${_auth.currentUser!.photoURL!}');
+        print('the response from the User of google login ${_auth.currentUser}');
         if (response == 'true') {
           await _handleSuccessfulLogin();
         } else if (response == 'false') {
@@ -96,8 +100,7 @@ class _WebLoginState extends State<WebLogin> {
     var jsonBody = json.decode(jsonString!);
     appLoadController.loggedUserData.value = SocialLoginData.fromJson(jsonBody);
     applicationBaseController.initializeApplication();
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => const Dashboard()));
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Dashboard()));
   }
 
   Future<void> _handleNewUser() async {
@@ -116,6 +119,8 @@ class _WebLoginState extends State<WebLogin> {
     appLoadController.loggedUserData.value.userphoto = _auth.currentUser!.photoURL!;
     appLoadController.loggedUserData.value.password = constants.password;
     appLoadController.loggedUserData.value.tccode = constants.tccode;
+    appLoadController.loggedUserData.value.tokenfacebook = '';
+    appLoadController.loggedUserData.value.tokenyahoo = '';
     Navigator.pushReplacement(
         context, MaterialPageRoute(builder: (context) => const ProfileEdit()));
   }
@@ -150,7 +155,21 @@ class _WebLoginState extends State<WebLogin> {
                     );
                   },
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 5),
+                // LayoutBuilder(
+                //   builder: (BuildContext context, BoxConstraints constraints) {
+                //     double maxWidth = 500;
+                //     double width = constraints.maxWidth < maxWidth
+                //         ? constraints.maxWidth
+                //         : maxWidth;
+                //     return SizedBox(
+                //       width: width,
+                //       child:
+                //       CustomDropdownButton(placeholder: 'Please Choose Country', textColor: Colors.black, buttonColor: Colors.yellow, items: countries, onChanged: (v){}),
+                //     );
+                //   },
+                // ),
+                // const SizedBox(height: 20),
                 LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints constraints) {
                     double maxWidth = 500;

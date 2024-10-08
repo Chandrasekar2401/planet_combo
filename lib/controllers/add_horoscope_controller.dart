@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:planetcombo/api/api_endpoints.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
+import 'package:planetcombo/controllers/payment_controller.dart';
 import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/screens/services/horoscope_services.dart';
 import 'package:planetcombo/models/social_login.dart';
@@ -30,6 +31,9 @@ class AddHoroscopeController extends GetxController {
 
   final AppLoadController appLoadController =
   Get.put(AppLoadController.getInstance(), permanent: true);
+
+  final PaymentController paymentController =
+  Get.put(PaymentController.getInstance(), permanent: true);
 
   final ApplicationBaseController applicationBaseController =
   Get.put(ApplicationBaseController.getInstance(), permanent: true);
@@ -72,7 +76,7 @@ class AddHoroscopeController extends GetxController {
 
   RxString hNativePhoto = ''.obs;
   RxString hUserId = ''.obs;
-  RxString hid = ''.obs;
+  RxString hid = '0'.obs;
   RxString hHoroscopePhoto = ''.obs;
   RxString hMarriageAmPm = ''.obs;
   RxString hFirstChildTimeAMPM = ''.obs;
@@ -131,7 +135,7 @@ class AddHoroscopeController extends GetxController {
     );
 
     // Format the DateTime to the desired string format
-    return DateFormat('ddMMyyHHmmss').format(mergedDateTime);
+    return mergedDateTime.toString();
   }
 
   void setHoroscopeProfileWebImageBase64(String value) {
@@ -152,7 +156,7 @@ class AddHoroscopeController extends GetxController {
 
   String getCurrentDateTime() {
     DateTime now = DateTime.now();
-    String formattedDate = DateFormat('ddMMyyHHmmss').format(now);
+    String formattedDate = now.toString();
     return formattedDate;
   }
 
@@ -172,16 +176,12 @@ class AddHoroscopeController extends GetxController {
     addHoroscopeBirthSelectedTime!.value =  TimeOfDay(hour: horoscope.hhours!.toInt(), minute: horoscope.hmin!.toInt());
     placeStateCountryOfBirth.text = horoscope.hplace!;
     landmarkOfBirth.text = horoscope.hlandmark!;
-    birthOrder.value = horoscope.hbirthorder!;
-
+    birthOrder.value = horoscope.hbirthorder ?? "";
     hid.value = horoscope.hid!;
-    hAfFlightNo.value = horoscope.haflightno!;
-    hMarriageAmPm.value = horoscope.hmarriageampm!;
-    hFirstChildTimeAMPM.value = horoscope.hfirstchildtimeampm!;
-
-
-    placeStateCountryOfMarriage.text = horoscope.hmarriageplace!;
-    print('the marriage date is ${horoscope.hmarriagetime}');
+    hAfFlightNo.value = horoscope.haflightno ?? "";
+    hMarriageAmPm.value = horoscope.hmarriageampm ?? "";
+    hFirstChildTimeAMPM.value = horoscope.hfirstchildtimeampm ?? "";
+    placeStateCountryOfMarriage.text = horoscope.hmarriageplace ?? "";
     if(horoscope.hmarriagedate != null){
       addSelectedMarriageDate = DateTime.now().obs;
       addSelectedMarriageDate!.value  = DateTime.parse(horoscope.hmarriagedate!);
@@ -209,7 +209,7 @@ class AddHoroscopeController extends GetxController {
       addSelectedMarriageTime!.value = TimeOfDay(hour: hours, minute: minutes);
     }
 
-    placeStateCountryOfChildBirth.text = horoscope.hfirstchildplace!;
+    placeStateCountryOfChildBirth.text = horoscope.hfirstchildplace ?? "";
     if(horoscope.hfirstchilddate != null){
       addSelectedChildBirthDate = DateTime.now().obs;
       addSelectedChildBirthDate!.value  = DateTime.parse(horoscope.hfirstchilddate!);
@@ -237,7 +237,7 @@ class AddHoroscopeController extends GetxController {
       addSelectedChildBirthTime!.value = TimeOfDay(hour: hours, minute: minutes);
     }
 
-    whereDidYouTraveled.text = horoscope.hatplace!;
+    whereDidYouTraveled.text = horoscope.hatplace ?? "";
     if(horoscope.hatdate != null){
       addSelectedTravelDate = DateTime.now().obs;
       addSelectedTravelDate!.value  = DateTime.parse(horoscope.hatdate!);
@@ -265,7 +265,7 @@ class AddHoroscopeController extends GetxController {
       addSelectedTravelTime!.value = TimeOfDay(hour: hours, minute: minutes);
     }
 
-    whereMessageReceived.text = horoscope.hcrplace!;
+    whereMessageReceived.text = horoscope.hcrplace ?? "";
     if(horoscope.hcrdate != null){
       addSelectedMessageReceivedDate = DateTime.now().obs;
       addSelectedMessageReceivedDate!.value  = DateTime.parse(horoscope.hcrdate!);
@@ -293,9 +293,8 @@ class AddHoroscopeController extends GetxController {
       addSelectedMessageReceivedTime!.value = TimeOfDay(hour: hours, minute: minutes);
     }
 
-    relationShipWithOwner.text = horoscope.hdrr!;
-    eventPlace.text = horoscope.hdrrp!;
-    print('the event date is ${horoscope.hdrrd}');
+    relationShipWithOwner.text = horoscope.hdrr ?? "";
+    eventPlace.text = horoscope.hdrrp ?? "";
     if(horoscope.hdrrd != null){
       addSelectedEventDate = DateTime.now().obs;
       addSelectedEventDate!.value  = DateTime.parse(horoscope.hdrrd!);
@@ -341,7 +340,7 @@ class AddHoroscopeController extends GetxController {
     imageFileList!.value =  <XFile>[];
 
     horoscopeName.text = '';
-    hid.value = '';
+    hid.value = '0';
     addHoroscopeGender.value = "Male";
     addHoroscopeBirthSelectedDate = null;
     addHoroscopeBirthSelectedTime = null;
@@ -549,11 +548,11 @@ class AddHoroscopeController extends GetxController {
     }else{
       Map<String, dynamic> addNewHoroscope = {
         "HUSERID": appLoadController.loggedUserData.value.userid,
-        "HID":hid.value.trim(),
+        "HID": hid.value != '0' ? hid.value : '0',
         "HNAME": horoscopeName.text,
         "HNATIVEPHOTO": hNativePhoto.value,
         "HGENDER": findGender(),
-        "HDOBNATIVE": returnIntDate(addHoroscopeBirthSelectedDate!.value),
+        "HDOBNATIVE": addHoroscopeBirthSelectedDate!.value.toString(),
         // mergeDateAndTime(addHoroscopeBirthSelectedDate!.value.toString(), addHoroscopeBirthSelectedTime),
         "HHOURS":convertTo12HourFormat(addHoroscopeBirthSelectedTime!.value.hour),
         "HMIN":addHoroscopeBirthSelectedTime!.value.minute.toString(),
@@ -561,25 +560,25 @@ class AddHoroscopeController extends GetxController {
         "HAMPM":addHoroscopeBirthSelectedTime!.value.period == DayPeriod.pm ? "PM": "AM",
         "HPLACE":placeStateCountryOfBirth.text,
         "HLANDMARK":landmarkOfBirth.text,
-        "HMARRIAGEDATE":addSelectedMarriageDate != null ? DateFormat('ddMMyyHHmmss').format(addSelectedMarriageDate!.value): '',
+        "HMARRIAGEDATE":addSelectedMarriageDate != null ?addSelectedMarriageDate!.value.toString(): '',
         "HMARRIAGEPLACE":placeStateCountryOfMarriage.text,
         "HMARRIAGETIME":addSelectedMarriageTime != null ? timeToCustomFormat(addSelectedMarriageTime!.value) : '',
         "HMARRIAGEAMPM":addSelectedMarriageTime != null ? findMarriageSession(addSelectedMarriageTime!.value) : '',
-        "HFIRSTCHILDDATE":addSelectedChildBirthDate != null ? DateFormat('ddMMyyHHmmss').format(addSelectedChildBirthDate!.value) : '',
+        "HFIRSTCHILDDATE":addSelectedChildBirthDate != null ?addSelectedChildBirthDate!.value.toString() : '',
         "HFIRSTCHILDPLACE":placeStateCountryOfChildBirth.text,
         "HFIRSTCHILDTIME":addSelectedChildBirthTime != null ? timeToCustomFormat(addSelectedChildBirthTime!.value) : '',
         "HFIRSTCHILDTIMEAMPM":addSelectedChildBirthTime != null ? findMarriageSession(addSelectedChildBirthTime!.value) : '',
-        "HATDATE":addSelectedTravelDate != null ? DateFormat('ddMMyyHHmmss').format(addSelectedTravelDate!.value):'',
+        "HATDATE":addSelectedTravelDate != null ?addSelectedTravelDate!.value.toString():'',
         "HATPLACE":whereDidYouTraveled.text,
         'HATTIME':addSelectedTravelTime != null ? timeToCustomFormat(addSelectedTravelTime!.value) : '',
         "HATTAMPM":addSelectedTravelTime != null ? findMarriageSession(addSelectedTravelTime!.value) : '',
         "HAFLIGHTNO":'',
-        "HCRDATE":addSelectedMessageReceivedDate != null ? DateFormat('ddMMyyHHmmss').format(addSelectedMessageReceivedDate!.value):'',
+        "HCRDATE":addSelectedMessageReceivedDate != null ?addSelectedMessageReceivedDate!.value.toString():'',
         "HCRTIME":addSelectedMessageReceivedTime != null ? timeToCustomFormat(addSelectedMessageReceivedTime!.value) : '',
         "HCRPLACE": whereMessageReceived.text,
         "HCRTAMPM":addSelectedMessageReceivedTime != null ? findMarriageSession(addSelectedMessageReceivedTime!.value) : '',
         "HDRR":relationShipWithOwner.text,
-        "HDRRD":addSelectedEventDate != null ? DateFormat('ddMMyyHHmmss').format(addSelectedEventDate!.value) : '',
+        "HDRRD":addSelectedEventDate != null ?addSelectedEventDate!.value.toString() : '',
         "HDRRT":addSelectedEventTime != null ? timeToCustomFormat(addSelectedEventTime!.value) : '',
         'HDRRP':eventPlace.text,
         'HDRRTAMPM':addSelectedEventTime != null ? findMarriageSession(addSelectedEventTime!.value): '',
@@ -594,11 +593,11 @@ class AddHoroscopeController extends GetxController {
         'HPDF':'',
         'LASTREQUESTID':'',
         'LASTMESSAGEID':'',
-        'LASTWPDATE': DateFormat('ddMMyyhhmmss').format(DateTime.now()).toString(),
-        "LASTDPDATE": DateFormat('ddMMyyhhmmss').format(DateTime.now()).toString(),
+        'LASTWPDATE':DateTime.now().toString(),
+        "LASTDPDATE":DateTime.now().toString(),
         "HLOCKED":'',
         "HRECDELETED":'',
-        "HCREATIONDATE": DateFormat('ddMMyyHHmmss').format(DateTime.now()).toString(),
+        "HCREATIONDATE":DateTime.now().toString(),
         "HRECDELETEDD":'',
         "HTOTALTRUE":'',
         "HTOTALFALSE":'',
@@ -609,53 +608,53 @@ class AddHoroscopeController extends GetxController {
       };
       print('the passing value $addNewHoroscope');
       CustomDialog.showLoading(context, 'Please wait');
-     if(hid.value == ''){
+     if(hid.value == '0'){
        var response = await APICallings.addNewHoroscope(addNewHoroscope: addNewHoroscope, token: appLoadController.loggedUserData!.value.token!);
        CustomDialog.cancelLoading(context);
        print('the received response of add horoscope $response');
-       if(response == true){
-         CustomDialog.okActionAlert(context, 'Horoscope added successfully', 'OK', true, 14, () {
-           applicationBaseController.getUserHoroscopeList();
-           CustomDialog.showLoading(context, 'Please wait');
-           Future.delayed(Duration(seconds: 2), () {
-             CustomDialog.cancelLoading(context);
-             Navigator.pushAndRemoveUntil(
-               context,
-               MaterialPageRoute(builder: (context) => const HoroscopeServices()),
-                   (Route<dynamic> route) => false,
-             );
-           });
-         });
-       }else{
-         CustomDialog.showAlert(context, response, false, 14);
-       }
-     }else{
-       var response = await APICallings.updateHoroscope(addNewHoroscope: addNewHoroscope, token: appLoadController.loggedUserData!.value.token!);
-       CustomDialog.cancelLoading(context);
-       print('the received response of update horoscope ${response.success}');
-       if(response.success == true){
-         CustomDialog.okActionAlert(context, 'Horoscope added successfully', 'OK', true, 14, () {
-           applicationBaseController.getUserHoroscopeList();
-           CustomDialog.showLoading(context, 'Please wait');
-           Future.delayed(Duration(seconds: 2), () {
-             CustomDialog.cancelLoading(context);
-             Navigator.pushAndRemoveUntil(
-               context,
-               MaterialPageRoute(builder: (context) => const HoroscopeServices()),
-                   (Route<dynamic> route) => false,
-             );
-           });
+       if(response != null){
+         var jsonResponse = json.decode(response);
+         multiTextYesOrNoDialog(
+             context: context,
+             dialogMessage: 'Horoscope Created Successfully will you pay now or Later',
+             subText1: 'Total Amount : ${jsonResponse['data']['total_amount']}',
+             cancelText: 'Pay Later', okText: 'Pay Now',
+             cancelAction: (){
+              Navigator.pop(context);
+              applicationBaseController.updateHoroscopeUiList();
+               Navigator.pushAndRemoveUntil(
+                 context,
+                 MaterialPageRoute(builder: (context) => const HoroscopeServices()),
+                     (Route<dynamic> route) => false,
+               );
+             },
+             okAction: () {
+             paymentController.payByPaypal(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
          });
        }else{
          CustomDialog.showAlert(context, 'Something went wrong', false, 14);
        }
+     }else{
+       var response = await APICallings.updateHoroscope(updateHoroscope: addNewHoroscope, token: appLoadController.loggedUserData!.value.token!);
+       CustomDialog.cancelLoading(context);
+       if(response.success == true){
+         CustomDialog.okActionAlert(context, 'Horoscope updated successfully', 'OK', true, 14, () {
+           applicationBaseController.getUserHoroscopeList();
+           CustomDialog.showLoading(context, 'Please wait');
+           Future.delayed(Duration(seconds: 2), () {
+             CustomDialog.cancelLoading(context);
+             Navigator.pushAndRemoveUntil(
+               context,
+               MaterialPageRoute(builder: (context) => const HoroscopeServices()),
+                   (Route<dynamic> route) => false,
+             );
+           });
+         });
+       }else{
+         CustomDialog.showAlert(context, response.errorMessage.toString(), false, 14);
+       }
      }
     }
-  }
-
-
-  void resetHnativePhoto(){
-
   }
 
   Future<void> updateProfileWithImage(context, username) async {
@@ -769,7 +768,7 @@ class AddHoroscopeController extends GetxController {
     };
     String fileKey = 'hNativePhoto';
     String url = '';
-    if(hid.value == ''){
+    if(hid.value == '0'){
       url = '${APIEndPoints.baseUrl}api/horoscope/addNew?fileKey=$fileKey';
     }else{
       url = '${APIEndPoints.baseUrl}api/horoscope/updateHoroscope?fileKey=$fileKey';
@@ -790,7 +789,7 @@ class AddHoroscopeController extends GetxController {
     // Set the headers and parameters
     request.headers.addAll(headers);
     request.fields['HUSERID'] = appLoadController.loggedUserData.value.userid!;
-    request.fields["HID"] = hid.value == '' ? '' : hid.value.trim();
+    request.fields["HID"] = hid.value == '0' ? '0' : hid.value.trim();
     request.fields["HNAME"]= horoscopeName.text;
     request.fields["HGENDER"]=findGender()!;
     request.fields["HDOBNATIVE"]=returnIntDate(addHoroscopeBirthSelectedDate!.value).toString();
@@ -800,25 +799,25 @@ class AddHoroscopeController extends GetxController {
     request.fields["HAMPM"]=addHoroscopeBirthSelectedTime!.value.period == DayPeriod.pm ? "PM": "AM";
     request.fields["HPLACE"]=placeStateCountryOfBirth.text;
     request.fields["HLANDMARK"]=landmarkOfBirth.text;
-    request.fields["HMARRIAGEDATE"]=addSelectedMarriageDate != null ? DateFormat('ddMMyyHHmmss').format(addSelectedMarriageDate!.value): '';
+    request.fields["HMARRIAGEDATE"]=addSelectedMarriageDate != null ?addSelectedMarriageDate!.value.toString(): '';
     request.fields["HMARRIAGEPLACE"]=placeStateCountryOfMarriage.text;
     request.fields["HMARRIAGETIME"]=addSelectedMarriageTime != null ? timeToCustomFormat(addSelectedMarriageTime!.value) : '';
     request.fields["HMARRIAGEAMPM"]=(addSelectedMarriageTime != null ? findMarriageSession(addSelectedMarriageTime!.value) : '')!;
-    request.fields["HFIRSTCHILDDATE"]=addSelectedChildBirthDate != null ? DateFormat('ddMMyyHHmmss').format(addSelectedChildBirthDate!.value) : '';
+    request.fields["HFIRSTCHILDDATE"]=addSelectedChildBirthDate != null ?addSelectedChildBirthDate!.value.toString() : '';
     request.fields["HFIRSTCHILDPLACE"]=placeStateCountryOfChildBirth.text;
     request.fields["HFIRSTCHILDTIME"]=addSelectedChildBirthTime != null ? timeToCustomFormat(addSelectedChildBirthTime!.value) : '';
     request.fields["HFIRSTCHILDTIMEAMPM"]=(addSelectedChildBirthTime != null ? findMarriageSession(addSelectedChildBirthTime!.value) : '')!;
-    request.fields["HATDATE"]=addSelectedTravelDate != null ? DateFormat('ddMMyyHHmmss').format(addSelectedTravelDate!.value):'';
+    request.fields["HATDATE"]=addSelectedTravelDate != null ?addSelectedTravelDate!.value.toString():'';
     request.fields["HATPLACE"]=whereDidYouTraveled.text;
     request.fields['HATTIME']=addSelectedTravelTime != null ? timeToCustomFormat(addSelectedTravelTime!.value) : '';
     request.fields["HATTAMPM"]=(addSelectedTravelTime != null ? findMarriageSession(addSelectedTravelTime!.value) : '')!;
     request.fields["HAFLIGHTNO"]='';
-    request.fields["HCRDATE"]=addSelectedMessageReceivedDate != null ? DateFormat('ddMMyyHHmmss').format(addSelectedMessageReceivedDate!.value):'';
+    request.fields["HCRDATE"]=addSelectedMessageReceivedDate != null ?addSelectedMessageReceivedDate!.value.toString():'';
     request.fields["HCRTIME"]=addSelectedMessageReceivedTime != null ? timeToCustomFormat(addSelectedMessageReceivedTime!.value) : '';
     request.fields["HCRPLACE"]= whereMessageReceived.text;
     request.fields["HCRTAMPM"]=(addSelectedMessageReceivedTime != null ? findMarriageSession(addSelectedMessageReceivedTime!.value) : '')!;
     request.fields["HDRR"]=relationShipWithOwner.text;
-    request.fields["HDRRD"]=addSelectedEventDate != null ? DateFormat('ddMMyyHHmmss').format(addSelectedEventDate!.value) : '';
+    request.fields["HDRRD"]=addSelectedEventDate != null ?addSelectedEventDate!.value.toString() : '';
     request.fields["HDRRT"]=addSelectedEventTime != null ? timeToCustomFormat(addSelectedEventTime!.value) : '';
     request.fields['HDRRP']=eventPlace.text;
     request.fields['HDRRTAMPM']=(addSelectedEventTime != null ? findMarriageSession(addSelectedEventTime!.value): '')!;
@@ -833,11 +832,11 @@ class AddHoroscopeController extends GetxController {
     request.fields['HPDF']='';
     request.fields['LASTREQUESTID']='';
     request.fields['LASTMESSAGEID']='';
-    request.fields['LASTWPDATE']= DateFormat('ddMMyyhhmmss').format(DateTime.now()).toString();
-    request.fields["LASTDPDATE"]= DateFormat('ddMMyyhhmmss').format(DateTime.now()).toString();
+    request.fields['LASTWPDATE']=DateTime.now().toString();
+    request.fields["LASTDPDATE"]=DateTime.now().toString();
     request.fields["HLOCKED"]='';
     request.fields["HRECDELETED"]='';
-    request.fields["HCREATIONDATE"]= DateFormat('ddMMyyHHmmss').format(DateTime.now()).toString();
+    request.fields["HCREATIONDATE"]=DateTime.now().toString();
     request.fields["HRECDELETEDD"]='';
     request.fields["HTOTALTRUE"]='';
     request.fields["HTOTALFALSE"]='';

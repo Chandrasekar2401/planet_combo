@@ -26,35 +26,50 @@ class FactsMyths extends StatelessWidget {
           }, icon: const Icon(Icons.home_outlined))
         ],
       ),
-      body: Padding(
-        padding: EdgeInsets.all(21.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            commonBoldText(text: 'Fact#1.'),
-            SizedBox(height: 10),
-            commonText(color: Colors.black54, fontSize: 14, text: "Life aspects are aligned as per dasa periods and appropriate planetary transits"),
-            SizedBox(height: 10),
-            Divider(color: Colors.black12),
-            SizedBox(height: 10),
-            commonBoldText(text: 'Fact#2.'),
-            SizedBox(height: 10),
-            commonText(color: Colors.black54, fontSize: 14, text: "The Practice of Nivarti or Prayachittam will not override a promise as per chart. They remain a matter of faith / belief."),
-            SizedBox(height: 10),
-            Divider(color: Colors.black12),
-            SizedBox(height: 10),
-            commonBoldText(text: 'Fact#3.'),
-            SizedBox(height: 10),
-            commonText(color: Colors.black54, fontSize: 14, text: "VC Pathathi does not consider Dosha, Yogam and Aspects of a chart as valid scientific approach. Hence common myths like mangal Dosha is a chart are not recognized  as valid by VC Pathathi approach. For e.g. a person with Mars in position 7/8 ( Mangal Dosha) can have a good married life depending on the chart and no dosha is considered."),
-            SizedBox(height: 10),
-            Divider(color: Colors.black12),
-            SizedBox(height: 10),
-            commonBoldText(text: 'Fact#4.'),
-            SizedBox(height: 10),
-            commonText(color: Colors.black54, fontSize: 14, text: "It is challenging to determine whether a chart owner is alive or not. Hence users are to provide birth charts of living individuals when seeking prediction."),
-            SizedBox(height: 20),
-          ],
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(21.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              commonBoldText(text: 'Fact#1.'),
+              const SizedBox(height: 10),
+              commonText(color: Colors.black54, fontSize: 14, text: "Scientifically, it is not possible to determine from a horoscope whether the chart owner is deceased or alive. The app assumes that the chart owner is alive and seeks guidance."),
+              const SizedBox(height: 10),
+              const Divider(color: Colors.black12),
+              const SizedBox(height: 10),
+              commonBoldText(text: 'Fact#2.'),
+              const SizedBox(height: 10),
+              commonText(color: Colors.black54, fontSize: 14, text: ""
+                  "According to experts, astrology is a predictive science that isn’t purely scientific. This app demonstrates that its predictions rely on two key factors: a) planetary calculations based on the Ephemeris supplied by NASA, and b) a prediction engine developed using chart and transitory positions following event rules. Notably, there is no manual intervention, aligning with the universality of methods across charts."
+              ),
+              const SizedBox(height: 10),
+              const Divider(color: Colors.black12),
+              const SizedBox(height: 10),
+              commonBoldText(text: 'Fact#3.'),
+              const SizedBox(height: 10),
+              commonText(color: Colors.black54, fontSize: 14, text: "Planet Combo has developed a birth time adjustment methodology that aligns effectively with the predictive approach. Accurate data is crucial for chart generation; otherwise, predictions may be inaccurate. PLANETCOMBO offers a 30-day free service to verify predictions. Once validated, the chart is certified for full use."
+              ),
+              const SizedBox(height: 10),
+              const Divider(color: Colors.black12),
+              const SizedBox(height: 10),
+              commonBoldText(text: 'Fact#4.'),
+              const SizedBox(height: 10),
+              commonText(color: Colors.black54, fontSize: 14, text:
+              "Traditional Vedic astrology draws upon concepts such as Doshams, Yogams, Uttcham, and Neecham of houses and planets to make life predictions. CP Astrology, which builds upon the extended and expanded rules of KP Astrology, is actively researching Vedic principles further. PLANETCOMBO remains committed to this research."
+              ),
+              const SizedBox(height: 10),
+              const Divider(color: Colors.black12),
+              const SizedBox(height: 10),
+              commonBoldText(text: 'Fact#5.'),
+              const SizedBox(height: 10),
+              commonText(color: Colors.black54, fontSize: 14, text:
+                  "Can the PLANETCOMBO app be used without birth details? The answer is NO. However, PLANETCOMBO will try to create a chart based on past life events and explore options for generating the chart. Even in such cases, having the place and date is critical, and efforts will be made to determine the exact time."
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );

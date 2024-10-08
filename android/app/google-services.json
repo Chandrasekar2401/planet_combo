@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "488939796804",
+    "project_id": "flutterplanetcombo-ff367",
+    "storage_bucket": "flutterplanetcombo-ff367.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:488939796804:android:ba7a9c27cb0f7aababbf11",
+        "android_client_info": {
+          "package_name": "com.chandrasekar.planetcombo.planetcombo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "488939796804-9hovca0oc2eo1n661ql6jccqmb6t10mg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.chandrasekar.planetcombo.planetcombo",
+            "certificate_hash": "a3e27bf2d411dd2cdc29dc78d4b455166fb36090"
+          }
+        },
+        {
+          "client_id": "488939796804-dbrqtn3iu8iatkdo1lh4eqg5d4r9lg3b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDXRbwhoPL8Pxc7NxJ1MRCJiiBcYrECJus"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "488939796804-7sg8h4gm8oda4qrqvca1cmd2eo91jq9r.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

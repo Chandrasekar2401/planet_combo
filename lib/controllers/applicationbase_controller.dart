@@ -7,6 +7,7 @@ import 'package:planetcombo/models/messages_list.dart';
 import 'package:planetcombo/api/api_callings.dart';
 import 'package:planetcombo/models/payment_records.dart';
 import 'package:planetcombo/models/get_request.dart';
+import 'package:planetcombo/models/pending_payment_list.dart';
 
 class ApplicationBaseController extends GetxController {
   static ApplicationBaseController? _instance;
@@ -21,15 +22,17 @@ class ApplicationBaseController extends GetxController {
 
   RxList<HoroscopesList> horoscopeList = <HoroscopesList>[].obs;
 
+  RxList<PendingPaymentList> pendingPaymentsList = <PendingPaymentList>[].obs;
+
   RxList<MessageHistory> messagesHistory = <MessageHistory>[].obs;
 
   Rx<MessagesList> messagesInfo = MessagesList().obs;
 
-  Rx<PaymentRecords> paymentInfo = PaymentRecords().obs;
-
-  RxList<PaymentHistory> paymentHistory = <PaymentHistory>[].obs;
+  RxList<PaymentRecord> paymentHistory = <PaymentRecord>[].obs;
 
   RxBool horoscopeListPageLoad = false.obs;
+
+  RxBool pendingPayment = false.obs;
 
   RxString termsAndConditionsLink = ''.obs;
 
@@ -45,10 +48,17 @@ class ApplicationBaseController extends GetxController {
 
   void initializeApplication(){
     _getUserHoroscopeList();
+    _getUserPendingPayments();
     _getTermsAndConditions();
     _getTimeZone();
     _getUserMessages();
     _getUserWallet();
+    _getInvoiceList();
+  }
+
+  void updateHoroscopeUiList(){
+    _getUserHoroscopeList();
+    _getUserPendingPayments();
     _getInvoiceList();
   }
 
@@ -76,6 +86,10 @@ class ApplicationBaseController extends GetxController {
 
   getUserHoroscopeList(){
     _getUserHoroscopeList();
+  }
+
+  getPendingPayments(){
+    _getUserPendingPayments();
   }
 
   getUserWallet(){
@@ -158,24 +172,52 @@ class ApplicationBaseController extends GetxController {
     }
   }
 
-  _getInvoiceList() async{
-    try{
-      var response = await APICallings.getInvoiceList(userId: appLoadController.loggedUserData.value.userid!, token: appLoadController.loggedUserData.value.token!);
-      print('the response of the invoice list');
+  _getInvoiceList() async {
+    try {
+      var response = await APICallings.getInvoiceList(
+          userId: appLoadController.loggedUserData.value.userid!,
+          token: appLoadController.loggedUserData.value.token!
+      );
+      print('The response of the invoice list:');
       print(response);
-      if(response != null){
+      if (response != null) {
         var jsonBody = json.decode(response);
-        if (jsonBody['Status'] == 'Success') {
-          paymentInfo.value = paymentListFromJson(response);
-          paymentHistory.value = paymentInfo.value.data!;
-          print('the recevied value of payment length is ${paymentHistory.length}');
+        // Assuming the API still returns a status field
+        if (jsonBody is List) {
+          // If the API directly returns a list of payment records
+          paymentHistory.value = paymentRecordsFromJson(response);
+        } else if (jsonBody is Map && jsonBody['status'] == 'Success' && jsonBody['data'] is List) {
+          // If the API returns a wrapper object with a data field containing the list
+          paymentHistory.value = paymentRecordsFromJson(json.encode(jsonBody['data']));
+        } else {
+          print('Unexpected API response format');
         }
+        print('The received value of payment length is ${paymentHistory.length}');
       }
-    }catch(error){
-      print('payment history have api reach error');
+    } catch (error) {
+      print('Payment history API request error:');
       print(error);
     }
   }
+
+  _getUserPendingPayments() async{
+    try{
+      pendingPayment.value = true;
+      var response = await APICallings.getPendingPayments(userId: appLoadController.loggedUserData.value.userid!, token: appLoadController.loggedUserData.value.token!);
+      pendingPayment.value = false;
+      print("Get payments List Response : $response");
+      if (response != null) {
+        var jsonBody = json.decode(response);
+        pendingPaymentsList.value = [];
+        pendingPaymentsList.value = pendingPaymentListFromJson(response);
+        print('the value of pending payments ${pendingPaymentsList.length}');
+        print('the value of pending payments $pendingPaymentsList');
+      }else{
+        pendingPaymentsList.value = [];
+      }
+    }finally {}
+  }
+
 
   // _getUserHoroscopeList() async{
   //   try{
@@ -213,13 +255,11 @@ class ApplicationBaseController extends GetxController {
       print("Get Horoscope List Response : $response");
       if (response != null) {
         var jsonBody = json.decode(response);
-        if (jsonBody['Status'] == 'Success') {
-          if (jsonBody['Data'] == null) {
-            print('the length of the horoscopes ${horoscopeList.length}');
+        if (jsonBody['status'] == 'Success') {
+          if (jsonBody['data'] == null) {
             horoscopeList.value = [];
           } else {
             horoscopeList.value = horoscopesListFromJson(response);
-
             // Sort the horoscopeList by hcreationdate
             horoscopeList.value.sort((a, b) {
               // Parse the date strings to DateTime objects

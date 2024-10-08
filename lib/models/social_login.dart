@@ -50,27 +50,27 @@ class SocialLoginData{
   });
 
   factory SocialLoginData.fromJson(json) {
-    final userid= json["USERID"].toString();
-    final username= json["USERNAME"].toString();
-    final useremail= json["USEREMAIL"].toString();
-    final useridd= json["USERIDD"].toString();
-    final usermobile= json["USERMOBILE"].toString();
-    final userphoto= json["USERPHOTO"].toString();
-    final useraccountno= json["USERACCOUNTNO"].toString();
-    final ucountry= json["UCOUNTRY"].toString();
-    final ucurrency= json["UCURRENCY"].toString();
-    final ucharge= json["UCHARGE"].toString();
-    final userpdate= json["USERPDATE"].toString();
-    final userpplang= json["USERPPLANG"].toString();
-    final userlasthoroid= json["USERLASTHOROID"];
-    final password= json["PASSWORD"].toString();
-    final tokenfacebook= json["TOKENFACEBOOK"].toString();
-    final tokengoogle= json["TOKENGOOGLE"].toString();
-    final tokenyahoo= json["TOKENYAHOO"].toString();
-    final touchid= json["TOUCHID"].toString();
-    final token= json["TOKEN"].toString();
-    final tcFlag= json["TCFlag"].toString();
-    final tccode= json["TCCODE"].toString();
+    final userid= json["userid"].toString();
+    final username= json["username"].toString();
+    final useremail= json["useremail"].toString();
+    final useridd= json["useridd"].toString();
+    final usermobile= json["usermobile"].toString();
+    final userphoto= json["userphoto"].toString();
+    final useraccountno= json["useraccountno"].toString();
+    final ucountry= json["ucountry"].toString();
+    final ucurrency= json["ucurrency"].toString();
+    final ucharge= json["ucharge"].toString();
+    final userpdate= json["userpdate"].toString();
+    final userpplang= json["userpplang"].toString();
+    final userlasthoroid= json["userlasthoroid"];
+    final password= json["password"].toString();
+    final tokenfacebook= json["tokenfacebook"].toString();
+    final tokengoogle= json["tokengoogle"].toString();
+    final tokenyahoo= json["tokenyahoo"].toString();
+    final touchid= json["touchid"].toString();
+    final token= json["token"].toString();
+    final tcFlag= json["tcFlag"].toString();
+    final tccode= json["tccode"].toString();
     return SocialLoginData(
         userid: userid,
         username:username,

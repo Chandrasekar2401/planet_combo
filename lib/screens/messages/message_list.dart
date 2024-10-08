@@ -90,6 +90,7 @@ class _MessagesListState extends State<MessagesList> {
                         dialogMessage: 'Do you want to delete this Message ?',
                         cancelText: 'No',
                         okText: 'Yes',
+                        cancelAction: (){},
                         okAction: () async{
                           Navigator.pop(context);
                           var response = await messageController.deleteMessage(context, applicationBaseController.messagesHistory[index].msgmessageid!.replaceAll(' ', ''), applicationBaseController.messagesHistory[index].msghid!.replaceAll(' ', ''), applicationBaseController.messagesHistory[index].msguserid);

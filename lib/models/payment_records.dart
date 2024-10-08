@@ -1,97 +1,110 @@
-// To parse this JSON data, do
-//
-//     final messagesList = messagesListFromJson(jsonString);
-
 import 'dart:convert';
 
-PaymentRecords paymentListFromJson(String str) => PaymentRecords.fromJson(json.decode(str));
+List<PaymentRecord> paymentRecordsFromJson(String str) =>
+    List<PaymentRecord>.from(json.decode(str).map((x) => PaymentRecord.fromJson(x)));
 
-String paymentListToJson(PaymentRecords data) => json.encode(data.toJson());
+String paymentRecordsToJson(List<PaymentRecord> data) =>
+    json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
-class PaymentRecords {
-  String? status;
-  String? message;
-  List<PaymentHistory>? data;
-  String? errorMessage;
+class PaymentRecord {
+  String? name;
+  int? id;
+  int? requestId;
+  String? userId;
+  int? hid;
+  String? tax1Code;
+  double? tax1Amount;
+  String? tax2Code;
+  double? tax2Amount;
+  String? tax3Code;
+  double? tax3Amount;
+  int? requestType;
+  double? amount;
+  bool? isPaid;
+  String? paymentReference;
+  String? paymentChanel;
+  String? invoiceNumber;
+  String? invoiceUrl;
+  DateTime? creationDate;
+  DateTime? paidDate;
+  double? totalAmount;
+  String? currency;
+  String? paidStatus;
 
-  PaymentRecords({
-    this.status,
-    this.message,
-    this.data,
-    this.errorMessage,
-  });
-
-  factory PaymentRecords.fromJson(Map<String, dynamic> json) => PaymentRecords(
-    status: json["Status"],
-    message: json["Message"],
-    data: List<PaymentHistory>.from(json["Data"]['PrimaryList'].map((x) => PaymentHistory.fromJson(x))),
-    errorMessage: json["ErrorMessage"],
-  );
-
-  Map<String, dynamic> toJson() => {
-    "Status": status,
-    "Message": message,
-    "Data": List<dynamic>.from(data!.map((x) => x.toJson())),
-    "ErrorMessage": errorMessage,
-  };
-}
-
-class PaymentHistory {
-  String? uid;
-  String? hid;
-  String? paymentrequest;
-  String? invoice;
-  String? invoicedate;
-  String? paymentlinkrefnumber;
-  double? totalinvocieamount;
-  String? pprefnumber;
-  String?  currency;
-  String? paiddate;
-  double? paidamount;
-  String? paidstatus;
-
-  PaymentHistory({
-    this.uid,
+  PaymentRecord({
+    this.name,
+    this.id,
+    this.requestId,
+    this.userId,
     this.hid,
-    this.paymentrequest,
-    this.invoice,
-    this.invoicedate,
-    this.paymentlinkrefnumber,
-    this.totalinvocieamount,
-    this.pprefnumber,
+    this.tax1Code,
+    this.tax1Amount,
+    this.tax2Code,
+    this.tax2Amount,
+    this.tax3Code,
+    this.tax3Amount,
+    this.requestType,
+    this.amount,
+    this.isPaid,
+    this.paymentReference,
+    this.paymentChanel,
+    this.invoiceNumber,
+    this.invoiceUrl,
+    this.creationDate,
+    this.paidDate,
+    this.totalAmount,
     this.currency,
-    this.paiddate,
-    this.paidamount,
-    this.paidstatus,
+    this.paidStatus,
   });
 
-  factory PaymentHistory.fromJson(Map<String, dynamic> json) => PaymentHistory(
-    uid: json["UID"],
-    hid: json["HID"],
-    paymentrequest: json["PAYMENTREQUEST"],
-    invoice: json["INVOICE"],
-    invoicedate: json["INVOICEDATE"],
-    paymentlinkrefnumber: json["PAYMENTLINKREFNUMBER"],
-    totalinvocieamount: json["TOTALINVOICEAMOUNT"],
-    pprefnumber: json["PPREFNUMBER"],
-    currency: json["CURRENCY"],
-    paiddate: json["PAIDDATE"],
-    paidamount: json["PAIDAMOUNT"],
-    paidstatus: json["PAIDSTATUS"],
+  factory PaymentRecord.fromJson(Map<String, dynamic> json) => PaymentRecord(
+    name: json["userName"],
+    id: json["id"],
+    requestId: json["requestId"],
+    userId: json["userId"],
+    hid: json["hid"],
+    tax1Code: json["tax1_Code"],
+    tax1Amount: json["tax1_amount"]?.toDouble(),
+    tax2Code: json["tax2_Code"],
+    tax2Amount: json["tax2_amount"]?.toDouble(),
+    tax3Code: json["tax3_Code"],
+    tax3Amount: json["tax3_amount"]?.toDouble(),
+    requestType: json["requestType"],
+    amount: json["amount"]?.toDouble(),
+    isPaid: json["isPaid"],
+    paymentReference: json["paymentReference"],
+    paymentChanel: json["paymentChanel"],
+    invoiceNumber: json["invoiceNumber"],
+    invoiceUrl: json["invoiceUrl"],
+    creationDate: json["creationDate"] == null ? null : DateTime.parse(json["creationDate"]),
+    paidDate: json["paidDate"] == null ? null : DateTime.parse(json["paidDate"]),
+    totalAmount: json["total_amount"]?.toDouble(),
+    currency: json["currency"],
+    paidStatus: json["paid_status"],
   );
 
   Map<String, dynamic> toJson() => {
-    "UID": uid,
-    "HID": hid,
-    "PAYMENTREQUEST": paymentrequest,
-    "INVOICE": invoice,
-    "INVOICEDATE": invoicedate,
-    "PAYMENTLINKREFNUMBER": paymentlinkrefnumber,
-    "TOTALINVOICEAMOUNT": totalinvocieamount,
-    "PPREFNUMBER": pprefnumber,
-    "CURRENCY": currency,
-    "PAIDDATE": paiddate,
-    "PAIDAMOUNT": paidamount,
-    "PAIDSTATUS": paidstatus,
+    "name": name,
+    "requestId": requestId,
+    "userId": userId,
+    "hid": hid,
+    "tax1_Code": tax1Code,
+    "tax1_amount": tax1Amount,
+    "tax2_Code": tax2Code,
+    "tax2_amount": tax2Amount,
+    "tax3_Code": tax3Code,
+    "tax3_amount": tax3Amount,
+    "requestType": requestType,
+    "amount": amount,
+    "isPaid": isPaid,
+    "paymentReference": paymentReference,
+    "paymentChanel": paymentChanel,
+    "invoiceNumber": invoiceNumber,
+    "invoiceUrl": invoiceUrl,
+    "creationDate": creationDate?.toIso8601String(),
+    "paidDate": paidDate?.toIso8601String(),
+    "total_amount": totalAmount,
+    "currency": currency,
+    "paid_status": paidStatus,
   };
 }

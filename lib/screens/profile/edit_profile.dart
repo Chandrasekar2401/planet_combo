@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:planetcombo/controllers/applicationbase_controller.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/controllers/add_horoscope_controller.dart';
 import 'package:planetcombo/models/social_login.dart';
@@ -256,15 +257,15 @@ class _ProfileEditState extends State<ProfileEdit> {
         children: [
           const SizedBox(height: 20),
           _buildProfileImage(),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-            child: commonText(
-              textAlign: TextAlign.center,
-              color: Colors.black38,
-              fontSize: 14,
-              text: LocalizationController.getInstance().getTranslatedValue('upload profile picture'),
-            ),
-          ),
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+          //   child: commonText(
+          //     textAlign: TextAlign.center,
+          //     color: Colors.black38,
+          //     fontSize: 14,
+          //     text: LocalizationController.getInstance().getTranslatedValue('upload profile picture'),
+          //   ),
+          // ),
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
@@ -307,8 +308,8 @@ class _ProfileEditState extends State<ProfileEdit> {
                   label: 'Language',
                   options: [
                     LocalizationController.getInstance().getTranslatedValue('English'),
-                    LocalizationController.getInstance().getTranslatedValue('தமிழ்'),
-                    LocalizationController.getInstance().getTranslatedValue('हिंदी'),
+                    // LocalizationController.getInstance().getTranslatedValue('தமிழ்'),
+                    // LocalizationController.getInstance().getTranslatedValue('हिंदी'),
                   ],
                   currentValue: currentValue(localizationController.currentLanguage.value),
                   onChanged: (value) {
@@ -355,7 +356,8 @@ class _ProfileEditState extends State<ProfileEdit> {
     if (addHoroscopeController.editProfileImageFileList!.isNotEmpty ||
         addHoroscopeController.editProfileImageBase64!.isNotEmpty) {
       return GestureDetector(
-        onTap: appLoadController.addNewUser.value == 'YES' ? () {} : _openImagePicker,
+        onTap: (){},
+        // appLoadController.addNewUser.value == 'YES' ? () {} : _openImagePicker,
         child: Container(
           height: 90,
           width: 90,
@@ -385,7 +387,8 @@ class _ProfileEditState extends State<ProfileEdit> {
       );
     } else {
       return GestureDetector(
-        onTap: _openImagePicker,
+        onTap: (){},
+        // _openImagePicker,
         child: (appLoadController.loggedUserData.value.userphoto == '' ||
             appLoadController.loggedUserData.value.userphoto == null)
             ? Container(
@@ -407,11 +410,14 @@ class _ProfileEditState extends State<ProfileEdit> {
             : CircleAvatar(
           radius: 50,
           child: ClipOval(
-            child: Image.network(
-              appLoadController.loggedUserData.value.userphoto!,
+            child:
+            CachedNetworkImage(
+              imageUrl: appLoadController.loggedUserData.value.userphoto!,
               width: 95,
               height: 95,
               fit: BoxFit.cover,
+              placeholder: (context, url) => CircularProgressIndicator(),
+              errorWidget: (context, url, error) => Icon(Icons.person),
             ),
           ),
         ),
@@ -611,8 +617,8 @@ class _ProfileEditState extends State<ProfileEdit> {
           if (isChecked && isPaymentInfoChecked) {
             var response = await addHoroscopeController.addNewProfileWithoutImage(context);
             var string2json = json.decode(response);
-            if ((string2json['Status'] == 'Success' && string2json['Data'] == null)) {
-              CustomDialog.showAlert(context, string2json['Message'] + ' Please contact admin for more info', false, 14);
+            if ((string2json['status'] == 'Success' && string2json['data'] == null)) {
+              CustomDialog.showAlert(context, string2json['message'] + ' Please contact admin for more info', false, 14);
             } else {
               final prefs = await SharedPreferences.getInstance();
               String? jsonString = prefs.getString('UserInfo');
@@ -628,18 +634,19 @@ class _ProfileEditState extends State<ProfileEdit> {
           }
         } else {
           var response = await addHoroscopeController.updateProfile(context, username.text);
+          print('the response received after the profile Update $response');
           if (response != null) {
             var responseData = json.decode(response);
             SharedPreferences pref = await SharedPreferences.getInstance();
-            await pref.setString('UserInfo', json.encode(responseData['Data']));
+            await pref.setString('UserInfo', json.encode(responseData['data']));
             final prefs = await SharedPreferences.getInstance();
             String? jsonString = prefs.getString('UserInfo');
             var jsonBody = json.decode(jsonString!);
             appLoadController.loggedUserData.value = SocialLoginData.fromJson(jsonBody);
-            if (responseData['Status'] == 'Success') {
-              CustomDialog.showAlert(context, responseData['Message'], true, 14);
+            if (responseData['status'] == 'Success') {
+              CustomDialog.showAlert(context, responseData['message'], true, 14);
             } else {
-              CustomDialog.showAlert(context, responseData['Message'], false, 14);
+              CustomDialog.showAlert(context, responseData['message'], false, 14);
             }
           }
         }

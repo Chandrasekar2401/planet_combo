@@ -1,9 +1,11 @@
+import 'dart:async';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:html' as html;
 
 class SocialLoginController extends GetxController {
   static SocialLoginController? _instance;
@@ -14,29 +16,37 @@ class SocialLoginController extends GetxController {
   }
   static bool _fbIsInitialized = false;
 
-  static Future<void> initialize() async {
+  static Future<void> initialize(BuildContext context) async {
     if (kIsWeb && !_fbIsInitialized) {
-      await FacebookAuth.instance.webAndDesktopInitialize(
-        appId: "YOUR_FACEBOOK_APP_ID", // Replace with your actual App ID
-        cookie: true,
-        xfbml: true,
-        version: "v15.0",
-      );
-      _fbIsInitialized = true;
+      print('Initializing Facebook SDK...');
+      try {
+        await FacebookAuth.instance.webAndDesktopInitialize(
+          appId: "YOUR_FACEBOOK_APP_ID", // Replace with your actual App ID
+          cookie: true,
+          xfbml: true,
+          version: "v15.0",
+        );
+        print('Facebook SDK initialized successfully');
+        _fbIsInitialized = true;
+      } catch (e) {
+        print('Facebook SDK initialization failed: $e');
+      }
+      print('Facebook SDK initialization process completed');
     }
   }
 
-  static Future<void> loginWithFacebook(context) async {
+  static Future<void> loginWithFacebook(BuildContext context) async {
     try {
-      if (kIsWeb && !html.window.location.protocol.contains('https')) {
-        throw Exception('Facebook login requires HTTPS. Please use a secure connection.');
-      }
-
       CustomDialog.showLoading(context, 'Please wait');
 
-      await initialize();
+      await initialize(context);
+      print('Attempting Facebook login...');
 
-      final LoginResult result = await FacebookAuth.instance.login();
+      final LoginResult result = await FacebookAuth.instance.login()
+          .timeout(Duration(seconds: 15), onTimeout: () {
+        throw TimeoutException('Facebook login timed out');
+      });
+
       print('Login result: ${result.status}, Message: ${result.message}');
 
       if (result.status == LoginStatus.success) {
@@ -58,7 +68,17 @@ class SocialLoginController extends GetxController {
     } catch (e) {
       print('Exception during Facebook login: $e');
       CustomDialog.cancelLoading(context);
-      CustomDialog.showAlert(context, 'Facebook login failed: ${e.toString()}', false, 14);
+
+      String errorMessage = 'Facebook login failed';
+      if (e is TimeoutException) {
+        errorMessage = 'Login timed out. Please check your internet connection and try again.';
+      } else if (e is FirebaseAuthException) {
+        errorMessage = 'Firebase authentication error: ${e.message}';
+      } else if (e is Exception) {
+        errorMessage = 'An error occurred: ${e.toString()}';
+      }
+
+      CustomDialog.showAlert(context, errorMessage, false, 14);
     }
   }
 

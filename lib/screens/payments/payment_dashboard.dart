@@ -7,6 +7,9 @@ import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/controllers/add_horoscope_controller.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:planetcombo/screens/payments/payment_history.dart';
+import 'package:planetcombo/screens/payments/pending_payments.dart';
+import 'package:planetcombo/screens/payments/pricing.dart';
+import 'package:planetcombo/common/widgets.dart';
 
 import 'package:planetcombo/screens/static/facts_myths.dart';
 
@@ -111,8 +114,8 @@ class _PaymentDashboardState extends State<PaymentDashboard> {
                               children: [
                                 GestureDetector(
                                   onTap: (){
-                                    // Navigator.push(
-                                    //     context, MaterialPageRoute(builder: (context) => const Pay()));
+                                    Navigator.push(
+                                        context, MaterialPageRoute(builder: (context) => PendingPaymentsPage()));
                                   },
                                   child: Container(
                                       width: MediaQuery.of(context).size.width * 0.4,
@@ -176,8 +179,8 @@ class _PaymentDashboardState extends State<PaymentDashboard> {
                               children: [
                                 GestureDetector(
                                   onTap: (){
-                                    // Navigator.push(
-                                    //     context, MaterialPageRoute(builder: (context) => const Balance()));
+                                    Navigator.push(
+                                        context, MaterialPageRoute(builder: (context) => const PricingPage()));
                                   },
                                   child: Container(
                                       width: MediaQuery.of(context).size.width * 0.4,

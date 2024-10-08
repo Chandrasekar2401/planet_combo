@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
@@ -46,12 +47,13 @@ class APICallings {
         print('the json response from social login');
         print(jsonResponse);
         var string = 'true';
-        if(jsonResponse['Status'] == 'Success'){
-          if(jsonResponse['Message'] == 'No Data found'){
+        if(jsonResponse['status'] == 'Success'){
+          print('you string response reaced here $string');
+          if(jsonResponse['message'] == 'No Data found'){
                 string = 'No Data found';
           }else{
             SharedPreferences prefs = await SharedPreferences.getInstance();
-            await prefs.setString('UserInfo', json.encode(jsonResponse['Data']));
+            await prefs.setString('UserInfo', json.encode(jsonResponse['data']));
               string = 'true';
           }
         }else{
@@ -74,8 +76,6 @@ class APICallings {
       {required Map<String, dynamic> addNewHoroscope,  required String token}) async {
     Map<String, dynamic> registerObject = addNewHoroscope;
     var url = Uri.parse(APIEndPoints.addNewHoroscope);
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
     try{
       var response = await http.post(
           url,
@@ -85,17 +85,16 @@ class APICallings {
           },
           body: registerObject
       );
-      print('the response are crossed 3');
       print(response.statusCode);
       if(response.statusCode == 403){
         return '403 Error';
       }else if(response.statusCode == 200){
         var jsonResponse = json.decode(response.body);
         print(jsonResponse);
-        if(jsonResponse['Status'] == 'Success'){
-          return true;
+        if(jsonResponse['data'] == null){
+          return null;
         }else{
-          return jsonResponse['ErrorMessage'];
+          return response.body;
         }
       }else{
         return 'Something went wrong';
@@ -104,6 +103,40 @@ class APICallings {
       print('catch error is');
       print(error);
       return 'Something went wrong';
+    }
+  }
+
+  static Future<APIResponse> updateHoroscope({
+    required Map<String, dynamic> updateHoroscope,
+    required String token,
+  }) async {
+    try {
+      Map<String, dynamic> updateObject = updateHoroscope;
+      var url = Uri.parse(APIEndPoints.updateHoroscope);
+      print('URL : $url');
+      print("Body: ${json.encode(updateHoroscope)}");
+      var response = await http.post(
+          url,
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            "token": token
+          },
+          body: updateObject
+      );
+      print('Response Status Code: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        var jsonResponse = json.decode(response.body);
+        print('Response Body: $jsonResponse');
+        if (jsonResponse['status'] == 'Success') {
+          return APIResponse(success: true, data: response.body);
+        } else {
+          return APIResponse(success: false, errorMessage: jsonResponse['errorMessage']);
+        }
+      } else {
+        return APIResponse(success: false, errorMessage: 'HTTP Error ${response.statusCode}');
+      }
+    } catch (e) {
+      return APIResponse(success: false, errorMessage: 'Exception: $e');
     }
   }
 
@@ -130,10 +163,10 @@ class APICallings {
       }else if(response.statusCode == 200){
         var jsonResponse = json.decode(response.body);
         print(jsonResponse);
-        if(jsonResponse['Status'] == 'Success'){
+        if(jsonResponse['status'] == 'Success'){
           return response.body;
         }else{
-          return jsonResponse['ErrorMessage'];
+          return jsonResponse['errorMessage'];
         }
       }else if(response.statusCode == 500){
         return '500';
@@ -168,15 +201,15 @@ class APICallings {
       }else if(response.statusCode == 200){
         var jsonResponse = json.decode(response.body);
         print(jsonResponse);
-        if(jsonResponse['Status'] == 'Success'){
+        if(jsonResponse['status'] == 'Success'){
           SharedPreferences prefs = await SharedPreferences.getInstance();
-          await prefs.setString('UserInfo', json.encode(jsonResponse['Data']));
+          await prefs.setString('UserInfo', json.encode(jsonResponse['data']));
           return response.body;
         }else{
-          if(jsonResponse['Message'] != null){
-            return jsonResponse['Message'];
+          if(jsonResponse['message'] != null){
+            return jsonResponse['message'];
           }else{
-            return jsonResponse['ErrorMessage'];
+            return jsonResponse['errorMessage'];
           }
         }
       }else{
@@ -221,44 +254,6 @@ class APICallings {
   //   }
   // }
 
-  static Future<APIResponse> updateHoroscope({
-    required Map<String, dynamic> addNewHoroscope,
-    required String token,
-  }) async {
-    try {
-      var url = Uri.parse(APIEndPoints.updateHoroscope);
-      print('URL : $url');
-      print("Body: ${json.encode(addNewHoroscope)}");
-
-      var response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json', // use 'application/json' for JSON data
-          'token': token,
-        },
-        body: json.encode(addNewHoroscope),
-      );
-
-      print('Response Status Code: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        var jsonResponse = json.decode(response.body);
-        print('Response Body: $jsonResponse');
-
-        if (jsonResponse['Status'] == 'Success') {
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          await prefs.setString('UserInfo', json.encode(jsonResponse['Data']));
-          return APIResponse(success: true, data: response.body);
-        } else {
-          return APIResponse(success: false, errorMessage: jsonResponse['ErrorMessage']);
-        }
-      } else {
-        return APIResponse(success: false, errorMessage: 'HTTP Error ${response.statusCode}');
-      }
-    } catch (e) {
-      return APIResponse(success: false, errorMessage: 'Exception: $e');
-    }
-  }
   ///get horoscope
   static Future<String?> getHoroscope({required String userId, required String token}) async {
     Map<String, String> headers = {
@@ -268,6 +263,28 @@ class APICallings {
       // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
     };
     var url = Uri.parse(APIEndPoints.getHoroscope+userId);
+    var response = await http.get(
+      url,
+      headers: headers,
+    );
+    print("Get Vendor Profile URL : $url");
+    if (response.statusCode == 200) {
+      return response.body;
+    } else {
+      return null;
+    }
+  }
+
+
+  ///get pending Payments
+  static Future<String?> getPendingPayments({required String userId, required String token}) async {
+    Map<String, String> headers = {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "token": token
+      // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
+    };
+    var url = Uri.parse(APIEndPoints.getPendingPayments+userId);
     var response = await http.get(
       url,
       headers: headers,
@@ -536,7 +553,7 @@ class APICallings {
       // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
     };
     var url = Uri.parse(APIEndPoints.getInvoiceList+userId);
-    var response = await http.get(
+    var response = await http.post(
       url,
       headers: headers,
     );
@@ -654,9 +671,11 @@ class APICallings {
     }
   }
 
-  ///Email Chart
-  static Future<String?> emailChart(
-      {required String userId,required String hId, required String token}) async {
+  static Future<String> emailChart({
+    required String userId,
+    required String hId,
+    required String token,
+  }) async {
     Map<String, dynamic> registerObject = {
       "HId": hId,
       "UserId": userId,
@@ -664,23 +683,38 @@ class APICallings {
     var url = Uri.parse(APIEndPoints.emailChart);
     print('URL : $url');
     print("Body: ${json.encode(registerObject)}");
-    var response = await http.post(
-      url,
-      body: jsonEncode(registerObject),
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "token": token
-      },
-    );
-    print('the response are crossed 1');
-    print(response.statusCode);
-    if(response.statusCode == 403){
-      return '403 Server error';
-    }else if(response.statusCode == 200){
-      return response.body;
-    }else{
-      return 'Something went wrong';
+
+    try {
+      var response = await http.post(
+        url,
+        body: jsonEncode(registerObject),
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "token": token
+        },
+      ).timeout(const Duration(seconds: 10));
+      print('Response status code: ${response.statusCode}');
+      switch (response.statusCode) {
+        case 200:
+          return response.body;
+        case 403:
+          return '403 Forbidden: Server denied access';
+        case 404:
+          return '404 Not Found: The requested resource could not be found';
+        case 500:
+          return '500 Internal Server Error: Something went wrong on the server';
+        default:
+          return 'Unexpected status code: ${response.statusCode}';
+      }
+    } on TimeoutException {
+      return 'Request timed out after 10 seconds';
+    } on http.ClientException catch (e) {
+      return 'Network error: ${e.message}';
+    } on FormatException {
+      return 'Invalid response format from the server';
+    } catch (e) {
+      return 'Unexpected error occurred: $e';
     }
   }
 
@@ -953,14 +987,40 @@ class APICallings {
 
 
 
-  ///add offline Money
-  static Future<Response?> payByUpi(
-      {required int amount, required String currency, required String email, required String userId, required String token}) async {
+  ///add paypal payment
+  static Future<Response?> payByPaypal(
+      {required double amount, required int reqId, required String userId, required String token}) async {
     Map<String, dynamic> registerObject = {
-      "Amount": amount,
-      "Currency": currency,
-      "Email":email,
-      "UserId": userId
+      "requestId": reqId,
+      "userId": userId,
+      "amount":amount,
+    };
+    var url = Uri.parse(APIEndPoints.payByPaypal);
+
+    print('URL : $url');
+    print("Body: ${json.encode(registerObject)}");
+
+    var response = await http.post(
+      url,
+      body: jsonEncode(registerObject),
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "token": token
+      },
+    );
+    var jsonResponse = json.decode(response.body);
+    return response;
+  }
+
+
+  ///add paypal payment
+  static Future<Response?> payByUpi(
+      {required double amount, required int reqId, required String userId, required String token}) async {
+    Map<String, dynamic> registerObject = {
+      "requestId": reqId,
+      "userId": userId,
+      "amount":amount,
     };
     var url = Uri.parse(APIEndPoints.payByUpi);
 
@@ -979,6 +1039,8 @@ class APICallings {
     var jsonResponse = json.decode(response.body);
     return response;
   }
+
+
 
 
   ///add social Media

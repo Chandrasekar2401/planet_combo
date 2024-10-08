@@ -1,13 +1,16 @@
 class APIEndPoints {
 
   //application api base Url
-  static String baseUrl = 'https://dev.planetcombo.com/api/';
+  static String baseUrl = 'https://dev.planetcombo.com/';
 
   ///Social Login
   static String socialLogin = '${baseUrl}api/Profile/login';
 
   ///Get horoscopes
   static String getHoroscope = '${baseUrl}api/horoscope/get?userId=';
+
+  ///Get pendingPayments
+  static String getPendingPayments = '${baseUrl}api/Payments/pending-payments/';
 
   ///Get horoscopes
   static String checkRequest = '${baseUrl}api/request/ChekckDuplicateRequest?USERID=';
@@ -19,8 +22,12 @@ class APIEndPoints {
   static String addOfflineMoney = '${baseUrl}api/Invoice/Pay';
 
 
-  ///Pay Payment by UPI
-  static String payByUpi = '${baseUrl}api/Invoice/Pay';
+  ///Pay Payment by Paypal
+  static String payByPaypal = '${baseUrl}api/Payments/create-paypal-payment';
+
+  ///Pay Payment by Upi
+  static String payByUpi = '${baseUrl}api/Payments/create-UpiPay-payment';
+
 
   ///update Message
   static String updateMessage = '${baseUrl}api/messages/updateMessages';
@@ -38,7 +45,7 @@ class APIEndPoints {
   static String getTermsAndConditions = '${baseUrl}api/termCondition/TCLinkandCharCharges?userId=';
 
   ///Get invoice List
-  static String getInvoiceList = '${baseUrl}api/invoice/GetInvoiceLists?userId=';
+  static String getInvoiceList = '${baseUrl}api/Payments/invoice-records/';
 
   ///Get user wallet balance
   static String getUserWalletBalance = '${baseUrl}api/account/getStatements?userId=';
@@ -75,6 +82,9 @@ class APIEndPoints {
 
   ///Add New Profile
   static String addProfile = '${baseUrl}api/profile/addProfile';
+
+  ///Payment Status Check
+  static String paymentStatusCheck = '${baseUrl}api/Payments/pending-payments-ref-id/';
 
   ///Update horoscopes
   static String updateHoroscope = '${baseUrl}api/horoscope/updateHoroscope';

@@ -103,12 +103,11 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
     print('the value of result is $result');
     CustomDialog.cancelLoading(context);
     var jsondata = jsonDecode(result!);
-    print('The recevied chart is ${jsondata['Status']}');
-    if(jsondata['Status'] == 'Success'){
-      if(jsondata['Data'] == 'undefined' || jsondata['Data'] == null){
+    if(jsondata['status'] == 'Success'){
+      if(jsondata['data'] == 'undefined' || jsondata['data'] == null){
         CustomDialog.showAlert(context, 'Chart is not ready yet', false, 14);
       }else{
-          String htmlLink = jsondata['Data'];
+          String htmlLink = jsondata['data'];
           if (!await launchUrl(Uri.parse(htmlLink))) {
             throw Exception('Could not launch $htmlLink');
           }
@@ -116,22 +115,56 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
     }
   }
 
-  void emailHoroscope(String userId, String hid) async{
+
+  void emailHoroscope(String userId, String hid) async {
     CustomDialog.showLoading(context, 'Please wait');
-    var result = await APICallings.emailChart(userId: userId, hId: hid.trim(), token: appLoadController.loggedUserData!.value.token!);
-    print('the value of result is $result');
-    CustomDialog.cancelLoading(context);
-    if(result == '403 Server error'){
-      CustomDialog.showAlert(context, result!, false, 14);
-    }else if(result == 'Something went wrong' || result == null){
-      CustomDialog.showAlert(context, result!, false, 14);
-    }else{
+
+    try {
+      var result = await APICallings.emailChart(
+          userId: userId,
+          hId: hid.trim(),
+          token: appLoadController.loggedUserData!.value.token!
+      );
+
+      print('The value of result is $result');
+
+      CustomDialog.cancelLoading(context);
+
+      if (result.startsWith('2')) { // Successful response
         var jsonData = json.decode(result);
-        if(jsonData['Status'] == 'Failure'){
-          CustomDialog.showAlert(context, jsonData['ErrorMessage'], false, 14);
-        }else{
+        if (jsonData['Status'] == 'Success') {
           CustomDialog.showAlert(context, jsonData['Message'], true, 14);
+        } else {
+          CustomDialog.showAlert(context, jsonData['ErrorMessage'] ?? 'Unknown error occurred', false, 14);
         }
+      } else {
+        // Handle various error scenarios
+        switch (result) {
+          case '403 Forbidden: Server denied access':
+            CustomDialog.showAlert(context, 'Access denied. Please check your credentials.', false, 14);
+            break;
+          case '404 Not Found: The requested resource could not be found':
+            CustomDialog.showAlert(context, 'The requested chart could not be found.', false, 14);
+            break;
+          case '500 Internal Server Error: Something went wrong on the server':
+            CustomDialog.showAlert(context, 'Server error. Please try again later.', false, 14);
+            break;
+          case 'Request timed out after 10 seconds':
+            CustomDialog.showAlert(context, 'The request timed out. Please check your internet connection and try again.', false, 14);
+            break;
+          default:
+            if (result.startsWith('Network error:')) {
+              CustomDialog.showAlert(context, 'Network error. Please check your internet connection.', false, 14);
+            } else if (result == 'Invalid response format from the server') {
+              CustomDialog.showAlert(context, 'Received an invalid response from the server. Please try again.', false, 14);
+            } else {
+              CustomDialog.showAlert(context, 'An unexpected error occurred: $result', false, 14);
+            }
+        }
+      }
+    } catch (e) {
+      CustomDialog.cancelLoading(context);
+      CustomDialog.showAlert(context, 'An unexpected error occurred: $e', false, 14);
     }
   }
 
@@ -583,6 +616,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                               print('selected value is 4');
                                               yesOrNoDialog(
                                                 context: context,
+                                                cancelAction: (){},
                                                 dialogMessage: 'Are you sure you want to delete this horoscope?',
                                                 cancelText: 'No',
                                                 okText: 'Yes',

@@ -930,11 +930,11 @@ Widget commonColorButton(
       required VoidCallback onPressed}) {
   return ElevatedButton(
     style: ButtonStyle(
-        backgroundColor: MaterialStateProperty.all(buttonColor),
+        backgroundColor: WidgetStateProperty.all(buttonColor),
         padding:
-        MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 8, horizontal: 8)),
-        elevation: MaterialStateProperty.all(0),
-        shape: MaterialStateProperty.all(RoundedRectangleBorder(
+        WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 8, horizontal: 8)),
+        elevation: WidgetStateProperty.all(0),
+        shape: WidgetStateProperty.all(RoundedRectangleBorder(
           // side: const BorderSide(color: Color(0xff979797)),
             borderRadius: BorderRadius.circular(4)))),
     onPressed: onPressed,
@@ -966,11 +966,11 @@ Widget fullLeftIconColorButton(
     width: MediaQuery.of(context).size.width * 1,
     child: ElevatedButton(
       style: ButtonStyle(
-        backgroundColor: MaterialStateProperty.all(buttonColor),
+        backgroundColor: WidgetStateProperty.all(buttonColor),
         padding:
-        MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 12)),
-        elevation: MaterialStateProperty.all(4),
-        shape: MaterialStateProperty.all(
+        WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 12)),
+        elevation: WidgetStateProperty.all(4),
+        shape: WidgetStateProperty.all(
           RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(21),
           ),
@@ -995,11 +995,124 @@ Widget fullLeftIconColorButton(
             child: SvgPicture.asset(iconUrl, color: iconColor)),
           ),
         ],
-
       ),
-
     ),
   );
+}
+
+class CustomDropdownButton extends StatefulWidget {
+  final String placeholder;
+  final Color textColor;
+  final Color buttonColor;
+  final Color? iconColor;
+  final double? iconLeftSize;
+  final List<DropdownItem> items;
+  final Function(DropdownItem?) onChanged;
+
+  const CustomDropdownButton({
+    super.key,
+    required this.placeholder,
+    required this.textColor,
+    required this.buttonColor,
+    this.iconColor,
+    this.iconLeftSize,
+    required this.items,
+    required this.onChanged,
+  });
+
+  @override
+  _CustomDropdownButtonState createState() => _CustomDropdownButtonState();
+}
+
+class _CustomDropdownButtonState extends State<CustomDropdownButton> {
+  DropdownItem? selectedItem;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 45,
+      width: MediaQuery.of(context).size.width,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(21),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: ButtonTheme(
+          alignedDropdown: true,
+          child: DropdownButton<DropdownItem>(
+            isExpanded: true,
+            value: selectedItem,
+            icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
+            elevation: 0,
+            style: GoogleFonts.lexend(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: widget.textColor,
+            ),
+            onChanged: (DropdownItem? newValue) {
+              setState(() {
+                selectedItem = newValue;
+              });
+              widget.onChanged(newValue);
+            },
+            selectedItemBuilder: (BuildContext context) {
+              return widget.items.map<Widget>((DropdownItem item) {
+                return Container(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    children: [
+                      if (selectedItem != null)
+                        SizedBox(
+                          width: widget.iconLeftSize ?? 20,
+                          child: Image.asset(
+                            selectedItem!.iconUrl,
+                            color: widget.iconColor,
+                          ),
+                        ),
+                      if (selectedItem != null) const SizedBox(width: 8),
+                      Text(
+                        selectedItem?.title ?? widget.placeholder,
+                        style: GoogleFonts.lexend(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: selectedItem != null ? widget.textColor : Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList();
+            },
+            items: widget.items.map<DropdownMenuItem<DropdownItem>>((DropdownItem item) {
+              return DropdownMenuItem<DropdownItem>(
+                value: item,
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: widget.iconLeftSize ?? 20,
+                      child: Image.asset(
+                        item.iconUrl,
+                        color: widget.iconColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(item.title),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class DropdownItem {
+  final String title;
+  final String iconUrl;
+
+  DropdownItem({required this.title, required this.iconUrl});
 }
 
 Widget reusablePopUp({required BuildContext context}){
@@ -1093,7 +1206,7 @@ class CommonSearchBar extends StatelessWidget {
   }
 }
 
-Future yesOrNoDialog({required BuildContext context, required String dialogMessage, required String cancelText, required String okText, required VoidCallback okAction}) {
+Future yesOrNoDialog({required BuildContext context, required String dialogMessage, required String cancelText, required String okText, required VoidCallback okAction, required VoidCallback cancelAction}) {
   return  showDialog(
       context: context,
       builder: (context) {
@@ -1127,14 +1240,12 @@ Future yesOrNoDialog({required BuildContext context, required String dialogMessa
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.grey)),
               child: TextButton(
+                onPressed: cancelAction,
                 child: Text(cancelText,
                     style: GoogleFonts.lexend(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         color: Colors.black)),
-                onPressed: () {
-                  Navigator.pop(context);//Close Dialog Box
-                },
               ),
             ),
             Container(
@@ -1155,6 +1266,95 @@ Future yesOrNoDialog({required BuildContext context, required String dialogMessa
         );
       });
 }
+
+Future multiTextYesOrNoDialog({required BuildContext context, String? subText1,String? subText2,String? subText3, required String dialogMessage, required String cancelText, required String okText, required VoidCallback okAction, required VoidCallback cancelAction}) {
+  return  showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.info,
+                color: Colors.red,
+                size: 40,
+              ),
+              const SizedBox(height: 15),
+              Text(
+                dialogMessage,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.lexend(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black),
+              ),
+              if(subText1 != null)const SizedBox(height: 5),
+              if(subText1 != null)Text(
+                subText1,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.lexend(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black),
+              ),
+              if(subText2 != null)const SizedBox(height: 5),
+              if(subText2 != null)Text(
+                subText2,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.lexend(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black),
+              ),
+              if(subText3 != null)const SizedBox(height: 5),
+              if(subText3 != null)Text(
+                subText3,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.lexend(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black),
+              ),
+            ],
+          ),
+          actionsPadding: EdgeInsets.only(bottom: 8, right: 8),
+          actions: [
+            Container(
+              height: 40,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey)),
+              child: TextButton(
+                onPressed: cancelAction,
+                child: Text(cancelText,
+                    style: GoogleFonts.lexend(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black)),
+              ),
+            ),
+            Container(
+              height: 40,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red)),
+              child: TextButton(
+                onPressed: okAction,
+                child: Text(okText,
+                    style: GoogleFonts.lexend(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.red)),
+              ),
+            ),
+          ],
+        );
+      });
+}
+
 
 class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
