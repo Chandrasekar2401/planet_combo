@@ -541,6 +541,11 @@ class AddHoroscopeController extends GetxController {
       return 'Invalid hour';
     }
   }
+
+  double taxCalc(double tax1, double tax2, double tax3){
+    double totalTax = tax1 + tax2 + tax3;
+    return totalTax;
+  }
   
   addNewHoroscope(context) async{
     if(imageFileList!.isNotEmpty || setHoroscopeWebProfileImageBase64!.isNotEmpty){
@@ -617,7 +622,8 @@ class AddHoroscopeController extends GetxController {
          multiTextYesOrNoDialog(
              context: context,
              dialogMessage: 'Horoscope Created Successfully will you pay now or Later',
-             subText1: 'Total Amount : ${jsonResponse['data']['total_amount']}',
+             subText1: 'Tax Amount: ${taxCalc(jsonResponse['data']['tax1_amount'], jsonResponse['data']['tax3_amount'], jsonResponse['data']['tax3_amount'])}',
+             subText3: 'Total Amount : ${jsonResponse['data']['total_amount']}',
              cancelText: 'Pay Later', okText: 'Pay Now',
              cancelAction: (){
               Navigator.pop(context);

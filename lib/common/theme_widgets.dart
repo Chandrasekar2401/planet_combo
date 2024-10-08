@@ -26,6 +26,7 @@ class CustomDrawer extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: [
             Container(
+              height: 220,
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.transparent),
                 boxShadow: [],

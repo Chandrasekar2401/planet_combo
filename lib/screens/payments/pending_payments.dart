@@ -71,7 +71,7 @@ class PaymentListItem extends StatelessWidget {
   String findReqType(String type){
     if(type == "7"){
       return "Chart Request";
-    }else if(type == "8"){
+    }else if(type == "2"){
       return "Daily Request";
     }else{
       return "Special Request";
@@ -118,19 +118,60 @@ class PaymentListItem extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 7),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 17),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                commonBoldText(text:'Name : ${payment.name ?? ""}', fontSize: 14),
-                commonText(text: 'Payable amount: ${payment.currency}' ' ${formatIndianRupees(payment.totalAmount!)}', color: Colors.green, fontSize: 14),
-                commonText(text:'Charge : ${payment.currency}' ' ${formatIndianRupees(payment.amount!)}', color: Colors.black38, fontSize: 11),
-                commonText(text: 'Tax: ${payment.currency}' ' ${formatIndianRupees(taxCalc(payment.tax1Amount ?? 0, payment.tax2Amount ?? 0, payment.tax3Amount ?? 0))}', color: Colors.black38, fontSize: 11),
-                commonText(text: 'Type : ${findReqType(payment.requestType.toString())}',  color: Colors.black38, fontSize: 11),
-                commonText(text: 'Req Id : ${payment.requestId.toString()}',  color: Colors.black38, fontSize: 11),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    SizedBox(width: 150, child: commonBoldText(text:'Name ', fontSize: 14)),
+                    commonBoldText(text: "-  ${payment.name ?? "Not Available"}", fontSize: 14)
+                  ],
+                ),
+                SizedBox(height: 5),
+                Row(
+                  children: [
+                    SizedBox(width: 150, child: commonText(text: 'Type ',  color: Colors.black87, fontSize: 11)),
+                    commonText(text: '-  ${findReqType(payment.requestType.toString())}', fontSize: 11),
+                  ],
+                ),
+                SizedBox(height: 5),
+                Row(
+                  children: [
+                    SizedBox(width: 150, child: commonText(text: 'Req Id ',  color: Colors.black87, fontSize: 11)),
+                    commonText(text: '-  ${payment.requestId.toString()}', fontSize: 11),
+                  ],
+                ),
+                SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    SizedBox(width:150, child: commonText(text:'Charge ', color: Colors.black87, fontSize: 11)),
+                    commonText(text:'-  ${payment.currency}' ' ${formatIndianRupees(payment.amount!)}', fontSize: 11),
+                  ],
+                ),
+                SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    SizedBox(width: 150, child: commonText(text: 'Tax ', color: Colors.black87, fontSize: 11)),
+                    commonText(text: '-  ${payment.currency}' ' ${formatIndianRupees(taxCalc(payment.tax1Amount ?? 0, payment.tax2Amount ?? 0, payment.tax3Amount ?? 0))}', fontSize: 11),
+                  ],
+                ),
+                SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    SizedBox(
+                        width: 150,
+                        child: commonText(text: 'Payable amount ', fontSize: 12)),
+                    commonText(text: '-  ${payment.currency} ' ' ${formatIndianRupees(payment.totalAmount!)}', color: Colors.green, fontSize: 12),
+                  ],
+                ),
               ],
             ),
             GradientButton(

@@ -30,13 +30,54 @@ class _PaymentHistoryState extends State<PaymentHistory> {
   }
   
   String paymentStatus(String paymentString){
-    String pay = 'Not Paid';
+    String pay = 'Not Available';
     if(paymentString == 'N'){
       pay = 'Pending';
     }else{
       pay = 'Paid';
     }
     return pay;
+  }
+
+  String formatIndianRupees(double amount) {
+    // Round to 2 decimal places
+    double roundedAmount = (amount * 100).round() / 100;
+
+    // Create a number format for Indian Rupees
+    NumberFormat indianRupeesFormat = NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: '₹',
+      decimalDigits: 2,
+    );
+
+    // Format the amount
+    String formattedAmount = indianRupeesFormat.format(roundedAmount);
+
+    // Remove the rupee symbol as we just need the number format
+    formattedAmount = formattedAmount.replaceAll('₹', '');
+
+    // Trim any leading whitespace
+    formattedAmount = formattedAmount.trim();
+
+    return formattedAmount;
+  }
+
+  String formatDate(String dateString) {
+    // Parse the input string to a DateTime object
+    DateTime dateTime = DateTime.parse(dateString);
+
+    // Create a DateFormat object for the desired output format
+    DateFormat formatter = DateFormat("yyyy-MM-dd '@' hh:mm a");
+
+    // Format the date
+    String formattedDate = formatter.format(dateTime);
+
+    return formattedDate;
+  }
+
+  double taxCalc(double tax1, double tax2, double tax3){
+    double totalTax = tax1 + tax2 + tax3;
+    return totalTax;
   }
 
 
@@ -93,16 +134,16 @@ class _PaymentHistoryState extends State<PaymentHistory> {
                   title: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // commonText(text: 'Invoice date : ${formatDateTime(applicationBaseController.paymentHistory[index].invoiceNumber!)}', color: Colors.grey, fontSize: 13),
-                      // SizedBox(height: 7),
-                      commonBoldText(text: 'Name : ${applicationBaseController.paymentHistory[index].name ?? ""}', color: Colors.black87, fontSize: 13),
+                      commonBoldText(text: 'Name : ${applicationBaseController.paymentHistory[index].name ?? ""}', fontSize: 13),
                       const SizedBox(height: 7),
-                      commonText(text: 'Total Invoice Amount : ${applicationBaseController.paymentHistory[index].currency}' ' ${applicationBaseController.paymentHistory[index].totalAmount}', color: Colors.grey, fontSize: 13),
+                      commonText(text: 'Amount: ${applicationBaseController.paymentHistory[index].currency}' ' ${formatIndianRupees(applicationBaseController.paymentHistory[index].amount ?? 0)}', fontSize: 13),
+                      const SizedBox(height: 7),
+                      commonText(text: 'Tax: ${applicationBaseController.paymentHistory[index].currency}' ' ${formatIndianRupees(taxCalc(applicationBaseController.paymentHistory[index].tax1Amount ?? 0, applicationBaseController.paymentHistory[index].tax2Amount ?? 0, applicationBaseController.paymentHistory[index].tax3Amount ?? 0))}', fontSize: 13),
+                      const SizedBox(height: 7),
+                      commonText(text: 'Total Amount: ${applicationBaseController.paymentHistory[index].currency}' ' ${formatIndianRupees(applicationBaseController.paymentHistory[index].totalAmount ?? 0)}', fontSize: 13),
                       SizedBox(height: 7),
                       commonText(
-                          text: 'Paid Status : ${paymentStatus(applicationBaseController.paymentHistory[index].isPaid!.toString())}',
-                          color: applicationBaseController.paymentHistory[index].paidStatus == 'N' ? Colors.grey : Colors.blueGrey,
-                          fontSize: 13),
+                          text: 'Payment method : ${applicationBaseController.paymentHistory[index].paymentChanel ?? "Not Updated".toString()}', fontSize: 13),
                     ],
                   ),
                   collapsedBackgroundColor: Colors.white,
@@ -111,20 +152,17 @@ class _PaymentHistoryState extends State<PaymentHistory> {
                   expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
                   childrenPadding: EdgeInsets.fromLTRB(15, 0, 0, 0),
                   children: [
-                    commonText(text: 'Paypal reference number : ${applicationBaseController.paymentHistory[index].paymentReference}', color: Colors.grey, fontSize: 13),
+                    commonText(text: 'Reference Number : ${applicationBaseController.paymentHistory[index].paymentReference}', fontSize: 13),
                     SizedBox(height: 7),
-                    commonText(text: 'Taxes : \$ ${applicationBaseController.paymentHistory[index].tax1Amount}', color: Colors.grey, fontSize: 13),
+                    commonText(text: 'Paid Date : ${formatDate(applicationBaseController.paymentHistory[index].paidDate.toString())}', fontSize: 13),
                     SizedBox(height: 7),
-                    commonText(text: 'Service Charge : & ${applicationBaseController.paymentHistory[index].amount}', color: Colors.grey, fontSize: 13),
-                    SizedBox(height: 7),
-                    // commonText(text: 'Paid date :  ${formatDateTime(applicationBaseController.paymentHistory[index].paidDate!.toString())}', color: Colors.grey, fontSize: 13),
-                    // SizedBox(height: 7),
-                    commonText(text: 'Payment link reference number : ', color: Colors.grey, fontSize: 13),
                     GestureDetector(
                       onTap: (){
-                        launchUrl(Uri.parse(applicationBaseController.paymentHistory[index].invoiceUrl!));
+                        if(applicationBaseController.paymentHistory[index].invoiceUrl != null || applicationBaseController.paymentHistory[index].invoiceUrl != ""){
+                          launchUrl(Uri.parse(applicationBaseController.paymentHistory[index].invoiceUrl!));
+                        }
                       },
-                      child: commonText(fontSize: 12, text: '${applicationBaseController.paymentHistory[index].requestType}', color: Colors.blue),
+                      child: commonText(fontSize: 12, text: 'Invoice/Receipt Link  : \$ ${applicationBaseController.paymentHistory[index].invoiceUrl ?? 'Link not received'}', color: Colors.blue),
                     )
                   ],
                   onExpansionChanged: (bool expanded) {

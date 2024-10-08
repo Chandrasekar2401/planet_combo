@@ -104,7 +104,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
     CustomDialog.cancelLoading(context);
     var jsondata = jsonDecode(result!);
     if(jsondata['status'] == 'Success'){
-      if(jsondata['data'] == 'undefined' || jsondata['data'] == null){
+      if(jsondata['data'] == 'undefined' || jsondata['data'] == null || jsondata['data'] == ""){
         CustomDialog.showAlert(context, 'Chart is not ready yet', false, 14);
       }else{
           String htmlLink = jsondata['data'];
