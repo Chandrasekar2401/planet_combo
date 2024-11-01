@@ -22,11 +22,36 @@ class _ProfileState extends State<Profile> {
   final AppLoadController appLoadController =
   Get.put(AppLoadController.getInstance(), permanent: true);
 
+  String decodeUrlRecursively(String encodedUrl) {
+    String decodedUrl = Uri.decodeFull(encodedUrl);
+
+    // Check if the decoded URL is different from the input
+    print('the value of decoded value from the url $decodedUrl');
+    if (decodedUrl != encodedUrl) {
+      // If it's different, recursively decode again
+      return decodeUrlRecursively(decodedUrl);
+    } else {
+      // If it's the same, we've reached the final decoded state
+      return decodedUrl;
+    }
+  }
+
+  String profileCurrency(String currency){
+    if(currency.toLowerCase() == 'inr'){
+      return 'INR(Indian Rupees)';
+    }else if(currency.toLowerCase() == 'aed'){
+      return 'AED(UAE Dirhams)';
+    }else{
+      return 'USD(US Dollar)';
+    }
+  }
+
   @override
   void initState() {
     // TODO: implement initState
     profileController.profileEmail.text = appLoadController.loggedUserData.value.useremail!;
     profileController.profileLanguage.text = appLoadController.loggedUserData.value.userpplang!;
+    profileController.profilePaymentCurrency.text = profileCurrency(appLoadController.loggedUserData.value.ucurrency!);
     super.initState();
   }
 
@@ -100,7 +125,7 @@ class _ProfileState extends State<Profile> {
                         child: appLoadController.loggedUserData.value.userphoto != null
                             ? Image.network(
                           appLoadController.loggedUserData.value.userphoto!= null ?
-                          appLoadController.loggedUserData.value.userphoto! :
+                          decodeUrlRecursively(appLoadController.loggedUserData.value.userphoto!) :
                           "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRNlBkEd3_jxQ6mh26UJsKrV0y1TTvITYK4aA&usqp=CAU",
                           fit: BoxFit.cover,
                           width: 160,
@@ -142,10 +167,21 @@ class _ProfileState extends State<Profile> {
                   controller: profileController.profileLanguage,
                   readOnly: true,
                 ),
+                SizedBox(height: 30),
+                commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Payment Currency'), fontSize: 12, color: Colors.black87, textAlign: TextAlign.start),
+                PrimaryStraightInputText(
+                  onValidate: (v) {
+                    return null;
+                  },
+                  fontSize: 12,
+                  hintText: LocalizationController.getInstance().getTranslatedValue('Currency'),
+                  controller: profileController.profilePaymentCurrency,
+                  readOnly: true,
+                ),
               ],
             ),
           ),
-          SizedBox(height: 20),
+          SizedBox(height: 15),
           SizedBox(width: 180, child: GradientButton(buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], title: 'Delete Profile', textColor: Colors.white, onPressed: (Offset buttonOffset){
             yesOrNoDialog(context: context,
                 cancelAction: (){},

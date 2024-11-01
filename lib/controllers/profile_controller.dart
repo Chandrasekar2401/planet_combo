@@ -27,6 +27,7 @@ class ProfileController extends GetxController {
 
   TextEditingController profileEmail = TextEditingController();
   TextEditingController profileLanguage = TextEditingController();
+  TextEditingController profilePaymentCurrency = TextEditingController();
 
   deleteProfile(context, userId) async{
     try{

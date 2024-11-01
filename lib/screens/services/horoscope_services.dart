@@ -8,7 +8,7 @@ import 'package:get/get.dart';
 import 'package:flutter/rendering.dart';
 import 'package:planetcombo/screens/predictions/predictions.dart';
 import 'package:url_launcher/url_launcher.dart';
-
+import 'package:intl/intl.dart';
 //controllers
 import 'package:planetcombo/controllers/request_controller.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
@@ -24,6 +24,9 @@ import 'package:planetcombo/screens/Requests/planet_transit.dart';
 import 'package:planetcombo/screens/services/add_nativePhoto.dart';
 import 'package:planetcombo/screens/services/add_primaryInfo.dart';
 import 'package:planetcombo/screens/dashboard.dart';
+
+import 'package:planetcombo/screens/messages/message_list.dart';
+
 
 
 
@@ -88,13 +91,13 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
       }
     }
 
-    void deleteHoroscope(String userId, String hid) async{
+  void deleteHoroscope(String userId, String hid) async{
     CustomDialog.showLoading(context, 'Please wait');
     var result = await APICallings.deleteHoroscope(userId: userId, hId: hid.trim(), token: appLoadController.loggedUserData!.value.token!);
     CustomDialog.cancelLoading(context);
     var jsondata = jsonDecode(result!);
     print('The recevied result is $jsondata');
-    applicationBaseController.getUserHoroscopeList();
+    applicationBaseController.updateHoroscopeUiList();
   }
 
   void viewHoroscope(String userId, String hid) async{
@@ -115,7 +118,6 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
     }
   }
 
-
   void emailHoroscope(String userId, String hid) async {
     CustomDialog.showLoading(context, 'Please wait');
 
@@ -132,10 +134,10 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
 
       if (result.startsWith('2')) { // Successful response
         var jsonData = json.decode(result);
-        if (jsonData['Status'] == 'Success') {
-          CustomDialog.showAlert(context, jsonData['Message'], true, 14);
+        if (jsonData['status'] == 'Success') {
+          CustomDialog.showAlert(context, jsonData['message'], true, 14);
         } else {
-          CustomDialog.showAlert(context, jsonData['ErrorMessage'] ?? 'Unknown error occurred', false, 14);
+          CustomDialog.showAlert(context, jsonData['errorMessage'] ?? 'Unknown error occurred', false, 14);
         }
       } else {
         // Handle various error scenarios
@@ -173,6 +175,17 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
     super.initState();
   }
 
+  String convertDateFormat(String inputDate) {
+    // Parse the input date string
+    DateTime parsedDate = DateTime.parse(inputDate);
+
+    // Format the date into dd/MM/yyyy format
+
+    String formattedDate = DateFormat('MMMM dd, yyyy').format(parsedDate);
+
+    return formattedDate;
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -190,6 +203,16 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
             }, icon: const Icon(Icons.chevron_left_rounded),),
             title: LocalizationController.getInstance().getTranslatedValue("Horoscope Services (${appLoadController.loggedUserData.value.username})"),
             colors: const [Color(0xFFf2b20a), Color(0xFFf34509)], centerTitle: true,
+            actions: [
+              Row(
+                children: [
+                  const Icon(Icons.payment_outlined, color: Colors.white, size: 16),
+                  // commonBoldText(text: 'Currency(', color: Colors.white, fontSize: 12),
+                  commonBoldText(text: ' - ${appLoadController.loggedUserData.value.ucurrency!}', color: Colors.white, fontSize: 12),
+                  const SizedBox(width: 10)
+                ],
+              )
+            ],
           ),
           body: Obx(() =>
               applicationBaseController.horoscopeListPageLoad.value == true ? const Center(child: CircularProgressIndicator()):
@@ -292,7 +315,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     commonBoldText(text: applicationBaseController.horoscopeList[index].hname!, fontSize: 14),
-                                    commonText(text: 'DOB: ${applicationBaseController.horoscopeList[index].hdobnative!.substring(0, applicationBaseController.horoscopeList[index].hdobnative!.indexOf("T"))}', color: Colors.black38, fontSize: 11)
+                                    commonText(text: 'DOB: ${convertDateFormat(applicationBaseController.horoscopeList[index].hdobnative!.substring(0, applicationBaseController.horoscopeList[index].hdobnative!.indexOf("T")))}', color: Colors.black38, fontSize: 11)
                                   ],
                                 )
                               ],
@@ -302,7 +325,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
                                 Expanded(
-                                  child: GradientButton(title: LocalizationController.getInstance().getTranslatedValue("Service Request"),buttonHeight: 30, textColor: Colors.white, buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset) async{
+                                  child: GradientButton(title: LocalizationController.getInstance().getTranslatedValue("Plans"),buttonHeight: 30, textColor: Colors.white, buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset) async{
                                       if(applicationBaseController.horoscopeList[index].hstatus == '5'){
                                        if(horoscopeRequestController.deviceCurrentLocationFound.value == true){
                                          final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
@@ -319,11 +342,11 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                            items: [
                                              PopupMenuItem(
                                                value: 1,
-                                               child: commonText(text: LocalizationController.getInstance().getTranslatedValue("Today's Prediction"), fontSize: 14),
+                                               child: commonText(text: LocalizationController.getInstance().getTranslatedValue("90-day Prediction"), fontSize: 14),
                                              ),
                                              PopupMenuItem(
                                                value: 3,
-                                               child: commonText(text: LocalizationController.getInstance().getTranslatedValue("Special Request"), fontSize: 14),
+                                               child: commonText(text: LocalizationController.getInstance().getTranslatedValue("Life Guidance Questions"), fontSize: 14),
                                              )
                                            ],
                                          );
@@ -359,10 +382,9 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                );
                                                break;
                                              case 5:
-                                               horoscopeRequestController.selectedRequest.value = 5;
                                                Navigator.push(
                                                  context,
-                                                 MaterialPageRoute(builder: (context) => PlanetTransit(horoscope: applicationBaseController.horoscopeList[index])),
+                                                 MaterialPageRoute(builder: (context) => MessagesList(horoscopeId: applicationBaseController.horoscopeList[index].hid!,)),
                                                );
                                                break;
                                              case 6:
@@ -422,54 +444,26 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                             items: [
                                               PopupMenuItem(
                                                 value: 1,
-                                                child: commonText(text: LocalizationController.getInstance().getTranslatedValue("Daily Prediction"), fontSize: 14),
+                                                child: commonText(text: LocalizationController.getInstance().getTranslatedValue("90-day Prediction"), fontSize: 14),
                                               ),
                                               PopupMenuItem(
                                                 value: 3,
-                                                child: commonText(text: LocalizationController.getInstance().getTranslatedValue("Special Prediction"), fontSize: 14),
+                                                child: commonText(text: LocalizationController.getInstance().getTranslatedValue("Life Guidance Questions"), fontSize: 14),
                                               ),
-                                              // PopupMenuItem(
-                                              //   value: 4,
-                                              //   child: commonText(text: LocalizationController.getInstance().getTranslatedValue("Transit of Jupiter"), fontSize: 14),
-                                              // ),
-                                              // PopupMenuItem(
-                                              //   value: 5,
-                                              //   child: commonText(text: LocalizationController.getInstance().getTranslatedValue("Transit of Saturn"), fontSize: 14),
-                                              // ),
-                                              // PopupMenuItem(
-                                              //   value: 6,
-                                              //   child: commonText(text: LocalizationController.getInstance().getTranslatedValue("Transit of Rahu"), fontSize: 14),
-                                              // ),
-                                              // PopupMenuItem(
-                                              //   value: 7,
-                                              //   child: commonText(text: LocalizationController.getInstance().getTranslatedValue("Transit of Ketu"), fontSize: 14),
-                                              // ),
-                                              // PopupMenuItem(
-                                              //   value: 8,
-                                              //   child: commonText(text: LocalizationController.getInstance().getTranslatedValue("Transit of Mars"), fontSize: 14),
-                                              // ),
-                                              // PopupMenuItem(
-                                              //   value: 9,
-                                              //   child: commonText(text: LocalizationController.getInstance().getTranslatedValue("Transit of Sun"), fontSize: 14),
-                                              // ),
-                                              // PopupMenuItem(
-                                              //   value: 10,
-                                              //   child: commonText(text: LocalizationController.getInstance().getTranslatedValue("Transit of Mercury"), fontSize: 14),
-                                              // ),
                                             ],
                                           );
 
                                           if (selectedValue != null) {
                                             switch (selectedValue) {
                                               case 1:
-                                                horoscopeRequestController.selectedRequest.value = 1;
+                                                horoscopeRequestController.selectedRequest.value = 2;
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(builder: (context) => DailyPredictions(horoscope: applicationBaseController.horoscopeList[index])),
                                                 );
                                                 break;
                                               case 2:
-                                                horoscopeRequestController.selectedRequest.value = 2;
+                                                horoscopeRequestController.selectedRequest.value = 3;
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(builder: (context) => DailyPredictions(horoscope: applicationBaseController.horoscopeList[index])),
@@ -490,10 +484,9 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                 );
                                                 break;
                                               case 5:
-                                                horoscopeRequestController.selectedRequest.value = 5;
                                                 Navigator.push(
                                                   context,
-                                                  MaterialPageRoute(builder: (context) => PlanetTransit(horoscope: applicationBaseController.horoscopeList[index])),
+                                                  MaterialPageRoute(builder: (context) => MessagesList(horoscopeId: applicationBaseController.horoscopeList[index].hid!,)),
                                                 );
                                                 break;
                                               case 6:
@@ -545,7 +538,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                     if(applicationBaseController.horoscopeList[index].hstatus == '5'){
                                            _getUserPredictions(applicationBaseController.horoscopeList[index].hid!.trim());
                                       }else{
-                                      CustomDialog.showAlert(context, LocalizationController.getInstance().getTranslatedValue("Promise is yet to be generated"),null, 14);
+                                      CustomDialog.showAlert(context, LocalizationController.getInstance().getTranslatedValue("Prediction is yet to be generated"),null, 14);
                                     }
                                   }),
                                 ),
@@ -576,9 +569,13 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                               value: 3,
                                               child: commonText(text: LocalizationController.getInstance().getTranslatedValue('Email Horoscope'), fontSize: 14),
                                             ),
-                                            PopupMenuItem(
+                                            if(applicationBaseController.horoscopeList[index].isPaid != "true")PopupMenuItem(
                                               value: 4,
                                               child: commonText(text: LocalizationController.getInstance().getTranslatedValue('Delete Horoscope'), fontSize: 14),
+                                            ),
+                                            if(applicationBaseController.horoscopeList[index].isPaid == "true")PopupMenuItem(
+                                              value: 5,
+                                              child: commonText(text: LocalizationController.getInstance().getTranslatedValue('Messages'), fontSize: 14),
                                             ),
                                           ],
                                         );
@@ -616,7 +613,9 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                               print('selected value is 4');
                                               yesOrNoDialog(
                                                 context: context,
-                                                cancelAction: (){},
+                                                cancelAction: (){
+                                                  Navigator.pop(context);
+                                                },
                                                 dialogMessage: 'Are you sure you want to delete this horoscope?',
                                                 cancelText: 'No',
                                                 okText: 'Yes',
@@ -630,6 +629,11 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                               );
                                               // Handle Menu 3 option
                                               break;
+                                            case 5:
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(builder: (context) => MessagesList(horoscopeId: applicationBaseController.horoscopeList[index].hid!)),
+                                                );
                                           }
                                         }
                                       }),

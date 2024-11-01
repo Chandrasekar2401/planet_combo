@@ -15,12 +15,12 @@ class PredictionResponse {
 
   factory PredictionResponse.fromJson(Map<String, dynamic> json) {
     return PredictionResponse(
-      status: json['Status'],
-      message: json['Message'],
-      data: (json['Data'] as List)
+      status: json['status'] ?? json['STATUS'],
+      message: json['message'] ?? json['MESSAGE'],
+      data: (json['data'] ?? json['DATA'] as List)
           .map((item) => PredictionData.fromJson(item))
           .toList(),
-      errorMessage: json['ErrorMessage'],
+      errorMessage: json['errorMessage'] ?? json['ERRORMESSAGE'] ?? "Something went wrong",
     );
   }
 }
@@ -71,33 +71,42 @@ class PredictionData {
   });
 
   factory PredictionData.fromJson(Map<String, dynamic> json) {
+    String getValueCaseInsensitive(Map<String, dynamic> map, String key) {
+      return (map[key] ?? map[key.toUpperCase()] ?? '').toString().trim();
+    }
+
     return PredictionData(
-      prUserId: json['PRUSERID'],
-      prHId: json['PRHID'].trim(),
-      prRequestId: json['PRREQUESTID'].trim(),
-      prRequestIdSeq: json['PRREQUESTIDSEQ'],
-      prSignification: json['PRSIGNIFICATION'],
-      prDate: DateTime.parse(json['PRDATE']),
-      prEndTime: json['PRENDTIME'],
-      prDDasa: json['PRDDASA'],
-      prDetails: _parsePrDetails(json['PRDETAILS']),
-      prFeedFlag: json['PRFEEDFLAG'],
-      prCustomerCom: json['PRCUSTOMERCOM'],
-      prAgentCom: json['PRAGENTCOM'],
-      prHComments: json['PRHCOMMENTS'],
-      prRecDeleted: json['PRRECDELETED'],
-      prStatus: json['PRSTATUS'],
-      prUnread: json['PRUNREAD'],
-      horoName: json['HORONAME'],
-      horoNativeImage: json['HORONATIVEIMAGE'],
-      requestCat: json['RequestCat'].trim(),
-      userName: json['UserName'],
+      prUserId: getValueCaseInsensitive(json, 'prUserId'),
+      prHId: getValueCaseInsensitive(json, 'prHId'),
+      prRequestId: getValueCaseInsensitive(json, 'prRequestId'),
+      prRequestIdSeq: double.tryParse(getValueCaseInsensitive(json, 'prRequestIdSeq')),
+      prSignification: getValueCaseInsensitive(json, 'prSignification'),
+      prDate: DateTime.tryParse(getValueCaseInsensitive(json, 'prDate')),
+      prEndTime: getValueCaseInsensitive(json, 'prEndTime'),
+      prDDasa: getValueCaseInsensitive(json, 'prDDasa'),
+      prDetails: _parsePrDetails(getValueCaseInsensitive(json, 'prDetails')),
+      prFeedFlag: getValueCaseInsensitive(json, 'prFeedFlag'),
+      prCustomerCom: getValueCaseInsensitive(json, 'prCustomerCom'),
+      prAgentCom: getValueCaseInsensitive(json, 'prAgentCom'),
+      prHComments: getValueCaseInsensitive(json, 'prHComments'),
+      prRecDeleted: getValueCaseInsensitive(json, 'prRecDeleted'),
+      prStatus: getValueCaseInsensitive(json, 'prStatus'),
+      prUnread: getValueCaseInsensitive(json, 'prUnread'),
+      horoName: getValueCaseInsensitive(json, 'horoName'),
+      horoNativeImage: getValueCaseInsensitive(json, 'horoNativeImage'),
+      requestCat: getValueCaseInsensitive(json, 'requestCat'),
+      userName: getValueCaseInsensitive(json, 'userName'),
     );
   }
 
   static List<PredictionDetail> _parsePrDetails(String jsonString) {
-    List<dynamic> jsonList = json.decode(jsonString);
-    return jsonList.map((json) => PredictionDetail.fromJson(json)).toList();
+    try {
+      List<dynamic> jsonList = json.decode(jsonString);
+      return jsonList.map((json) => PredictionDetail.fromJson(json)).toList();
+    } catch (e) {
+      print("Error parsing prDetails: $e");
+      return [];
+    }
   }
 }
 
@@ -112,8 +121,8 @@ class PredictionDetail {
 
   factory PredictionDetail.fromJson(Map<String, dynamic> json) {
     return PredictionDetail(
-      ruleId: json['ruleId'],
-      description: json['description'],
+      ruleId: json['ruleId'] ?? json['RULEID'] ?? '',
+      description: json['description'] ?? json['DESCRIPTION'] ?? '',
     );
   }
 }

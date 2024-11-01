@@ -16,41 +16,50 @@ class PendingPaymentsPage extends StatefulWidget {
 }
 
 class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
-
   final ApplicationBaseController applicationBaseController =
   Get.put(ApplicationBaseController.getInstance(), permanent: true);
-  
+
+  final AppLoadController appLoadController =
+  Get.put(AppLoadController.getInstance(), permanent: true);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: GradientAppBar(
         leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: Icon(Icons.chevron_left_rounded),
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.chevron_left_rounded),
         ),
-        title: LocalizationController.getInstance().getTranslatedValue("Pending Payments"),
+        title: LocalizationController.getInstance()
+            .getTranslatedValue("Pending Payments"),
         colors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () {
-              // Add home button functionality
-            },
-            icon: const Icon(Icons.home_outlined),
+          Row(
+            children: [
+              const Icon(Icons.payment_outlined, color: Colors.white, size: 16),
+              commonBoldText(
+                  text: ' - ${appLoadController.loggedUserData.value.ucurrency!}',
+                  color: Colors.white,
+                  fontSize: 12),
+              const SizedBox(width: 10)
+            ],
           )
         ],
       ),
       body: Obx(() {
         if (applicationBaseController.pendingPaymentsList.isEmpty) {
-          return Center(child: Text("No pending payments"));
+          return const Center(child: Text("No pending payments"));
         }
         return ListView.builder(
+          padding: const EdgeInsets.all(16),
           itemCount: applicationBaseController.pendingPaymentsList.length,
           itemBuilder: (context, index) {
             final payment = applicationBaseController.pendingPaymentsList[index];
-            return PaymentListItem(payment: payment);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: PaymentCard(payment: payment),
+            );
           },
         );
       }),
@@ -58,9 +67,10 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
   }
 }
 
-class PaymentListItem extends StatelessWidget {
-  final  PendingPaymentList payment; // Change to the actual type of your payment item
-  PaymentListItem({super.key, required this.payment});
+class PaymentCard extends StatelessWidget {
+  final PendingPaymentList payment;
+
+  PaymentCard({super.key, required this.payment});
 
   final PaymentController paymentController =
   Get.put(PaymentController.getInstance(), permanent: true);
@@ -68,131 +78,233 @@ class PaymentListItem extends StatelessWidget {
   final AppLoadController appLoadController =
   Get.put(AppLoadController.getInstance(), permanent: true);
 
-  String findReqType(String type){
-    if(type == "7"){
-      return "Chart Request";
-    }else if(type == "2"){
-      return "Daily Request";
-    }else{
-      return "Special Request";
+  Color getRequestTypeColor(String type) {
+    switch (type) {
+      case "7":
+        return Colors.blue;
+      case "2":
+        return Colors.green;
+      default:
+        return Colors.orange;
+    }
+  }
+
+  String findReqType(String type) {
+    switch (type) {
+      case "7":
+        return "Chart Request";
+      case "2":
+        return "Daily Request";
+      default:
+        return "Special Request";
     }
   }
 
   String formatIndianRupees(double amount) {
-    // Round to 2 decimal places
     double roundedAmount = (amount * 100).round() / 100;
-
-    // Create a number format for Indian Rupees
     NumberFormat indianRupeesFormat = NumberFormat.currency(
       locale: 'en_IN',
       symbol: '₹',
       decimalDigits: 2,
     );
-
-    // Format the amount
-    String formattedAmount = indianRupeesFormat.format(roundedAmount);
-
-    // Remove the rupee symbol as we just need the number format
-    formattedAmount = formattedAmount.replaceAll('₹', '');
-
-    // Trim any leading whitespace
-    formattedAmount = formattedAmount.trim();
-
+    String formattedAmount = indianRupeesFormat
+        .format(roundedAmount)
+        .replaceAll('₹', '')
+        .trim();
     return formattedAmount;
   }
 
-  double taxCalc(double tax1, double tax2, double tax3){
-    double totalTax = tax1 + tax2 + tax3;
-    return totalTax;
+  double taxCalc(double tax1, double tax2, double tax3) {
+    return tax1 + tax2 + tax3;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.grey,
-            width: 0.2,
-          ),
-        ),
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 17),
+      child: IntrinsicHeight(
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    SizedBox(width: 150, child: commonBoldText(text:'Name ', fontSize: 14)),
-                    commonBoldText(text: "-  ${payment.name ?? "Not Available"}", fontSize: 14)
-                  ],
+            // Left color indicator
+            Container(
+              width: 8,
+              decoration: BoxDecoration(
+                color: getRequestTypeColor(payment.requestType.toString()),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
                 ),
-                SizedBox(height: 5),
-                Row(
-                  children: [
-                    SizedBox(width: 150, child: commonText(text: 'Type ',  color: Colors.black87, fontSize: 11)),
-                    commonText(text: '-  ${findReqType(payment.requestType.toString())}', fontSize: 11),
-                  ],
-                ),
-                SizedBox(height: 5),
-                Row(
-                  children: [
-                    SizedBox(width: 150, child: commonText(text: 'Req Id ',  color: Colors.black87, fontSize: 11)),
-                    commonText(text: '-  ${payment.requestId.toString()}', fontSize: 11),
-                  ],
-                ),
-                SizedBox(height: 5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    SizedBox(width:150, child: commonText(text:'Charge ', color: Colors.black87, fontSize: 11)),
-                    commonText(text:'-  ${payment.currency}' ' ${formatIndianRupees(payment.amount!)}', fontSize: 11),
-                  ],
-                ),
-                SizedBox(height: 5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    SizedBox(width: 150, child: commonText(text: 'Tax ', color: Colors.black87, fontSize: 11)),
-                    commonText(text: '-  ${payment.currency}' ' ${formatIndianRupees(taxCalc(payment.tax1Amount ?? 0, payment.tax2Amount ?? 0, payment.tax3Amount ?? 0))}', fontSize: 11),
-                  ],
-                ),
-                SizedBox(height: 5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    SizedBox(
-                        width: 150,
-                        child: commonText(text: 'Payable amount ', fontSize: 12)),
-                    commonText(text: '-  ${payment.currency} ' ' ${formatIndianRupees(payment.totalAmount!)}', color: Colors.green, fontSize: 12),
-                  ],
-                ),
-              ],
+              ),
             ),
-            GradientButton(
-              title: LocalizationController.getInstance().getTranslatedValue("Pay Now"),
-              buttonHeight: 30,
-              textColor: Colors.white,
-              buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
-              onPressed: (Offset buttonOffset) async {
-                // Implement payment logic here
-                // paymentController.payByUpi(payment.userId!, payment.requestId!, payment.amount!, appLoadController.loggedUserData.value.token!, context);
-                paymentController.payByPaypal(payment.userId!, payment.requestId!, payment.amount!, appLoadController.loggedUserData.value.token!, context);
-              },
-            )
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Request type and details
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Request Type Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: getRequestTypeColor(payment.requestType.toString())
+                                  .withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              findReqType(payment.requestType.toString()),
+                              style: TextStyle(
+                                color: getRequestTypeColor(
+                                    payment.requestType.toString()),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            payment.name ?? "Not Available",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          DetailRow(
+                            label: 'Request ID',
+                            value: payment.requestId.toString(),
+                          ),
+                          DetailRow(
+                            label: 'Charge',
+                            value:
+                            '${payment.currency} ${formatIndianRupees(payment.amount!)}',
+                          ),
+                          DetailRow(
+                            label: 'Tax',
+                            value:
+                            '${payment.currency} ${formatIndianRupees(taxCalc(payment.tax1Amount ?? 0, payment.tax2Amount ?? 0, payment.tax3Amount ?? 0))}',
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Amount and Pay Now button
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const Text(
+                                'Total Amount',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${payment.currency} ${formatIndianRupees(payment.totalAmount!)}',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              maxWidth: 180, // Fixed maximum width
+                            ),
+                            child: GradientButton(
+                              title: LocalizationController.getInstance()
+                                  .getTranslatedValue("Pay Now"),
+                              buttonHeight: 36,
+                              textColor: Colors.white,
+                              buttonColors: const [
+                                Color(0xFFf2b20a),
+                                Color(0xFFf34509)
+                              ],
+                              onPressed: (Offset buttonOffset) async {
+                                if (appLoadController.loggedUserData!.value.ucurrency!
+                                    .toLowerCase()
+                                    .compareTo('INR'.toLowerCase()) ==
+                                    0) {
+                                  paymentController.payByUpi(
+                                      payment.userId!,
+                                      payment.requestId!,
+                                      payment.totalAmount!,
+                                      appLoadController.loggedUserData.value.token!,
+                                      context);
+                                } else {
+                                  paymentController.payByPaypal(
+                                      payment.userId!,
+                                      payment.requestId!,
+                                      payment.totalAmount!,
+                                      appLoadController.loggedUserData.value.token!,
+                                      context);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+}
 
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'No date';
-    return '${date.month}/${date.day}/${date.year}';
+class DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const DetailRow({
+    super.key,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

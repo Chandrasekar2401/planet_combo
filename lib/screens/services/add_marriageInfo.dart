@@ -36,9 +36,10 @@ class _AddMarriageInfoState extends State<AddMarriageInfo> {
   void _selectWebMarriageDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: selectedMarriageDate ?? DateTime.now(),
+      initialDate: selectedMarriageDate,
       firstDate: DateTime(1920),
       lastDate: DateTime.now(),
+      locale: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'usd' ? const Locale('en', 'US') : const Locale('en', 'GB'),
     );
 
     if (picked != null && picked != selectedMarriageDate) {
@@ -52,6 +53,7 @@ class _AddMarriageInfoState extends State<AddMarriageInfo> {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
+      initialEntryMode: TimePickerEntryMode.input,
     );
 
     if (picked != null && picked != selectedMarriageTime) {
@@ -179,7 +181,11 @@ class _AddMarriageInfoState extends State<AddMarriageInfo> {
                                       ? LocalizationController.getInstance()
                                       .getTranslatedValue(
                                       'Please select date')
-                                      : '${LocalizationController.getInstance().getTranslatedValue('Selected date')} :  ${selectedMarriageDate != null ? DateFormat('dd-MM-yyyy').format(selectedMarriageDate!) : (addHoroscopeController.addSelectedMarriageDate != null ? DateFormat('dd-MM-yyyy').format(addHoroscopeController.addSelectedMarriageDate!.value) : '')}',
+                                      : '${LocalizationController.getInstance().getTranslatedValue('Selected date')} :  ${selectedMarriageDate != null ? DateFormat(
+                                      'MMMM dd, yyyy'
+                                  ).format(selectedMarriageDate!) : (addHoroscopeController.addSelectedMarriageDate != null ? DateFormat(
+                                    'MMMM dd, yyyy'
+                                  ).format(addHoroscopeController.addSelectedMarriageDate!.value) : '')}',
                                   style: GoogleFonts.lexend(
                                     fontSize: 14,
                                     color: Colors.black54,
@@ -297,7 +303,7 @@ class _AddMarriageInfoState extends State<AddMarriageInfo> {
                                           null)
                                       ? LocalizationController.getInstance()
                                       .getTranslatedValue(
-                                      'Please Select Time of Birth')
+                                      'Please Select Time of Marriage')
                                       : '${LocalizationController.getInstance().getTranslatedValue('Selected Time')} : ${selectedMarriageTime != null ? DateFormat('h:mm a').format(DateTime(2021, 1, 1, selectedMarriageTime!.hour, selectedMarriageTime!.minute)) : (addHoroscopeController.addSelectedMarriageTime != null ? DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addSelectedMarriageTime!.value.hour, addHoroscopeController.addSelectedMarriageTime!.value.minute)) : '')}',
                                   style: GoogleFonts.lexend(
                                     fontSize: 14,

@@ -1,7 +1,3 @@
-// To parse this JSON data, do
-//
-//     final messagesList = messagesListFromJson(jsonString);
-
 import 'dart:convert';
 
 MessagesList messagesListFromJson(String str) => MessagesList.fromJson(json.decode(str));
@@ -21,31 +17,36 @@ class MessagesList {
     this.errorMessage,
   });
 
-  factory MessagesList.fromJson(Map<String, dynamic> json) => MessagesList(
-    status: json["Status"],
-    message: json["Message"],
-    data: List<MessageHistory>.from(json["Data"].map((x) => MessageHistory.fromJson(x))),
-    errorMessage: json["ErrorMessage"],
-  );
+  factory MessagesList.fromJson(Map<String, dynamic> json) {
+    final lowercaseJson = json.map((key, value) => MapEntry(key.toLowerCase(), value));
+    return MessagesList(
+      status: lowercaseJson["status"],
+      message: lowercaseJson["message"],
+      data: lowercaseJson["data"] != null
+          ? List<MessageHistory>.from(lowercaseJson["data"].map((x) => MessageHistory.fromJson(x)))
+          : null,
+      errorMessage: lowercaseJson["errormessage"],
+    );
+  }
 
   Map<String, dynamic> toJson() => {
-    "Status": status,
-    "Message": message,
-    "Data": List<dynamic>.from(data!.map((x) => x.toJson())),
-    "ErrorMessage": errorMessage,
+    "status": status,
+    "message": message,
+    "data": data?.map((x) => x.toJson()).toList(),
+    "errorMessage": errorMessage,
   };
 }
 
 class MessageHistory {
   String? msguserid;
-  String? msghid;
+  dynamic? msghid;
   String? msgmessageid;
   String? msgcustomercom;
   String? msgagentcom;
   String? msghcomments;
   String? msgstatus;
   String? msgunread;
-  String?  msgdeleted;
+  String? msgdeleted;
   String? horoname;
   String? horonativeimage;
   String? userName;
@@ -65,33 +66,36 @@ class MessageHistory {
     this.userName,
   });
 
-  factory MessageHistory.fromJson(Map<String, dynamic> json) => MessageHistory(
-    msguserid: json["MSGUSERID"],
-    msghid: json["MSGHID"],
-    msgmessageid: json["MSGMESSAGEID"],
-    msgcustomercom: json["MSGCUSTOMERCOM"],
-    msgagentcom: json["MSGAGENTCOM"],
-    msghcomments: json["MSGHCOMMENTS"],
-    msgstatus: json["MSGSTATUS"],
-    msgunread: json["MSGUNREAD"],
-    msgdeleted: json["MSGDELETED"],
-    horoname: json["HORONAME"],
-    horonativeimage: json["HORONATIVEIMAGE"],
-    userName: json["UserName"],
-  );
+  factory MessageHistory.fromJson(Map<String, dynamic> json) {
+    final lowercaseJson = json.map((key, value) => MapEntry(key.toLowerCase(), value));
+    return MessageHistory(
+      msguserid: lowercaseJson["msguserid"],
+      msghid: lowercaseJson["msghid"],
+      msgmessageid: lowercaseJson["msgmessageid"],
+      msgcustomercom: lowercaseJson["msgcustomercom"],
+      msgagentcom: lowercaseJson["msgagentcom"],
+      msghcomments: lowercaseJson["msghcomments"],
+      msgstatus: lowercaseJson["msgstatus"],
+      msgunread: lowercaseJson["msgunread"],
+      msgdeleted: lowercaseJson["msgdeleted"],
+      horoname: lowercaseJson["horoname"],
+      horonativeimage: lowercaseJson["horonativeimage"],
+      userName: lowercaseJson["username"],
+    );
+  }
 
   Map<String, dynamic> toJson() => {
-    "MSGUSERID": msguserid,
-    "MSGHID": msghid,
-    "MSGMESSAGEID": msgmessageid,
-    "MSGCUSTOMERCOM": msgcustomercom,
-    "MSGAGENTCOM": msgagentcom,
-    "MSGHCOMMENTS": msghcomments,
-    "MSGSTATUS": msgstatus,
-    "MSGUNREAD": msgunread,
-    "MSGDELETED": msgdeleted,
-    "HORONAME": horoname,
-    "HORONATIVEIMAGE": horonativeimage,
-    "UserName": userName,
+    "msguserid": msguserid,
+    "msghid": msghid,
+    "msgmessageid": msgmessageid,
+    "msgcustomercom": msgcustomercom,
+    "msgagentcom": msgagentcom,
+    "msghcomments": msghcomments,
+    "msgstatus": msgstatus,
+    "msgunread": msgunread,
+    "msgdeleted": msgdeleted,
+    "horoname": horoname,
+    "horonativeimage": horonativeimage,
+    "username": userName,
   };
 }

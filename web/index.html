@@ -1,19 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
@@ -29,10 +16,42 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>chandra</title>
+  <!-- Google Maps JavaScript API for web support -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRX8p3QXbJtS6vVpNgelztCe2RAQBgN44"></script>
+
+  <title>Planet Combo</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* Center the loader */
+    .loader-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.8); /* Optional semi-transparent background */
+      z-index: 1000;
+    }
+  </style>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+<!-- Loader GIF centered in the page -->
+<div class="loader-container" id="loader">
+  <img src="assets/imgs/pload.gif" alt="Loading..." />
+</div>
+
+<!-- Main Flutter app -->
+<script src="flutter_bootstrap.js" async></script>
+
+<script>
+  // Listen for the first Flutter frame event to hide the loader
+  window.addEventListener("flutter-first-frame", function() {
+    document.getElementById("loader").style.display = "none";
+  });
+</script>
 </body>
 </html>

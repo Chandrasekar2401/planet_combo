@@ -24,8 +24,8 @@ class _HomePageState extends State<WebHomePage> with SingleTickerProviderStateMi
 
   final List<String> imgList = [
     'assets/images/web/bg1.jpg',
-    'assets/images/web/bg2.jpg',
-    'assets/images/web/bg3.jpg',
+    'assets/images/web/1.jpg',
+    'assets/images/web/2.jpg',
   ];
 
   late AnimationController _controller;
@@ -131,7 +131,7 @@ class _HomePageState extends State<WebHomePage> with SingleTickerProviderStateMi
                     ),
                   ],),
                   SizedBox(height: 20),
-                  commonBoldText(text: 'ASTROLOGY LIFE PREDICTIONS', fontSize: 32, color: Colors.white),
+                  commonBoldText(text: 'KNOW YOUR FUTURE', fontSize: 32, color: Colors.white),
                   SizedBox(height: 20),
                   commonBoldText(text: '(CHANDRASEKAR PATHATHI - CP ASTROLOGY)', fontSize: 22, color: Colors.white),
                   SizedBox(height: 25),

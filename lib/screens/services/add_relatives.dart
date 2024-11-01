@@ -34,12 +34,15 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
 
+  late List<Map<String, String>> confirmationData;
+
   void _selectWebDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime(1920),
       lastDate: DateTime.now(),
+      locale: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'usd' ? const Locale('en', 'US') : const Locale('en', 'GB'),
     );
 
     if (picked != null && picked != selectedDate) {
@@ -53,6 +56,7 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
+      initialEntryMode: TimePickerEntryMode.input,
     );
 
     if (picked != null && picked != selectedTime) {
@@ -76,6 +80,44 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
     });
   }
 
+  void _showConfirmationPopup(BuildContext playContext) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Confirm Details', style: GoogleFonts.lexend(fontSize: 20)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: confirmationData.length, // Placeholder for demonstration
+            itemBuilder: (context, index) => ListTile(
+              title: Text(
+                confirmationData[index].keys.first,
+                style: GoogleFonts.lexend(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(confirmationData[index].values.first),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Back', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: appLoadController.appMidColor,
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              addHoroscopeController.addNewHoroscope(playContext);
+            },
+            child: const Text('Confirm', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +127,13 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
         title: LocalizationController.getInstance().getTranslatedValue("Add Horoscope (${appLoadController.loggedUserData.value.username})"),
         colors: const [Color(0xFFf2b20a), Color(0xFFf34509)], centerTitle: true,
         actions: [
+          Row(
+            children: [
+              const Icon(Icons.payment_outlined, color: Colors.white, size: 16),
+              commonBoldText(text: ' - ${appLoadController.loggedUserData.value.ucurrency!}', color: Colors.white, fontSize: 12),
+              const SizedBox(width: 10)
+            ],
+          ),
           IconButton(onPressed: (){
             Navigator.pushAndRemoveUntil(
               context,
@@ -117,7 +166,7 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
                   const SizedBox(height: 20),
                   commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Relationship with chart owner'), fontSize: 12, color: Colors.black87, textAlign: TextAlign.start),
                   PrimaryStraightInputText(hintText:
-                  LocalizationController.getInstance().getTranslatedValue(''),
+                  LocalizationController.getInstance().getTranslatedValue('Relationship with chart owner'),
                     controller: addHoroscopeController.relationShipWithOwner,
                     onValidate: (v) {
                       if (v == null || v.isEmpty) {
@@ -170,7 +219,7 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
                               Text(
                                   (selectedDate == null && addHoroscopeController.addSelectedEventDate == null)
                                       ? LocalizationController.getInstance().getTranslatedValue('Please select date')
-                                      : '${LocalizationController.getInstance().getTranslatedValue('Selected date')} :  ${selectedDate == null ?DateFormat('dd-MM-yyyy').format(addHoroscopeController.addSelectedEventDate!.value): DateFormat('dd-MM-yyyy').format(selectedDate!)}',
+                                      : '${LocalizationController.getInstance().getTranslatedValue('Selected date')} :  ${selectedDate == null ?DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addSelectedEventDate!.value): DateFormat('MMMM dd, yyyy').format(selectedDate!)}',
                                   style: GoogleFonts.lexend(
                                     fontSize: 14,
                                     color: Colors.black54,
@@ -332,7 +381,7 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
                 SizedBox(width: 20),
                 Expanded(
                   child: GradientButton(
-                      title: LocalizationController.getInstance().getTranslatedValue("Save"),buttonHeight: 45, textColor: Colors.white, buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset){
+                      title: LocalizationController.getInstance().getTranslatedValue("Review"),buttonHeight: 45, textColor: Colors.white, buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset){
                     if(selectedDate != null){
                       addHoroscopeController.addSelectedEventDate = DateTime.now().obs;
                       addHoroscopeController.addSelectedEventDate!.value = selectedDate!;
@@ -341,7 +390,30 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
                       addHoroscopeController.addSelectedEventTime = TimeOfDay.now().obs;
                       addHoroscopeController.addSelectedEventTime!.value = selectedTime!;
                     }
-                    addHoroscopeController.addNewHoroscope(context);
+
+                    confirmationData = [
+                      {"Name": addHoroscopeController.horoscopeName.text},
+                      {"Gender": addHoroscopeController.addHoroscopeGender.value},
+                      {"Birth Date": DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addHoroscopeBirthSelectedDate!.value)},
+                      {"Birth Time": DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addHoroscopeBirthSelectedTime!.value.hour, addHoroscopeController.addHoroscopeBirthSelectedTime!.value.minute))},
+                      {"City of Birth": addHoroscopeController.placeStateCountryOfBirth.text},
+                      {"Nearest landmark for place of birth": addHoroscopeController.landmarkOfBirth.text},
+                      if(addHoroscopeController.addSelectedMarriageDate != null){"Date Of Marriage": DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addSelectedMarriageDate!.value)},
+                      if(addHoroscopeController.addSelectedMarriageTime != null){"Time Of Marriage": DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addSelectedMarriageTime!.value.hour, addHoroscopeController.addSelectedMarriageTime!.value.minute))},
+                      if(addHoroscopeController.placeStateCountryOfMarriage != null && addHoroscopeController.placeStateCountryOfMarriage.text != ''){"Place, State and Country of Marriage": addHoroscopeController.placeStateCountryOfMarriage.text},
+                      if(addHoroscopeController.addSelectedChildBirthDate != null){"Date Of Child Birth": DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addSelectedChildBirthDate!.value)},
+                      if(addHoroscopeController.addSelectedChildBirthTime != null){"Time Of Child Birth": DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addSelectedChildBirthTime!.value.hour, addHoroscopeController.addSelectedChildBirthTime!.value.minute))},
+                      if(addHoroscopeController.placeStateCountryOfChildBirth != null && addHoroscopeController.placeStateCountryOfChildBirth.text != ''){"Place, State and Country of Child Birth": addHoroscopeController.placeStateCountryOfChildBirth.text},
+                      if(addHoroscopeController.addSelectedTravelDate != null){"Date Of Travel": DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addSelectedTravelDate!.value)},
+                      if(addHoroscopeController.addSelectedTravelTime != null){"Time Of Travel": DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addSelectedTravelTime!.value.hour, addHoroscopeController.addSelectedTravelTime!.value.minute))},
+                      if(addHoroscopeController.whereDidYouTraveled != null && addHoroscopeController.whereDidYouTraveled.text != ''){"Place of Travel": addHoroscopeController.whereDidYouTraveled.text},
+                      if(addHoroscopeController.relationShipWithOwner != null && addHoroscopeController.relationShipWithOwner.text != ''){"Relationship with chart owner": addHoroscopeController.relationShipWithOwner.text},
+                      if(addHoroscopeController.addSelectedEventDate != null){"Date Of Event": DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addSelectedEventDate!.value)},
+                      if(addHoroscopeController.addSelectedEventTime != null){"Time Of Event": DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addSelectedEventTime!.value.hour, addHoroscopeController.addSelectedEventTime!.value.minute))},
+                      if(addHoroscopeController.eventPlace != null && addHoroscopeController.eventPlace.text != ''){"Place, State and Country of event": addHoroscopeController.eventPlace.text},
+                    ];
+
+                    _showConfirmationPopup(context);
                   }),
                 )
               ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:math' as math;
 import 'dart:async';
 import 'package:http/http.dart' as http;
@@ -28,7 +29,9 @@ class PaymentProgressPage extends StatefulWidget {
 class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Timer _timer;
+  late Timer _redirectTimer;
   String _paymentStatus = 'Pending';
+  int _remainingSeconds = 240; // 5 minutes in seconds
 
   final AppLoadController appLoadController =
   Get.put(AppLoadController.getInstance(), permanent: true);
@@ -48,26 +51,38 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
       _checkPaymentStatus();
     });
+
+    // Start redirect timer
+    _redirectTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_remainingSeconds > 0) {
+          _remainingSeconds--;
+        } else {
+          _redirectTimer.cancel();
+          _timer.cancel();
+          _redirectToDashboard();
+        }
+      });
+    });
   }
 
   @override
   void dispose() {
     _controller.dispose();
     _timer.cancel();
+    _redirectTimer.cancel();
     super.dispose();
   }
 
   Future<void> _checkPaymentStatus() async {
-    // Replace this URL with your actual API endpoint
     Map<String, String> headers = {
       "Content-Type": "application/json",
       "Accept": "application/json",
       "token": appLoadController.loggedUserData.value.token!
-      // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
     };
     final response = await http.get(
         Uri.parse(APIEndPoints.paymentStatusCheck+widget.paymentReferenceNumber),
-      headers: headers
+        headers: headers
     );
 
     if (response.statusCode == 200) {
@@ -76,9 +91,15 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
         _paymentStatus = data['status'];
       });
 
-      if (_paymentStatus == 'Completed') {
+      if (_paymentStatus.toLowerCase().compareTo('Completed'.toLowerCase()) == 0 || _paymentStatus.toLowerCase().compareTo('Success'.toLowerCase()) == 0 ) {
         _timer.cancel();
+        _redirectTimer.cancel();
         _showPaymentCompleteToast();
+        widget.onPaymentComplete(_paymentStatus);
+      }else if(_paymentStatus.toLowerCase() == 'Cancelled' || _paymentStatus.toLowerCase() == 'Failed' ){
+        _timer.cancel();
+        _redirectTimer.cancel();
+        _showFailedToast();
         widget.onPaymentComplete(_paymentStatus);
       }
     } else {
@@ -97,10 +118,37 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
     });
   }
 
+
+  void _showFailedToast() {
+    CustomDialog.okActionAlert(context, 'Payment failed please try later', 'OK', false, 14, (){
+      applicationBaseController.updateHoroscopeUiList();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const Dashboard()),
+            (Route<dynamic> route) => false,
+      );
+    });
+  }
+
+  void _redirectToDashboard() {
+    applicationBaseController.updateHoroscopeUiList();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const Dashboard()),
+          (Route<dynamic> route) => false,
+    );
+  }
+
+  String _formatTime(int seconds) {
+    int minutes = seconds ~/ 60;
+    int remainingSeconds = seconds % 60;
+    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false, // Prevent going back
+      canPop: false,
       child: Scaffold(
         appBar: GradientAppBar(
           colors: const [Color(0xFFf2b20a), Color(0xFFf34509)], centerTitle: true,
@@ -135,22 +183,29 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
                     ],
                   ),
                   child: Center(
-                    child: Icon(Icons.attach_money, size: 50, color: Colors.orange),
+                    child: appLoadController.loggedUserData.value.ucurrency!.toLowerCase().compareTo('INR'.toLowerCase()) == 0 ?
+                    SizedBox(height: 35, child: SvgPicture.asset('assets/svg/upi-icon.svg')) :
+                    SizedBox(height: 40, child: SvgPicture.asset('assets/svg/paypal.svg')),
                   ),
                 ),
               ),
-              SizedBox(height: 40),
+              const SizedBox(height: 40),
               Text(
                 'Payment Reference: ${widget.paymentReferenceNumber}',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Text(
                 'Status: $_paymentStatus',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 20),
-              Padding(
+              Text(
+                'Time remaining: ${_formatTime(_remainingSeconds)}',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red),
+              ),
+              const SizedBox(height: 20),
+              const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 40),
                 child: Text(
                   kIsWeb
@@ -159,6 +214,13 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16),
                 ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: GestureDetector(
+                      onTap: _redirectToDashboard,
+                      child: commonText(text: 'If You are facing any Issue, Please click here for dashboard', color: Colors.blue, textDecoration: TextDecoration.underline, fontSize: 12))
               ),
             ],
           ),

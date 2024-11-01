@@ -108,7 +108,7 @@ class _AddWhatsappInfoState extends State<AddWhatsappInfo> {
                           Text(
                               (selectedDate == null && addHoroscopeController.addSelectedMessageReceivedDate == null)
                                   ? LocalizationController.getInstance().getTranslatedValue('Please select date')
-                                  : '${LocalizationController.getInstance().getTranslatedValue('Selected date')} :  ${selectedDate == null ?DateFormat('dd-MM-yyyy').format(addHoroscopeController.addSelectedMessageReceivedDate!.value): DateFormat('dd-MM-yyyy').format(selectedDate!)}',
+                                  : '${LocalizationController.getInstance().getTranslatedValue('Selected date')} :  ${selectedDate == null ?DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addSelectedMessageReceivedDate!.value): DateFormat('MMMM dd, yyyy').format(selectedDate!)}',
                               style: GoogleFonts.lexend(
                                 fontSize: 14,
                                 color: Colors.black54,

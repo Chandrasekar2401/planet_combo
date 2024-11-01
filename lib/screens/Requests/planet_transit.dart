@@ -172,14 +172,14 @@ class _PlanetTransitState extends State<PlanetTransit> {
                     Row(
                       children: [
                         SizedBox(width: MediaQuery.of(context).size.width * 0.4, child: commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Start Date'))),
-                        commonBoldText(text: ':  ${DateFormat('dd MMM yyyy').format(DateTime.parse(planetTransitController.planet.value.trsdate!))}')
+                        commonBoldText(text: ':  ${DateFormat('MMMM dd, yyyy').format(DateTime.parse(planetTransitController.planet.value.trsdate!))}')
                       ],
                     ),
                     const SizedBox(height: 15),
                     Row(
                       children: [
                         SizedBox(width: MediaQuery.of(context).size.width * 0.4, child: commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('End Date'))),
-                        commonBoldText(text: ':  ${DateFormat('dd MMM yyyy').format(DateTime.parse(planetTransitController.planet.value.tredate!))}')
+                        commonBoldText(text: ':  ${DateFormat('MMMM dd, yyyy').format(DateTime.parse(planetTransitController.planet.value.tredate!))}')
                       ],
                     ),
                     const SizedBox(height: 15),

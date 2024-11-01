@@ -21,6 +21,9 @@ class APIEndPoints {
   ///Add offline Money
   static String addOfflineMoney = '${baseUrl}api/Invoice/Pay';
 
+  ///Reply Special Prediction
+  static String replyPredictionMessage = '${baseUrl}api/Prediction/addMessage';
+
 
   ///Pay Payment by Paypal
   static String payByPaypal = '${baseUrl}api/Payments/create-paypal-payment';
@@ -35,11 +38,26 @@ class APIEndPoints {
   ///add Message
   static String addMessage = '${baseUrl}api/messages/addMessages';
 
+  ///update Prediction Flag
+  static String updateFlag = '${baseUrl}api/Prediction/updatePredictionFLag/';
+
   ///delete Message
   static String deleteMessages = '${baseUrl}api/messages/deleteMessages?userId=';
 
   ///delete Profile
   static String deleteProfile = '${baseUrl}api/profile/deleteAppUser?userId=';
+
+  ///get Special Predictions
+  static String specialPredictions = '${baseUrl}api/Prediction/GetPredictions/';
+
+  ///get Daily Prediction dates
+  static String getDailyPredictionDates = '${baseUrl}api/Prediction/GetPredictionDates/';
+
+  ///get Daily Prediction date details
+  static String getDailyPredictionDateDetails = '${baseUrl}api/Prediction/GetPredictionDates/';
+
+  ///get Special Prediction Messages
+  static String specialPredictionMessages  = '${baseUrl}api/Prediction/getMessages?PredictionId=';
 
   ///Get terms and conditions
   static String getTermsAndConditions = '${baseUrl}api/termCondition/TCLinkandCharCharges?userId=';
@@ -55,7 +73,7 @@ class APIEndPoints {
 
 
   ///Get User All Predictions
-  static String getUserAllPredictions = '${baseUrl}api/prediction/GetPredictions?userId=';
+  static String getUserAllPredictions = '${baseUrl}api/prediction/GetPredictions/';
 
   ///Get User Predictions
   static String getUserPredictions = '${baseUrl}api/request/getRequests?userId=';

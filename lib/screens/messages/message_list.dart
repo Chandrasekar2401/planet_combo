@@ -12,7 +12,8 @@ import 'package:planetcombo/controllers/applicationbase_controller.dart';
 import 'package:planetcombo/controllers/message_controller.dart';
 
 class MessagesList extends StatefulWidget {
-  const MessagesList({Key? key}) : super(key: key);
+  String horoscopeId;
+  MessagesList({super.key, required this.horoscopeId});
 
   @override
   _MessagesListState createState() => _MessagesListState();
@@ -58,7 +59,8 @@ class _MessagesListState extends State<MessagesList> {
       Obx(() => ListView.builder(
         itemCount: applicationBaseController.messagesHistory.length,
         itemBuilder: (BuildContext context, int index) {
-          return Container(
+          if (widget.horoscopeId == applicationBaseController.messagesHistory[index].msghid!.toString()) {
+            return Container(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
             decoration: const BoxDecoration(
                 border: Border(
@@ -90,10 +92,12 @@ class _MessagesListState extends State<MessagesList> {
                         dialogMessage: 'Do you want to delete this Message ?',
                         cancelText: 'No',
                         okText: 'Yes',
-                        cancelAction: (){},
+                        cancelAction: (){
+                          Navigator.pop(context);
+                        },
                         okAction: () async{
                           Navigator.pop(context);
-                          var response = await messageController.deleteMessage(context, applicationBaseController.messagesHistory[index].msgmessageid!.replaceAll(' ', ''), applicationBaseController.messagesHistory[index].msghid!.replaceAll(' ', ''), applicationBaseController.messagesHistory[index].msguserid);
+                          var response = await messageController.deleteMessage(context, applicationBaseController.messagesHistory[index].msgmessageid!, applicationBaseController.messagesHistory[index].msghid!, applicationBaseController.messagesHistory[index].msguserid);
                         },
                       );
                     }),
@@ -109,6 +113,9 @@ class _MessagesListState extends State<MessagesList> {
               ],
             ),
           );
+          } else {
+            return const SizedBox();
+          }
         },
       )),
       floatingActionButton: GradientFloatingActionButton(
@@ -116,7 +123,7 @@ class _MessagesListState extends State<MessagesList> {
           // Add your message code here
           print('Message');
           Navigator.push(
-              context, MaterialPageRoute(builder: (context) => const AddMessages()));
+              context, MaterialPageRoute(builder: (context) => AddMessages(messageId: widget.horoscopeId)));
         },
         gradient: const LinearGradient(
           colors: [Color(0xFFf2b20a), Color(0xFFf34509)],

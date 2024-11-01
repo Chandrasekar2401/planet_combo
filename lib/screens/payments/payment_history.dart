@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:planetcombo/common/widgets.dart';
+import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:get/get.dart';
 import 'package:planetcombo/screens/dashboard.dart';
@@ -20,67 +21,39 @@ class _PaymentHistoryState extends State<PaymentHistory> {
   final ApplicationBaseController applicationBaseController =
   Get.put(ApplicationBaseController.getInstance(), permanent: true);
 
+  final AppLoadController appLoadController =
+  Get.put(AppLoadController.getInstance(), permanent: true);
+
   String formatDateTime(String dateTimeString) {
     DateTime dateTime = DateTime.parse(dateTimeString);
-    String formattedDate = DateFormat('dd MMM yyyy').format(dateTime);
+    String formattedDate = DateFormat('MMMM dd, yyyy').format(dateTime);
     String formattedTime = DateFormat('hh:mm a').format(dateTime);
-
-    String formatted = '$formattedDate at $formattedTime';
-    return formatted;
+    return '$formattedDate at $formattedTime';
   }
-  
-  String paymentStatus(String paymentString){
-    String pay = 'Not Available';
-    if(paymentString == 'N'){
-      pay = 'Pending';
-    }else{
-      pay = 'Paid';
-    }
-    return pay;
+
+  String paymentStatus(String paymentString) {
+    return paymentString == 'N' ? 'Pending' : 'Paid';
   }
 
   String formatIndianRupees(double amount) {
-    // Round to 2 decimal places
     double roundedAmount = (amount * 100).round() / 100;
-
-    // Create a number format for Indian Rupees
     NumberFormat indianRupeesFormat = NumberFormat.currency(
       locale: 'en_IN',
       symbol: '₹',
       decimalDigits: 2,
     );
-
-    // Format the amount
-    String formattedAmount = indianRupeesFormat.format(roundedAmount);
-
-    // Remove the rupee symbol as we just need the number format
-    formattedAmount = formattedAmount.replaceAll('₹', '');
-
-    // Trim any leading whitespace
-    formattedAmount = formattedAmount.trim();
-
-    return formattedAmount;
+    return indianRupeesFormat.format(roundedAmount).replaceAll('₹', '').trim();
   }
 
   String formatDate(String dateString) {
-    // Parse the input string to a DateTime object
     DateTime dateTime = DateTime.parse(dateString);
-
-    // Create a DateFormat object for the desired output format
-    DateFormat formatter = DateFormat("yyyy-MM-dd '@' hh:mm a");
-
-    // Format the date
-    String formattedDate = formatter.format(dateTime);
-
-    return formattedDate;
+    DateFormat formatter = DateFormat("MMMM dd, yyyy '|' hh:mm a");
+    return formatter.format(dateTime);
   }
 
-  double taxCalc(double tax1, double tax2, double tax3){
-    double totalTax = tax1 + tax2 + tax3;
-    return totalTax;
+  double taxCalc(double tax1, double tax2, double tax3) {
+    return tax1 + tax2 + tax3;
   }
-
-
 
   @override
   void initState() {
@@ -92,78 +65,122 @@ class _PaymentHistoryState extends State<PaymentHistory> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: GradientAppBar(
-        leading: IconButton(onPressed: () { Navigator.pop(context); }, icon: Icon(Icons.chevron_left_rounded),),
-        title: LocalizationController.getInstance().getTranslatedValue("Payment Records"),
-        colors: const [Color(0xFFf2b20a), Color(0xFFf34509)], centerTitle: true,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: const Icon(Icons.chevron_left_rounded),
+        ),
+        title: LocalizationController.getInstance()
+            .getTranslatedValue("Payment Records"),
+        colors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
+        centerTitle: true,
         actions: [
-          IconButton(onPressed: (){
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const Dashboard()),
-                  (Route<dynamic> route) => false,
-            );
-          }, icon: const Icon(Icons.home_outlined))
+          IconButton(
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const Dashboard()),
+                    (Route<dynamic> route) => false,
+              );
+            },
+            icon: const Icon(Icons.home_outlined),
+          ),
         ],
       ),
-      body: applicationBaseController.paymentHistory.isEmpty ?
-      Center(
+      body: applicationBaseController.paymentHistory.isEmpty
+          ? Center(
         child: commonText(text: 'No Records found', color: Colors.grey),
-      ) :
-      Obx(() => ListView.builder(
-        itemCount: applicationBaseController.paymentHistory.length,
-        itemBuilder: (BuildContext context, int index) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
-                    spreadRadius: 2.0,
-                    blurRadius: 4.0,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Theme(
-                data: ThemeData().copyWith(dividerColor: Colors.transparent),
+      )
+          : Obx(
+            () => ListView.builder(
+          itemCount: applicationBaseController.paymentHistory.length,
+          itemBuilder: (BuildContext context, int index) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(
+                  vertical: 8, horizontal: 15),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.4),
+                      spreadRadius: 1,
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
                 child: ExpansionTile(
                   title: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      commonBoldText(text: 'Name : ${applicationBaseController.paymentHistory[index].name ?? ""}', fontSize: 13),
-                      const SizedBox(height: 7),
-                      commonText(text: 'Amount: ${applicationBaseController.paymentHistory[index].currency}' ' ${formatIndianRupees(applicationBaseController.paymentHistory[index].amount ?? 0)}', fontSize: 13),
-                      const SizedBox(height: 7),
-                      commonText(text: 'Tax: ${applicationBaseController.paymentHistory[index].currency}' ' ${formatIndianRupees(taxCalc(applicationBaseController.paymentHistory[index].tax1Amount ?? 0, applicationBaseController.paymentHistory[index].tax2Amount ?? 0, applicationBaseController.paymentHistory[index].tax3Amount ?? 0))}', fontSize: 13),
-                      const SizedBox(height: 7),
-                      commonText(text: 'Total Amount: ${applicationBaseController.paymentHistory[index].currency}' ' ${formatIndianRupees(applicationBaseController.paymentHistory[index].totalAmount ?? 0)}', fontSize: 13),
-                      SizedBox(height: 7),
+                      commonBoldText(
+                        text:
+                        'Name: ${applicationBaseController.paymentHistory[index].name ?? ""}',
+                        fontSize: 14,
+                      ),
+                      const SizedBox(height: 6),
                       commonText(
-                          text: 'Payment method : ${applicationBaseController.paymentHistory[index].paymentChanel ?? "Not Updated".toString()}', fontSize: 13),
+                        text:
+                        'Amount: ${applicationBaseController.paymentHistory[index].currency} ${formatIndianRupees(applicationBaseController.paymentHistory[index].amount ?? 0)}',
+                        fontSize: 14,
+                      ),
+                      const SizedBox(height: 6),
+                      commonText(
+                        text:
+                        'Tax: ${applicationBaseController.paymentHistory[index].currency} ${formatIndianRupees(taxCalc(applicationBaseController.paymentHistory[index].tax1Amount ?? 0, applicationBaseController.paymentHistory[index].tax2Amount ?? 0, applicationBaseController.paymentHistory[index].tax3Amount ?? 0))}',
+                        fontSize: 14,
+                      ),
+                      const SizedBox(height: 6),
+                      commonText(
+                        text:
+                        'Total: ${applicationBaseController.paymentHistory[index].currency} ${formatIndianRupees(applicationBaseController.paymentHistory[index].totalAmount ?? 0)}',
+                        fontSize: 14,
+                      ),
+                      const SizedBox(height: 6),
+                      commonText(
+                        text:
+                        'Method: ${applicationBaseController.paymentHistory[index].paymentChanel ?? "Not Updated"}',
+                        fontSize: 14,
+                      ),
                     ],
                   ),
                   collapsedBackgroundColor: Colors.white,
                   backgroundColor: Colors.white,
                   initiallyExpanded: _expandedList[index],
                   expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
-                  childrenPadding: EdgeInsets.fromLTRB(15, 0, 0, 0),
+                  childrenPadding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
                   children: [
-                    commonText(text: 'Reference Number : ${applicationBaseController.paymentHistory[index].paymentReference}', fontSize: 13),
-                    SizedBox(height: 7),
-                    commonText(text: 'Paid Date : ${formatDate(applicationBaseController.paymentHistory[index].paidDate.toString())}', fontSize: 13),
-                    SizedBox(height: 7),
+                    commonText(
+                      text:
+                      'Reference: ${applicationBaseController.paymentHistory[index].paymentReference}',
+                      fontSize: 13,
+                    ),
+                    const SizedBox(height: 8),
+                    commonText(
+                      text:
+                      'Paid Date: ${formatDate(applicationBaseController.paymentHistory[index].paidDate.toString())}',
+                      fontSize: 13,
+                    ),
+                    const SizedBox(height: 8),
                     GestureDetector(
-                      onTap: (){
-                        if(applicationBaseController.paymentHistory[index].invoiceUrl != null || applicationBaseController.paymentHistory[index].invoiceUrl != ""){
-                          launchUrl(Uri.parse(applicationBaseController.paymentHistory[index].invoiceUrl!));
+                      onTap: () {
+                        final url = applicationBaseController
+                            .paymentHistory[index].invoiceUrl;
+                        if (url != null && url.isNotEmpty) {
+                          launchUrl(Uri.parse(url));
                         }
                       },
-                      child: commonText(fontSize: 12, text: 'Invoice/Receipt Link  : \$ ${applicationBaseController.paymentHistory[index].invoiceUrl ?? 'Link not received'}', color: Colors.blue),
-                    )
+                      child: commonText(
+                        text:
+                        'Invoice/Receipt: ${applicationBaseController.paymentHistory[index].invoiceUrl ?? 'Link not available'}',
+                        fontSize: 13,
+                        color: Colors.blue,
+                      ),
+                    ),
                   ],
                   onExpansionChanged: (bool expanded) {
                     setState(() {
@@ -172,10 +189,10 @@ class _PaymentHistoryState extends State<PaymentHistory> {
                   },
                 ),
               ),
-            ),
-          );
-        },
-      ))
+            );
+          },
+        ),
+      ),
     );
   }
 }

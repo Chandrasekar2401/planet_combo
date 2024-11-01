@@ -9,7 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import 'package:planetcombo/screens/predictions/view_comments.dart';
 
-import '../../models/preictions_list.dart';
+import 'package:planetcombo/models/preictions_list.dart';
 
 class PredictionsHistory extends StatefulWidget {
   const PredictionsHistory({super.key});
@@ -122,7 +122,7 @@ class _PredictionsHistoryState extends State<PredictionsHistory> {
                           borderRadius: BorderRadius.circular(12)
                         ),
                         padding: const EdgeInsets.all(8.0),
-                        child: commonBoldText(text: DateFormat('dd MMM yyyy').format(horoscopeServiceController.predictions[index].prDate!), textAlign: TextAlign.center, color: Colors.white),
+                        child: commonBoldText(text: DateFormat('MMMM dd, yyyy').format(horoscopeServiceController.predictions[index].prDate!), textAlign: TextAlign.center, color: Colors.white),
                       ),
                       SizedBox(height: 150,
                       child: ListView.builder(

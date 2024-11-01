@@ -56,6 +56,18 @@ class ApplicationBaseController extends GetxController {
     _getInvoiceList();
   }
 
+  String formatDecimalString(input) {
+    String val = input.toString();
+    double value = double.parse(val);
+
+    // Check if value has a decimal part
+    if (value % 1 == 0) {
+      return value.toStringAsFixed(1); // Adds ".0" if it's an integer
+    } else {
+      return value.toString();         // Keeps original decimal form if not an integer
+    }
+  }
+
   void updateHoroscopeUiList(){
     _getUserHoroscopeList();
     _getUserPendingPayments();
@@ -107,7 +119,7 @@ class ApplicationBaseController extends GetxController {
       print(response);
       if(response != null){
         var jsonBody = json.decode(response);
-        if (jsonBody['Status'] == 'Success') {
+        if (jsonBody['status'] == 'Success') {
           print('iam launching here $response');
              messagesInfo.value = messagesListFromJson(response);
              messagesHistory.value = messagesInfo.value.data!;
@@ -200,22 +212,47 @@ class ApplicationBaseController extends GetxController {
     }
   }
 
-  _getUserPendingPayments() async{
-    try{
+  Future<void> _getUserPendingPayments() async {
+    try {
       pendingPayment.value = true;
-      var response = await APICallings.getPendingPayments(userId: appLoadController.loggedUserData.value.userid!, token: appLoadController.loggedUserData.value.token!);
+      var response = await APICallings.getPendingPayments(
+          userId: appLoadController.loggedUserData.value.userid!,
+          token: appLoadController.loggedUserData.value.token!
+      );
       pendingPayment.value = false;
       print("Get payments List Response : $response");
+
       if (response != null) {
         var jsonBody = json.decode(response);
-        pendingPaymentsList.value = [];
         pendingPaymentsList.value = pendingPaymentListFromJson(response);
-        print('the value of pending payments ${pendingPaymentsList.length}');
-        print('the value of pending payments $pendingPaymentsList');
-      }else{
+
+        // Sort the pending payments list by date
+        pendingPaymentsList.value.sort((a, b) {
+          // Assuming there's a 'date' field of type DateTime? in your payment object
+          // Replace 'date' with the actual field name in your model
+          final dateA = a.creationDate;
+          final dateB = b.creationDate;
+
+          // Handle null dates by placing them at the end
+          if (dateA == null && dateB == null) return 0;
+          if (dateA == null) return 1;
+          if (dateB == null) return -1;
+
+          // Sort in descending order (latest first)
+          return dateB.compareTo(dateA);
+        });
+
+        print('The value of pending payments ${pendingPaymentsList.length}');
+        print('The value of pending payments $pendingPaymentsList');
+      } else {
         pendingPaymentsList.value = [];
       }
-    }finally {}
+    } catch (error) {
+      print("Error in _getUserPendingPayments: $error");
+      pendingPaymentsList.value = [];
+    } finally {
+      pendingPayment.value = false;
+    }
   }
 
 

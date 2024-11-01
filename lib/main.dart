@@ -17,6 +17,7 @@ import 'package:planetcombo/screens/web/web_home.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'models/social_login.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -25,13 +26,14 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 bool userValue = false;
 
-void main() async {
+Future<void> initializeApp() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  if(!kIsWeb){
+
+  if (!kIsWeb) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
@@ -66,7 +68,7 @@ void main() async {
       print('Notification permission denied');
       showFailedToast('Notifications have been blocked. Please enable them to receive notifications.');
     }
-  }else{
+  } else {
     await Firebase.initializeApp(
       options: const FirebaseOptions(
           apiKey: "AIzaSyCXAw8BQBx4OPMOWyNaI4bv7gh5GUXa0lQ",
@@ -95,7 +97,9 @@ void main() async {
     userValue = true;
     appLoadController.userValue.value = true;
   }
+}
 
+void main() {
   runApp(MyApp());
 }
 
@@ -121,6 +125,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Planet Combo',
+      locale: const Locale('en', 'US'),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: const [
+         Locale('en', 'US'), // mm/dd/yyyy
+         Locale('en', 'GB'), // dd/MM/yyyy
+        // Add more locales as needed
+      ],
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         radioTheme: RadioThemeData(
@@ -129,8 +143,76 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       onGenerateRoute: _appRouter.onGenerateRoute,
-      home: getInitScreen(),
+      home: FutureBuilder(
+        future: initializeApp(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return getInitScreen();
+          } else {
+            return const AnimatedLoadingScreen();
+          }
+        },
+      ),
       builder: EasyLoading.init(),
+    );
+  }
+}
+
+class AnimatedLoadingScreen extends StatefulWidget {
+  const AnimatedLoadingScreen({super.key});
+
+  @override
+  _AnimatedLoadingScreenState createState() => _AnimatedLoadingScreenState();
+}
+
+class _AnimatedLoadingScreenState extends State<AnimatedLoadingScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat(reverse: true);
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ScaleTransition(
+              scale: _animation,
+              child: const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                strokeWidth: 5,
+              ),
+            ),
+            const SizedBox(height: 20),
+            FadeTransition(
+              opacity: _animation,
+              child: const Text(
+                'Loading Planet Combo...',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

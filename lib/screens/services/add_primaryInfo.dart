@@ -42,6 +42,7 @@ class _AddPrimaryState extends State<AddPrimary> {
       initialDate: selectedDate,
       firstDate: DateTime(1920),
       lastDate: DateTime.now(),
+      locale: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'usd' ? const Locale('en', 'US') : const Locale('en', 'GB'),
     );
 
     if (picked != null && picked != selectedDate) {
@@ -55,6 +56,7 @@ class _AddPrimaryState extends State<AddPrimary> {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
+      initialEntryMode: TimePickerEntryMode.input,
     );
 
     if (picked != null && picked != selectedTime) {
@@ -184,7 +186,8 @@ class _AddPrimaryState extends State<AddPrimary> {
                                 Text(
                                     (selectedDate == null && addHoroscopeController.addHoroscopeBirthSelectedDate == null)
                                         ? LocalizationController.getInstance().getTranslatedValue('Please select date')
-                                        : '${LocalizationController.getInstance().getTranslatedValue('Selected date')} :  ${selectedDate == null ? DateFormat('dd-MM-yyyy').format(addHoroscopeController.addHoroscopeBirthSelectedDate!.value) : DateFormat('dd-MM-yyyy').format(selectedDate!)}',
+                                        : '${LocalizationController.getInstance().getTranslatedValue('Selected date')} : '
+                                        ' ${selectedDate == null ? DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addHoroscopeBirthSelectedDate!.value) : DateFormat('MMMM dd, yyyy').format(selectedDate!)}',
                                     style: GoogleFonts.lexend(
                                       fontSize: 14,
                                       color: Colors.black54,

@@ -40,6 +40,7 @@ class _AddChildInfoState extends State<AddChildInfo> {
       initialDate: selectedChildBirthDate,
       firstDate: DateTime(1920),
       lastDate: DateTime.now(),
+      locale: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'usd' ? const Locale('en', 'US') : const Locale('en', 'GB'),
     );
 
     if (picked != null && picked != selectedChildBirthDate) {
@@ -53,6 +54,7 @@ class _AddChildInfoState extends State<AddChildInfo> {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
+      initialEntryMode: TimePickerEntryMode.input,
     );
 
     if (picked != null && picked != selectedChildBirthTime) {
@@ -157,7 +159,11 @@ class _AddChildInfoState extends State<AddChildInfo> {
                               Text(
                                   (selectedChildBirthDate == null && addHoroscopeController.addSelectedChildBirthDate == null)
                                       ? LocalizationController.getInstance().getTranslatedValue('Please select date')
-                                      : '${LocalizationController.getInstance().getTranslatedValue('Selected date')} :  ${selectedChildBirthDate == null ?DateFormat('dd-MM-yyyy').format(addHoroscopeController.addSelectedChildBirthDate!.value): DateFormat('dd-MM-yyyy').format(selectedChildBirthDate!)}',
+                                      : '${LocalizationController.getInstance().getTranslatedValue('Selected date')} :  ${selectedChildBirthDate == null ?DateFormat(
+                                      'MMMM dd, yyyy'
+                                  ).format(addHoroscopeController.addSelectedChildBirthDate!.value): DateFormat(
+                                     'MMMM dd, yyyy'
+                                  ).format(selectedChildBirthDate!)}',
                                   style: GoogleFonts.lexend(
                                     fontSize: 14,
                                     color: Colors.black54,

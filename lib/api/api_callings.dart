@@ -348,7 +348,7 @@ class APICallings {
       {required String hid,required String userId, required String latitude, required String longitude,required String startDate,
         required String endDate, String? timestamp, String? completeDateTime,
         required String token}) async {
-    Map<String, dynamic> registerObject = {
+    Map<String, dynamic> addingObject = {
       "HId": hid,
       "USERID": userId,
       "DST":0,
@@ -363,10 +363,10 @@ class APICallings {
     var url = Uri.parse(APIEndPoints.addDailyRequest);
     print('passing token $token');
     print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    print("Body: ${json.encode(addingObject)}");
     var response = await http.post(
       url,
-      body: jsonEncode(registerObject),
+      body: jsonEncode(addingObject),
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -435,7 +435,6 @@ class APICallings {
       "COMPLETEDATETIME": ''
     };
     var url = Uri.parse(APIEndPoints.addSpecialRequest);
-    print('passing token $token');
     print('URL : $url');
     print("Body: ${json.encode(registerObject)}");
     var response = await http.post(
@@ -487,7 +486,7 @@ class APICallings {
       "token": token
       // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
     };
-    var url = Uri.parse('${APIEndPoints.getUserAllPredictions}$userId&hid=$hid&requestId=$requestId');
+    var url = Uri.parse('${APIEndPoints.getUserAllPredictions}$userId/$hid/$requestId');
     var response = await http.get(
       url,
       headers: headers,
@@ -879,6 +878,30 @@ class APICallings {
     return response;
   }
 
+
+
+  ///Add Message
+  static Future<Response?> updatePredictionFlag(
+      {required String userId, required int hid, required String reqId, required int flagId, required String flag, required String token}) async {
+    Map<String, dynamic> registerObject = {
+      "flag": flag,
+    };
+    var url = Uri.parse('${APIEndPoints.updateFlag}$userId/$hid/$reqId/$flagId?flag=$flag');
+    print('URL : $url');
+    print("Body: ${json.encode(registerObject)}");
+    var response = await http.post(
+      url,
+      body: jsonEncode(registerObject),
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "token": token
+      },
+    );
+    return response;
+  }
+
+
   ///Update Message
   static Future<Response?> updateMessage(
       {required String messageId, required String messageUserId, required String messageMessageId, required String userMessage, required String messageStatus, required String messageRead, required String token}) async {
@@ -955,6 +978,132 @@ class APICallings {
       return null;
     }
   }
+
+
+  ///
+  static Future<Response?> getSpecialPredictions(String userId,int hid, String requestId, String token) async {
+    Map<String, String> headers = {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "token": token
+      // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
+    };
+    var url = Uri.parse('${APIEndPoints.specialPredictions}$userId/$hid/$requestId');
+    var response = await http.get(
+      url,
+      headers: headers,
+    );
+    print("Get Delete Message URL : $url");
+    print(response.statusCode);
+    print(response.body);
+    if (response.statusCode == 200) {
+      var jsonResponse = json.decode(response.body);
+      return response;
+    } else {
+      return null;
+    }
+  }
+
+  ///get daily prediction dates
+  static Future<Response?> getDailyPredictionDates(String userId,int hid, String requestId, String token) async {
+    Map<String, String> headers = {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "token": token
+      // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
+    };
+    var url = Uri.parse('${APIEndPoints.getDailyPredictionDates}$userId/$hid/$requestId');
+    var response = await http.get(
+      url,
+      headers: headers,
+    );
+    print("Get Delete Message URL : $url");
+    print(response.statusCode);
+    print(response.body);
+    if (response.statusCode == 200) {
+      var jsonResponse = json.decode(response.body);
+      return response;
+    } else {
+      return null;
+    }
+  }
+
+
+  ///get daily prediction date details
+  static Future<Response?> getDailyPredictionDateDetails(String userId,int hid, String requestId,String date, String token) async {
+    Map<String, String> headers = {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "token": token
+      // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
+    };
+    var url = Uri.parse('${APIEndPoints.getDailyPredictionDateDetails}$userId/$hid/$requestId/$date');
+    var response = await http.get(
+      url,
+      headers: headers,
+    );
+    print("Get Delete Message URL : $url");
+    print(response.statusCode);
+    if (response.statusCode == 200) {
+      var jsonResponse = json.decode(response.body);
+      return response;
+    } else {
+      return null;
+    }
+  }
+
+
+
+
+  ///get Special Prediction Messages
+  static Future<Response?> getSpecialPredictionMessages(int predictionId,String token) async {
+    Map<String, String> headers = {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "token": token
+      // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
+    };
+    var url = Uri.parse('${APIEndPoints.specialPredictionMessages}$predictionId');
+    var response = await http.get(
+      url,
+      headers: headers,
+    );
+    print("Get Delete Message URL : $url");
+    print(response.statusCode);
+    print(response.body);
+    if (response.statusCode == 200) {
+      var jsonResponse = json.decode(response.body);
+      return response;
+    } else {
+      return null;
+    }
+  }
+
+  ///add
+  static Future<int> replySpecialPrediction(
+      {required int predictionId, required String message, required String token}) async {
+    Map<String, dynamic> registerObject = {
+      "messageType": 2,
+      "message": message,
+      "predictionId": predictionId
+    };
+    var url = Uri.parse(APIEndPoints.replyPredictionMessage);
+
+    print('URL : $url');
+    print("Body: ${json.encode(registerObject)}");
+
+    var response = await http.post(
+      url,
+      body: jsonEncode(registerObject),
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "token": token
+      },
+    );
+    return response.statusCode;
+  }
+
 
 
 

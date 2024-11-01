@@ -9,6 +9,7 @@ class HoroscopesList {
     this.huserid,
     this.hid,
     this.hname,
+    this.isPaid,
     this.hnativephoto,
     this.hhoroscopephoto,
     this.hgender,
@@ -79,6 +80,7 @@ class HoroscopesList {
   String? huserid;
   String? hid;
   String? hname;
+  String? isPaid;
   String? hnativephoto;
   String? hhoroscopephoto;
   String? hgender;
@@ -150,6 +152,7 @@ class HoroscopesList {
     huserid: _parseString(json["huserid"] ?? json["HUSERID"]),
     hid: _parseString(json["hid"] ?? json["HID"]),
     hname: _parseString(json["hname"] ?? json["HNAME"]),
+    isPaid: _parseString(json["isPaid"]),
     hnativephoto: _parseString(json["hnativephoto"] ?? json["HNATIVEPHOTO"]),
     hhoroscopephoto: _parseString(json["hhoroscopephoto"] ?? json["HHOROSCOPEPHOTO"]),
     hgender: _parseString(json["hgender"] ?? json["HGENDER"]),
@@ -236,6 +239,7 @@ class HoroscopesList {
     "huserid": huserid,
     "hid": hid,
     "hname": hname,
+    "isPaid" : isPaid,
     "hnativephoto": hnativephoto,
     "hhoroscopephoto": hhoroscopephoto,
     "hgender": hgender,

@@ -257,15 +257,15 @@ class _ProfileEditState extends State<ProfileEdit> {
         children: [
           const SizedBox(height: 20),
           _buildProfileImage(),
-          // Padding(
-          //   padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-          //   child: commonText(
-          //     textAlign: TextAlign.center,
-          //     color: Colors.black38,
-          //     fontSize: 14,
-          //     text: LocalizationController.getInstance().getTranslatedValue('upload profile picture'),
-          //   ),
-          // ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: commonText(
+              textAlign: TextAlign.center,
+              color: Colors.black38,
+              fontSize: 14,
+              text: LocalizationController.getInstance().getTranslatedValue('upload profile picture'),
+            ),
+          ),
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
@@ -356,8 +356,7 @@ class _ProfileEditState extends State<ProfileEdit> {
     if (addHoroscopeController.editProfileImageFileList!.isNotEmpty ||
         addHoroscopeController.editProfileImageBase64!.isNotEmpty) {
       return GestureDetector(
-        onTap: (){},
-        // appLoadController.addNewUser.value == 'YES' ? () {} : _openImagePicker,
+        onTap: _openImagePicker,
         child: Container(
           height: 90,
           width: 90,

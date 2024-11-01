@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:planetcombo/common/widgets.dart';
@@ -21,51 +23,111 @@ class HoroscopeRequestController extends GetxController {
   Rx<DateTime> currentTime = DateTime.now().obs;
 
 
+// First, the location request function
   Future<bool> getCurrentLocation(context) async {
-    bool serviceEnabled;
-    LocationPermission permission;
+    try {
+      bool serviceEnabled;
+      LocationPermission permission;
 
-    // Check if location services are enabled
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Location services are not enabled, handle accordingly
-      CustomDialog.cancelLoading(context);
-      CustomDialog.showAlert(context, 'Please Turn on Location Service', null, 14);
-      return false;
-    }
-
-    // Request permission to access the location
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        // Permission is denied, handle accordingly
+      // Check if location services are enabled
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
         CustomDialog.cancelLoading(context);
-        CustomDialog.showAlert(context, 'Location Permission is denied, please approve for future assistance', null, 14);
+        bool? result = await showDialog(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            content: Text(
+                kIsWeb
+                    ? 'Please refresh or open new tab and allow location access'
+                    : 'Please enable GPS on your phone Settings'
+            ),
+            actions: [
+              TextButton(
+                child: Text('Close'),
+                onPressed: () {
+                  Navigator.pop(context, false); // User cancels
+                },
+              ),
+            ],
+          ),
+        );
+
+        if (result == true) {
+          return getCurrentLocation(context); // Retry if user wants to try again
+        }
         return false;
       }
-    }
 
-    if (permission == LocationPermission.deniedForever) {
-      // Permission is permanently denied, handle accordingly
+      // Check and request permission
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      // If denied or deniedForever, show dialog with retry option
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        CustomDialog.cancelLoading(context);
+        bool? result = await showDialog(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            content: Text(
+                permission == LocationPermission.denied
+                    ? 'Location permission is required. Please enable and try again?'
+                    : 'Please enable location access in settings and try again'
+            ),
+            actions: [
+              TextButton(
+                child: Text('Close'),
+                onPressed: () {
+                  Navigator.pop(context, false); // User cancels
+                },
+              ),
+            ],
+          ),
+        );
+
+        if (result == true) {
+          return getCurrentLocation(context); // Retry if user wants to try again
+        }
+        return false;
+      }
+
+      // Get the current position if permissions are granted
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high
+      );
+
+      // Update controller values
+      applicationBaseController.deviceLatitude.value = position.latitude;
+      applicationBaseController.deviceLongitude.value = position.longitude;
+      deviceCurrentLocationFound.value = true;
+
+      print('Latitude: ${applicationBaseController.deviceLatitude.value}, Longitude: ${applicationBaseController.deviceLongitude.value}');
       CustomDialog.cancelLoading(context);
-      CustomDialog.showAlert(context, 'Please enable GPS on your phone Settings', false, 14);
+      return true;
+
+    } catch (e) {
+      CustomDialog.cancelLoading(context);
+      bool? result = await showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          content: Text('Error getting location. Please check location and try again?'),
+          actions: [
+            TextButton(
+              child: Text('Close'),
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+            ),
+          ],
+        ),
+      );
+
+      if (result == true) {
+        return getCurrentLocation(context);
+      }
       return false;
     }
-
-    // Get the current position (latitude and longitude)
-    Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
-
-    applicationBaseController.deviceLatitude.value  = position.latitude;
-    applicationBaseController.deviceLongitude.value = position.longitude;
-
-    deviceCurrentLocationFound.value = true;
-
-    // Do something with the latitude and longitude values
-    print('Latitude: ${applicationBaseController.deviceLatitude.value}, Longitude: ${applicationBaseController.deviceLongitude.value}');
-    CustomDialog.cancelLoading(context);
-    return true;
   }
 
 

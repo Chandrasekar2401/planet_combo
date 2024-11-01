@@ -130,7 +130,7 @@ class _WebLoginState extends State<WebLogin> {
     return Container(
       decoration: const BoxDecoration(
         image: DecorationImage(
-          image: AssetImage('assets/images/logintn.jpg'),
+          image: AssetImage('assets/images/web/1.jpg'),
           fit: BoxFit.cover,
         ),
       ),
@@ -190,7 +190,7 @@ class _WebLoginState extends State<WebLogin> {
                     );
                   },
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
                 LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints constraints) {
                     double maxWidth = 500;
@@ -213,8 +213,7 @@ class _WebLoginState extends State<WebLogin> {
                       ),
                     );
                   },
-                ),
-                const SizedBox(height: 80),
+                )
               ],
             ),
           ),

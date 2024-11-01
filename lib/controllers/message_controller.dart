@@ -28,10 +28,14 @@ class MessageController extends GetxController {
       print(response!.body);
       CustomDialog.cancelLoading(context);
       var jsonBody = json.decode(response.body);
-      if(jsonBody['Status'] == 'Success'){
+      if(jsonBody['status'] == 'Success'){
         applicationBaseController.getUserMessages();
-        CustomDialog.okActionAlert(context, jsonBody['Message'], 'Ok', true, 14, (){
+        CustomDialog.okActionAlert(context, jsonBody['message'], 'Ok', true, 14, (){
           Navigator.pop(context);
+          Navigator.pop(context);
+        });
+      }else{
+        CustomDialog.okActionAlert(context, jsonBody['message'], 'Ok', true, 14, (){
           Navigator.pop(context);
         });
       }
@@ -51,9 +55,9 @@ class MessageController extends GetxController {
       print(response!.body);
       CustomDialog.cancelLoading(context);
       var jsonBody = json.decode(response.body);
-      if(jsonBody['Status'] == 'Success'){
+      if(jsonBody['status'] == 'Success'){
         applicationBaseController.getUserMessages();
-        CustomDialog.okActionAlert(context, jsonBody['Message'], 'Ok', true, 14, (){
+        CustomDialog.okActionAlert(context, jsonBody['message'], 'Ok', true, 14, (){
           Navigator.pop(context);
           Navigator.pop(context);
         });
@@ -70,18 +74,18 @@ class MessageController extends GetxController {
   deleteMessage(context, msgId, hid, userId) async{
     try{
       CustomDialog.showLoading(context, 'Updating');
-      var response = await APICallings.deleteMessage(msgId, hid, userId, appLoadController.loggedUserData.value.token!);
+      var response = await APICallings.deleteMessage(msgId.toString(), hid.toString(), userId, appLoadController.loggedUserData.value.token!);
       print('where the response is ');
       print(response!.body);
       CustomDialog.cancelLoading(context);
       var jsonBody = json.decode(response.body);
-      if(jsonBody['Status'] == 'Success'){
+      if(jsonBody['status'] == 'Success'){
         applicationBaseController.getUserMessages();
-        CustomDialog.okActionAlert(context, jsonBody['Message'], 'Ok', true, 14, (){
+        CustomDialog.okActionAlert(context, jsonBody['message'], 'Ok', true, 14, (){
           Navigator.pop(context);
         });
       }else{
-        CustomDialog.showAlert(context, jsonBody['Message'], false, 14);
+        CustomDialog.showAlert(context, jsonBody['message'], false, 14);
       }
     }catch(error){
       print(error);

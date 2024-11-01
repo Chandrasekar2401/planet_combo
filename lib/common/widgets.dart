@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 // String appMode = 'Light';
 String appMode = 'Dark';
@@ -655,6 +656,7 @@ class PrimaryStraightInputText extends StatelessWidget {
               borderSide: BorderSide(color: Colors.orange)
           ),
           hintText: hintText,
+          contentPadding: kIsWeb ? EdgeInsets.only(bottom: 12) : null,
           hintStyle: GoogleFonts.lexend(
               fontSize: fontSize ?? 14,
               fontWeight: FontWeight.w400,
@@ -1267,94 +1269,176 @@ Future yesOrNoDialog({required BuildContext context, required String dialogMessa
       });
 }
 
-Future multiTextYesOrNoDialog({required BuildContext context, String? subText1,String? subText2,String? subText3, required String dialogMessage, required String cancelText, required String okText, required VoidCallback okAction, required VoidCallback cancelAction}) {
-  return  showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.info,
-                color: Colors.red,
-                size: 40,
+Future multiTextYesOrNoDialog({
+  required BuildContext context,
+  String? subText1Key,
+  String? subText1Value,
+  String? subText2Key,
+  String? subText2Value,
+  String? subText3Key,
+  String? subText3Value,
+  required String dialogMessage,
+  required String cancelText,
+  required String okText,
+  required VoidCallback okAction,
+  required VoidCallback cancelAction,
+}) {
+  return showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.info,
+              color: Colors.red,
+              size: 40,
+            ),
+            const SizedBox(height: 15),
+            Text(
+              dialogMessage,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.lexend(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
               ),
-              const SizedBox(height: 15),
-              Text(
-                dialogMessage,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.lexend(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black),
+            ),
+            const SizedBox(height: 10),
+            if (subText1Key != null) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      subText1Key,
+                      textAlign: TextAlign.left,
+                      style: GoogleFonts.lexend(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    subText1Value!, // Replace with dynamic amount if necessary
+                    textAlign: TextAlign.right,
+                    style: GoogleFonts.lexend(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
               ),
-              if(subText1 != null)const SizedBox(height: 5),
-              if(subText1 != null)Text(
-                subText1,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.lexend(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black),
-              ),
-              if(subText2 != null)const SizedBox(height: 5),
-              if(subText2 != null)Text(
-                subText2,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.lexend(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black),
-              ),
-              if(subText3 != null)const SizedBox(height: 5),
-              if(subText3 != null)Text(
-                subText3,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.lexend(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black),
-              ),
+              const SizedBox(height: 5),
             ],
-          ),
-          actionsPadding: EdgeInsets.only(bottom: 8, right: 8),
-          actions: [
-            Container(
-              height: 40,
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey)),
-              child: TextButton(
-                onPressed: cancelAction,
-                child: Text(cancelText,
-                    style: GoogleFonts.lexend(
-                        fontSize: 13,
+            if (subText2Key != null) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      subText2Key,
+                      textAlign: TextAlign.left,
+                      style: GoogleFonts.lexend(
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black)),
-              ),
-            ),
-            Container(
-              height: 40,
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red)),
-              child: TextButton(
-                onPressed: okAction,
-                child: Text(okText,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    subText2Value!, // Replace with dynamic amount if necessary
+                    textAlign: TextAlign.right,
                     style: GoogleFonts.lexend(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.red)),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
               ),
-            ),
+              const SizedBox(height: 5),
+            ],
+            if (subText3Key != null) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      subText3Key,
+                      textAlign: TextAlign.left,
+                      style: GoogleFonts.lexend(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    subText3Value!, // Replace with dynamic amount if necessary
+                    textAlign: TextAlign.right,
+                    style: GoogleFonts.lexend(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 5),
+            ],
           ],
-        );
-      });
+        ),
+        actionsPadding: const EdgeInsets.only(bottom: 8, right: 8),
+        actions: [
+          Container(
+            height: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey),
+            ),
+            child: TextButton(
+              onPressed: cancelAction,
+              child: Text(
+                cancelText,
+                style: GoogleFonts.lexend(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ),
+          Container(
+            height: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red),
+            ),
+            child: TextButton(
+              onPressed: okAction,
+              child: Text(
+                okText,
+                style: GoogleFonts.lexend(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
 }
-
 
 class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;

@@ -5,6 +5,8 @@ import 'package:planetcombo/api/api_callings.dart';
 
 import 'package:planetcombo/models/get_request.dart';
 import 'package:planetcombo/models/preictions_list.dart';
+import 'package:intl/intl.dart';
+
 
 class HoroscopeServiceController extends GetxController {
   static HoroscopeServiceController? _instance;
@@ -26,20 +28,35 @@ class HoroscopeServiceController extends GetxController {
   final AppLoadController appLoadController =
   Get.put(AppLoadController.getInstance(), permanent: true);
 
-  getUserPredictions(String hid) async{
-    try{
-      var response = await APICallings.getUserPredictions(userId: appLoadController.loggedUserData.value.userid!,hid: hid, token: appLoadController.loggedUserData.value.token!);
+  Future<void> getUserPredictions(String hid) async {
+    try {
+      var response = await APICallings.getUserPredictions(
+          userId: appLoadController.loggedUserData.value.userid!,
+          hid: hid,
+          token: appLoadController.loggedUserData.value.token!
+      );
       print('the response is ');
-      print(response);
-      if(response != null){
+      if (response != null) {
         var jsonBody = json.decode(response);
-        if (jsonBody['Status'] == 'Success') {
+        if (jsonBody['status'] == 'Success') {
           print('iam launching here $response');
           requestInfo.value = RequestList.fromJson(jsonBody);
-          requestHistory.value = requestInfo.value.data!;
+
+          // Sort the data list based on createdate
+          if (requestInfo.value.data != null) {
+            requestInfo.value.data!.sort((a, b) {
+              // Parse the createdates
+              DateTime dateA = DateTime.parse(a.reqcredate!);
+              DateTime dateB = DateTime.parse(b.reqcredate!);
+              // Sort in descending order (latest first)
+              return dateB.compareTo(dateA);
+            });
+          }
+
+          requestHistory.value = requestInfo.value.data ?? [];
         }
       }
-    }catch(error){
+    } catch (error) {
       print(error);
       requestHistory.value = [];
     }
@@ -63,18 +80,18 @@ class HoroscopeServiceController extends GetxController {
           requestId: requestId,
           token: appLoadController.loggedUserData.value.token!
       );
-      print('the response is ');
+      print('the response of token ${appLoadController.loggedUserData.value.token!}');
       print(response);
       var jsonBody = json.decode(response!);
-      if (response != null && jsonBody['Data'] != null) {
-        if (jsonBody['Data'] is List) {
+      if (response != null && jsonBody['data'] != null) {
+        if (jsonBody['data'] is List) {
           // If Data is already a list
-          List<dynamic> data = jsonBody['Data'];
+          List<dynamic> data = jsonBody['data'];
           predictions.value = data.map((item) => PredictionData.fromJson(item)).toList();
           print('predictions legth of the data ${predictions.value[0].prDetails![0].description}');
-        } else if (jsonBody['Data'] is Map<String, dynamic>) {
+        } else if (jsonBody['data'] is Map<String, dynamic>) {
           // If Data is a single item
-          PredictionData singlePrediction = PredictionData.fromJson(jsonBody['Data']);
+          PredictionData singlePrediction = PredictionData.fromJson(jsonBody['data']);
           predictions.value = [singlePrediction];
           print('the prediction value of map length is ${predictions.value.length}');
         } else {

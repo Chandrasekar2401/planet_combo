@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 class RequestList {
   String? status;
   String? message;
@@ -11,25 +13,30 @@ class RequestList {
     this.errorMessage,
   });
 
-  factory RequestList.fromJson(Map<String, dynamic> json) => RequestList(
-    status: json["Status"],
-    message: json["Message"],
-    data: List<RequestHistory>.from(json["Data"].map((x) => RequestHistory.fromJson(x))),
-    errorMessage: json["ErrorMessage"],
-  );
+  factory RequestList.fromJson(Map<String, dynamic> json) {
+    final lowercaseJson = json.map((key, value) => MapEntry(key.toLowerCase(), value));
+
+    return RequestList(
+      status: lowercaseJson["status"],
+      message: lowercaseJson["message"],
+      data: lowercaseJson["data"] != null
+          ? List<RequestHistory>.from(lowercaseJson["data"].map((x) => RequestHistory.fromJson(x)))
+          : null,
+      errorMessage: lowercaseJson["errormessage"],
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     "Status": status,
     "Message": message,
-    "Data": List<dynamic>.from(data!.map((x) => x.toJson())),
+    "Data": data?.map((x) => x.toJson()).toList(),
     "ErrorMessage": errorMessage,
   };
 }
 
-// Step 2: Define RequestHistory class
 class RequestHistory {
   String? rquserid;
-  String? rqhid;
+  dynamic rqhid;
   String? rqid;
   String? reqcat;
   String? rqspecialdetails;
@@ -82,33 +89,37 @@ class RequestHistory {
     this.completedatetime,
   });
 
-  factory RequestHistory.fromJson(Map<String, dynamic> json) => RequestHistory(
-    rquserid: json["RQUSERID"],
-    rqhid: json["RQHID"],
-    rqid: json["RQID"],
-    reqcat: json["REQCAT"],
-    rqspecialdetails: json["RQSPECIALDETAILS"],
-    rqsdate: json["RQSDATE"],
-    rqedate: json["RQEDATE"],
-    rqlongtidue: json["RQLONGTIDUE"],
-    rqlongtitudeew: json["RQLONGTITUDEEW"],
-    rqlatitude: json["RQLATITUDE"],
-    rqlatitudens: json["RQLATITUDENS"],
-    rqdst: json["RQDST"],
-    rqrecdeleted: json["RQRECDELETED"],
-    rqprstatus: json["RQPRSTATUS"],
-    rqunread: json["RQUNREAD"],
-    rqcharge: json["RQCHARGE"],
-    horoname: json["HORONAME"],
-    predictiondetail: json["PredictionDetail"],
-    horonativeimage: json["HORONATIVEIMAGE"],
-    repeat: json["REPEAT"],
-    timestamp: json["TIMESTAMP"],
-    username: json["UserName"],
-    reqcredate: json["REQCREDATE"],
-    creatdate: json["CREATDATE"],
-    completedatetime: json["COMPLETEDATETIME"],
-  );
+  factory RequestHistory.fromJson(Map<String, dynamic> json) {
+    final lowercaseJson = json.map((key, value) => MapEntry(key.toLowerCase(), value));
+
+    return RequestHistory(
+      rquserid: lowercaseJson["rquserid"],
+      rqhid: lowercaseJson["rqhid"],
+      rqid: lowercaseJson["rqid"],
+      reqcat: lowercaseJson["reqcat"],
+      rqspecialdetails: lowercaseJson["rqspecialdetails"],
+      rqsdate: lowercaseJson["rqsdate"],
+      rqedate: lowercaseJson["rqedate"],
+      rqlongtidue: lowercaseJson["rqlongtidue"],
+      rqlongtitudeew: lowercaseJson["rqlongtitudeew"],
+      rqlatitude: lowercaseJson["rqlatitude"],
+      rqlatitudens: lowercaseJson["rqlatitudens"],
+      rqdst: lowercaseJson["rqdst"],
+      rqrecdeleted: lowercaseJson["rqrecdeleted"],
+      rqprstatus: lowercaseJson["rqprstatus"],
+      rqunread: lowercaseJson["rqunread"],
+      rqcharge: lowercaseJson["rqcharge"],
+      horoname: lowercaseJson["horoname"],
+      predictiondetail: (lowercaseJson["predictiondetail"]),
+      horonativeimage: lowercaseJson["horonativeimage"],
+      repeat: lowercaseJson["repeat"],
+      timestamp: lowercaseJson["timestamp"],
+      username: lowercaseJson["username"],
+      reqcredate: lowercaseJson["reqcredate"],
+      creatdate: lowercaseJson["creatdate"],
+      completedatetime: lowercaseJson["completedatetime"],
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     "RQUSERID": rquserid,

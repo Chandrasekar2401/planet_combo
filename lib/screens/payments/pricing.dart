@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
-
 import 'package:planetcombo/common/widgets.dart';
-
 import 'package:planetcombo/controllers/localization_controller.dart';
-
 import 'package:planetcombo/screens/dashboard.dart';
 
 class PricingPage extends StatelessWidget {
   const PricingPage({Key? key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

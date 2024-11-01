@@ -9,8 +9,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:planetcombo/screens/payments/payment_history.dart';
 import 'package:planetcombo/screens/payments/pending_payments.dart';
 import 'package:planetcombo/screens/payments/pricing.dart';
-import 'package:planetcombo/common/widgets.dart';
-
 import 'package:planetcombo/screens/static/facts_myths.dart';
 
 class PaymentDashboard extends StatefulWidget {
@@ -159,9 +157,9 @@ class _PaymentDashboardState extends State<PaymentDashboard> {
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         crossAxisAlignment: CrossAxisAlignment.center,
                                         children: [
-                                          SvgPicture.asset('assets/svg/facts.svg', width: 52,height: 52, color: appLoadController.appPrimaryColor,),
+                                          SvgPicture.asset('assets/svg/about.svg', width: 52,height: 52, color: appLoadController.appPrimaryColor,),
                                           SizedBox(height: 12),
-                                          commonBoldText(textAlign: TextAlign.center,text: LocalizationController.getInstance().getTranslatedValue("Facts and Myths"),fontSize: 13, color: appLoadController.appPrimaryColor)
+                                          commonBoldText(textAlign: TextAlign.center,text: LocalizationController.getInstance().getTranslatedValue("About app"),fontSize: 13, color: appLoadController.appPrimaryColor)
                                         ],
                                       )
                                   ),
@@ -180,7 +178,7 @@ class _PaymentDashboardState extends State<PaymentDashboard> {
                                 GestureDetector(
                                   onTap: (){
                                     Navigator.push(
-                                        context, MaterialPageRoute(builder: (context) => const PricingPage()));
+                                        context, MaterialPageRoute(builder: (context) => PricingPage()));
                                   },
                                   child: Container(
                                       width: MediaQuery.of(context).size.width * 0.4,
@@ -206,6 +204,8 @@ class _PaymentDashboardState extends State<PaymentDashboard> {
                                 ),
                                 GestureDetector(
                                   onTap: (){
+                                    Navigator.push(
+                                        context, MaterialPageRoute(builder: (context) => const PaymentHistory()));
                                     // Navigator.push(
                                     //     context, MaterialPageRoute(builder: (context) => const Balance()));
                                   },
@@ -224,9 +224,9 @@ class _PaymentDashboardState extends State<PaymentDashboard> {
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         crossAxisAlignment: CrossAxisAlignment.center,
                                         children: [
-                                          SvgPicture.asset('assets/svg/feedback.svg', width: 52,height: 52, color: appLoadController.appPrimaryColor,),
+                                          SvgPicture.asset('assets/svg/payment-record.svg', width: 52,height: 52, color: appLoadController.appPrimaryColor,),
                                           const SizedBox(height: 12),
-                                          commonBoldText(text: LocalizationController.getInstance().getTranslatedValue("Feedbacks"),fontSize: 13, color: appLoadController.appPrimaryColor)
+                                          commonBoldText(text: LocalizationController.getInstance().getTranslatedValue("Payment History"),fontSize: 13, color: appLoadController.appPrimaryColor)
                                         ],
                                       )
                                   ),
@@ -241,39 +241,39 @@ class _PaymentDashboardState extends State<PaymentDashboard> {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 21, vertical: 10),
-              child: GestureDetector(
-                onTap: (){
-                  Navigator.push(
-                      context, MaterialPageRoute(builder: (context) => const PaymentHistory()));
-                },
-                child: Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SvgPicture.asset('assets/svg/payment-record.svg', width: 21,height: 24, color: appLoadController.appPrimaryColor,),
-                        const SizedBox(width: 12),
-                        commonBoldText(text: LocalizationController.getInstance().getTranslatedValue("Payment History"), color: appLoadController.appPrimaryColor, fontSize: 16),
-                      ],
-                    )
-                ),
-              ),
-            ),
+            // Padding(
+            //   padding: const EdgeInsets.symmetric(horizontal: 21, vertical: 10),
+            //   child: GestureDetector(
+            //     onTap: (){
+            //       Navigator.push(
+            //           context, MaterialPageRoute(builder: (context) => const PaymentHistory()));
+            //     },
+            //     child: Container(
+            //         height: 50,
+            //         decoration: BoxDecoration(
+            //           borderRadius: BorderRadius.circular(4),
+            //           color: Colors.white,
+            //           boxShadow: [
+            //             BoxShadow(
+            //               color: Colors.grey.withOpacity(0.5),
+            //               spreadRadius: 2,
+            //               blurRadius: 5,
+            //               offset: const Offset(0, 3),
+            //             ),
+            //           ],
+            //         ),
+            //         child: Row(
+            //           crossAxisAlignment: CrossAxisAlignment.center,
+            //           mainAxisAlignment: MainAxisAlignment.center,
+            //           children: [
+            //             SvgPicture.asset('assets/svg/payment-record.svg', width: 21,height: 24, color: appLoadController.appPrimaryColor,),
+            //             const SizedBox(width: 12),
+            //             commonBoldText(text: LocalizationController.getInstance().getTranslatedValue("Payment History"), color: appLoadController.appPrimaryColor, fontSize: 16),
+            //           ],
+            //         )
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),

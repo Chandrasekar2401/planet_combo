@@ -9,7 +9,7 @@ import 'package:get/get.dart';
 
 class ReplyMessages extends StatefulWidget {
   final MessageHistory messageInfo;
-  const ReplyMessages({Key? key, required this.messageInfo}) : super(key: key);
+  const ReplyMessages({super.key, required this.messageInfo});
 
   @override
   _ReplyMessagesState createState() => _ReplyMessagesState();
@@ -31,15 +31,6 @@ class _ReplyMessagesState extends State<ReplyMessages> {
         }, icon: const Icon(Icons.chevron_left_rounded),),
         title: LocalizationController.getInstance().getTranslatedValue("Reply Message"),
         colors: const [Color(0xFFf2b20a), Color(0xFFf34509)], centerTitle: true,
-        actions: [
-          IconButton(onPressed: (){
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const Dashboard()),
-                  (Route<dynamic> route) => false,
-            );
-          }, icon: const Icon(Icons.home_outlined))
-        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -48,13 +39,13 @@ class _ReplyMessagesState extends State<ReplyMessages> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               commonBoldText(text: 'Horoscope Name : ${widget.messageInfo.horoname}'),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               commonBoldText(text: 'Message'),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               PrimaryInputText(hintText: 'Type Your message',maxLines: 6,controller: userMessage, onValidate: (v){
                 return null;
               }),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -68,12 +59,12 @@ class _ReplyMessagesState extends State<ReplyMessages> {
                       );
                     }),
                   ),
-                  SizedBox(width: 20),
+                  const SizedBox(width: 20),
                   Expanded(
                     child: GradientButton(
                         title: LocalizationController.getInstance().getTranslatedValue("Send"),buttonHeight: 45, textColor: Colors.white, buttonColors: [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset){
                       if(userMessage.text.isNotEmpty){
-                        messageController.updateMessage(context, widget.messageInfo.msghid, widget.messageInfo.msguserid, widget.messageInfo.msgmessageid, userMessage.text, widget.messageInfo.msgstatus, widget.messageInfo.msgunread);
+                        messageController.updateMessage(context, widget.messageInfo.msghid.toString(), widget.messageInfo.msguserid, widget.messageInfo.msgmessageid, userMessage.text, widget.messageInfo.msgstatus, widget.messageInfo.msgunread);
                       }else{
                         showFailedToast("Please add reply message");
                       }

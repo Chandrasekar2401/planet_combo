@@ -30,7 +30,6 @@ class _AddNativePhotoState extends State<AddNativePhoto> {
   Get.put(AddHoroscopeController.getInstance(), permanent: true);
 
   void _openImagePicker() {
-    print('theis is the images you clciked');
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -81,6 +80,13 @@ class _AddNativePhotoState extends State<AddNativePhoto> {
         final base64Data = base64Encode(bytes);
         print('the web converted ${base64Data}');
         addHoroscopeController.setHoroscopeProfileWebImageBase64(base64Data);
+
+        //New method for upload image as file Type
+
+        // Store the file directly for web
+        addHoroscopeController.webNewHoroscopeImageFile?.value = pickedImage;
+        // Update the list for preview if needed
+        addHoroscopeController.webDisplayImageFileList?.value = [pickedImage];
       }else{
         addHoroscopeController.setImageFileListFromFile(pickedImage);
       }
