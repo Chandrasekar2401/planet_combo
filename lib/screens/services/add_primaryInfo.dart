@@ -112,6 +112,7 @@ class _AddPrimaryState extends State<AddPrimary> {
                       children: [
                         commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Name or Nickname'), fontSize: 12, color: addHoroscopeController.horoscopeNameAlert.value == true ? Colors.red : Colors.black87, textAlign: TextAlign.start),
                         PrimaryStraightInputText(
+                          allowOnlyLetters: true,
                           onValidate: (v) {
                             if (v == null || v.isEmpty) {
                               addHoroscopeController.horoscopeNameAlert.value = true;

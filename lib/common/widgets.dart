@@ -1,5 +1,6 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -628,8 +629,27 @@ class PrimaryStraightInputText extends StatelessWidget {
   final String? value;
   final double? fontSize;
   final double? height;
-  const PrimaryStraightInputText({Key? key,this.obscureText,this.fontSize, this.value,this.height, required this.hintText,this.readOnly, this.controller, required this.onValidate,this.isEnabled = true, this.textInputType = TextInputType.text, this.maxLines=1,this.maxLength, this.onChange, this.suffixImage, this.focusNode}) : super(key: key);
+  final bool allowOnlyLetters; // New parameter
 
+  const PrimaryStraightInputText({
+    Key? key,
+    this.obscureText,
+    this.fontSize,
+    this.value,
+    this.height,
+    required this.hintText,
+    this.readOnly,
+    this.controller,
+    required this.onValidate,
+    this.isEnabled = true,
+    this.textInputType = TextInputType.text,
+    this.maxLines = 1,
+    this.maxLength,
+    this.onChange,
+    this.suffixImage,
+    this.focusNode,
+    this.allowOnlyLetters = false, // Default value is false
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -646,8 +666,33 @@ class PrimaryStraightInputText extends StatelessWidget {
         maxLines: maxLines,
         maxLength: maxLength,
         enabled: isEnabled,
-        onChanged: onChange,
         keyboardType: textInputType,
+        // Add input formatters conditionally
+        inputFormatters: allowOnlyLetters
+            ? [
+          FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
+        ]
+            : null,
+        // Modified onChanged to handle letter-only restriction
+        onChanged: (value) {
+          if (onChange != null) {
+            if (allowOnlyLetters) {
+              // Remove any non-alphabetic characters that might have been pasted
+              final cleanedValue = value.replaceAll(RegExp(r'[^a-zA-Z\s]'), '');
+              if (cleanedValue != value && controller != null) {
+                controller!.text = cleanedValue;
+                controller!.selection = TextSelection.fromPosition(
+                  TextPosition(offset: cleanedValue.length),
+                );
+                onChange!(cleanedValue);
+              } else {
+                onChange!(value);
+              }
+            } else {
+              onChange!(value);
+            }
+          }
+        },
         decoration: InputDecoration(
           focusedBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: Colors.deepOrange)
@@ -656,12 +701,16 @@ class PrimaryStraightInputText extends StatelessWidget {
               borderSide: BorderSide(color: Colors.orange)
           ),
           hintText: hintText,
-          contentPadding: kIsWeb ? EdgeInsets.only(bottom: 12) : null,
+          contentPadding: kIsWeb ? const EdgeInsets.only(bottom: 12) : null,
           hintStyle: GoogleFonts.lexend(
               fontSize: fontSize ?? 14,
               fontWeight: FontWeight.w400,
               color: (appMode == 'Dark' ? Colors.black54 : Colors.white60)
           ),
+          // Add error text if letters-only mode is on and invalid characters are detected
+          errorText: allowOnlyLetters && controller?.text.contains(RegExp(r'[^a-zA-Z\s]')) == true
+              ? 'Only letters are allowed'
+              : null,
         ),
       ),
     );

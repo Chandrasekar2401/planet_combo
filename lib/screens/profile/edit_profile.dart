@@ -9,7 +9,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/controllers/add_horoscope_controller.dart';
 import 'package:planetcombo/models/social_login.dart';
-import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/screens/social_login.dart';
 import 'package:planetcombo/screens/policy.dart';
 import 'package:get/get.dart';
@@ -19,6 +18,7 @@ import 'package:planetcombo/controllers/request_controller.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
+import 'package:planetcombo/screens/web/webLogin.dart';
 
 class ProfileEdit extends StatefulWidget {
   const ProfileEdit({Key? key}) : super(key: key);
@@ -54,47 +54,15 @@ class _ProfileEditState extends State<ProfileEdit> {
 
   Future<Map<String, dynamic>>? _locationFuture;
 
-  Future<Map<String, dynamic>> _getCurrentLocationAndCountry() async {
-    print('i reached get location place');
-    Position position;
-    String country = 'Unknown';
-
-    try {
-      position = await Geolocator.getCurrentPosition();
-      print('Position: $position');
-
-      if (kIsWeb) {
-        // Web implementation
-        final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}&zoom=3');
-        final response = await http.get(url);
-
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          country = data['address']['country'] ?? 'Unknown';
-          appLoadController.loggedUserData.value.ucountry = country;
-        } else {
-          print('Failed to get country name for web');
-        }
-      } else {
-        // Mobile implementation
-        List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-        country = placemarks.first.country ?? 'Unknown';
-        appLoadController.loggedUserData.value.ucountry = country;
-      }
-
-      print('Country: $country');
-
-      return {
-        'position': position,
-        'country': country,
-      };
-    } catch (e) {
-      print('Error getting location or country: $e');
-      return {
-        'position': null,
-        'country': 'Unknown',
-      };
+  String currentValue(String value) {
+    if (value == 'ta') {
+      return 'தமிழ்';
+    } else if (value == 'en') {
+      return 'English';
+    } else if (value == 'hi') {
+      return 'हिंदी';
     }
+    return '';
   }
 
   void getUserCurrency(String country) {
@@ -163,15 +131,253 @@ class _ProfileEditState extends State<ProfileEdit> {
     }
   }
 
-  String currentValue(String value) {
-    if (value == 'ta') {
-      return 'தமிழ்';
-    } else if (value == 'en') {
-      return 'English';
-    } else if (value == 'hi') {
-      return 'हिंदी';
+  Future<bool> _showLocationDialog() async {
+    bool? result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(LocalizationController.getInstance().getTranslatedValue('Location Required')),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(LocalizationController.getInstance().getTranslatedValue(
+                  'This app needs location access to set your country and currency.'
+              )),
+              if (kIsWeb) const SizedBox(height: 10),
+              if (kIsWeb) Text(
+                LocalizationController.getInstance().getTranslatedValue(
+                    'Please allow location access in your browser when prompted.'
+                ),
+                style: const TextStyle(fontStyle: FontStyle.italic),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text(LocalizationController.getInstance().getTranslatedValue('Cancel')),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            TextButton(
+              child: Text(LocalizationController.getInstance().getTranslatedValue('Enable')),
+              onPressed: () async {
+                Navigator.of(context).pop(true);
+                await Geolocator.requestPermission();
+              },
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  Future<bool> _showSettingsDialog() async {
+    bool? result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(LocalizationController.getInstance().getTranslatedValue('Location Access Required')),
+          content: Text(LocalizationController.getInstance().getTranslatedValue(
+              'Location access is permanently denied. Please enable it in your device settings to continue.'
+          )),
+          actions: <Widget>[
+            TextButton(
+              child: Text(LocalizationController.getInstance().getTranslatedValue('Cancel')),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            TextButton(
+              child: Text(LocalizationController.getInstance().getTranslatedValue('Open Settings')),
+              onPressed: () async {
+                await Geolocator.openLocationSettings();
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  Future<bool> _checkLocationPermission() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        // Show dialog to request permission
+        return await _showLocationDialog();
+      } else if (permission == LocationPermission.deniedForever) {
+        if (kIsWeb) {
+          // For web, show a dialog explaining how to enable location in browser
+          return await _showWebLocationInstructionsDialog();
+        } else {
+          // For mobile, show settings dialog
+          return await _showSettingsDialog();
+        }
+      }
+
+      return true;
+    } catch (e) {
+      // Handle any errors during permission check
+      return await _showLocationDialog();
     }
-    return '';
+  }
+
+  Future<bool> _showWebLocationInstructionsDialog() async {
+    bool? result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Logo at the top center
+              Center(
+                child: Image.asset(
+                  'assets/images/headletters.png',
+                  height: 140,
+                  width: 140,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Title after logo
+              Text(
+                LocalizationController.getInstance().getTranslatedValue('Location Access Required'),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              // Rest of the content with left alignment
+              Align(
+                alignment: Alignment.centerLeft,
+                child: commonBoldText(
+                    text: LocalizationController.getInstance().getTranslatedValue(
+                        'Please enable location access in your browser to continue. Follow these steps:'
+                    )
+                ),
+              ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(left: 16), // Add left padding for steps
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start, // Ensures left alignment
+                  children: [
+                    commonText(text: '1. Click the lock/info icon in your browser\'s address bar'),
+                    commonText(text: '2. Select "Allow" for location access'),
+                    commonText(text: '3. Refresh the page'),
+                    SizedBox(height: 10),
+                    commonText(text: LocalizationController.getInstance().getTranslatedValue(
+                        'After enabling location, click ok to continue.'
+                    ))
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text(LocalizationController.getInstance().getTranslatedValue('Ok')),
+              onPressed: () async {
+                Navigator.of(context).pop(true);
+                await Geolocator.requestPermission();
+                setState(() {
+                  _locationFuture = _getCurrentLocationAndCountry();
+                });
+              },
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  Future<Map<String, dynamic>> _getCurrentLocationAndCountry() async {
+    try {
+      // First check and request permission
+      bool hasPermission = await _checkLocationPermission();
+      if (!hasPermission) {
+        throw Exception(LocalizationController.getInstance().getTranslatedValue(
+            'Location permission is required to continue'
+        ));
+      }
+
+      Position position = await Geolocator.getCurrentPosition();
+      String country = 'Unknown';
+
+      if (kIsWeb) {
+        final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}&zoom=3');
+        final response = await http.get(url);
+
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          country = data['address']['country'] ?? 'Unknown';
+          appLoadController.loggedUserData.value.ucountry = country;
+        }
+      } else {
+        List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+        country = placemarks.first.country ?? 'Unknown';
+        appLoadController.loggedUserData.value.ucountry = country;
+      }
+
+      return {
+        'position': position,
+        'country': country,
+      };
+    } catch (e) {
+      if (mounted) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(LocalizationController.getInstance().getTranslatedValue('Location Error')),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(LocalizationController.getInstance().getTranslatedValue(
+                      'Unable to get your location.'
+                  )),
+                  const SizedBox(height: 10),
+                  if (kIsWeb) ...[
+                    Text(LocalizationController.getInstance().getTranslatedValue(
+                        'Please ensure:'
+                    )),
+                    Text('• Your browser supports location services'),
+                    Text('• Location access is allowed in your browser'),
+                    Text('• You are using a secure (HTTPS) connection'),
+                  ],
+                  const SizedBox(height: 10),
+                  Text(LocalizationController.getInstance().getTranslatedValue(
+                      'Click Retry after enabling location access.'
+                  )),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: Text(LocalizationController.getInstance().getTranslatedValue('Retry')),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    setState(() {
+                      _locationFuture = _getCurrentLocationAndCountry();
+                    });
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -183,9 +389,20 @@ class _ProfileEditState extends State<ProfileEdit> {
     isSwitched = appLoadController.loggedUserData.value.touchid == 'T';
 
     if (appLoadController.addNewUser.value == "YES") {
+      // Initialize location future
       _locationFuture = _getCurrentLocationAndCountry();
       userCountry.text = "";
       userCurrency.text = "";
+
+      // Check location permission immediately
+      _checkLocationPermission().then((hasPermission) {
+        if (!hasPermission) {
+          // If permission denied, update UI to show error state
+          setState(() {
+            _locationFuture = Future.error('Location permission denied');
+          });
+        }
+      });
     } else {
       userCountry.text = appLoadController.loggedUserData.value.ucountry!;
       userCurrency.text = appLoadController.loggedUserData.value.ucurrency!;
@@ -257,16 +474,16 @@ class _ProfileEditState extends State<ProfileEdit> {
         children: [
           const SizedBox(height: 20),
           _buildProfileImage(),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-            child: commonText(
-              textAlign: TextAlign.center,
-              color: Colors.black38,
-              fontSize: 14,
-              text: LocalizationController.getInstance().getTranslatedValue('upload profile picture'),
-            ),
-          ),
-          const SizedBox(height: 20),
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+          //   child: commonText(
+          //     textAlign: TextAlign.center,
+          //     color: Colors.black38,
+          //     fontSize: 14,
+          //     text: LocalizationController.getInstance().getTranslatedValue('upload profile picture'),
+          //   ),
+          // ),
+          // const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
             child: Column(
@@ -352,11 +569,50 @@ class _ProfileEditState extends State<ProfileEdit> {
     );
   }
 
+  Widget _buildNetworkImage(String imageUrl) {
+    if (kIsWeb) {
+      // Web-specific image handling
+      return Image.network(
+        imageUrl,
+        width: 95,
+        height: 95,
+        fit: BoxFit.cover,
+        headers: const {
+          'Access-Control-Allow-Origin': '*',
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: 95,
+            height: 95,
+            color: Colors.grey[300],
+            child: const Icon(Icons.person, size: 40),
+          );
+        },
+      );
+    } else {
+      // Mobile-specific image handling
+      return CachedNetworkImage(
+        imageUrl: imageUrl,
+        width: 95,
+        height: 95,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => const CircularProgressIndicator(),
+        errorWidget: (context, url, error) => const Icon(Icons.person),
+      );
+    }
+  }
+
   Widget _buildProfileImage() {
     if (addHoroscopeController.editProfileImageFileList!.isNotEmpty ||
         addHoroscopeController.editProfileImageBase64!.isNotEmpty) {
       return GestureDetector(
-        onTap: _openImagePicker,
+        onTap: (){},
         child: Container(
           height: 90,
           width: 90,
@@ -387,7 +643,6 @@ class _ProfileEditState extends State<ProfileEdit> {
     } else {
       return GestureDetector(
         onTap: (){},
-        // _openImagePicker,
         child: (appLoadController.loggedUserData.value.userphoto == '' ||
             appLoadController.loggedUserData.value.userphoto == null)
             ? Container(
@@ -409,14 +664,8 @@ class _ProfileEditState extends State<ProfileEdit> {
             : CircleAvatar(
           radius: 50,
           child: ClipOval(
-            child:
-            CachedNetworkImage(
-              imageUrl: appLoadController.loggedUserData.value.userphoto!,
-              width: 95,
-              height: 95,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => CircularProgressIndicator(),
-              errorWidget: (context, url, error) => Icon(Icons.person),
+            child: _buildNetworkImage(
+              appLoadController.loggedUserData.value.userphoto!,
             ),
           ),
         ),
@@ -517,11 +766,11 @@ class _ProfileEditState extends State<ProfileEdit> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if(userCurrency.text == 'INR')Text(
+                  if(userCurrency.text == 'INR')const Text(
                     'Payments accepted via GooglePay through UPI in India',
                     textAlign: TextAlign.left,
                   ),
-                  if(userCurrency.text != 'INR')Text(
+                  if(userCurrency.text != 'INR')const Text(
                     'Payments accepted via Paypal using International Credit/Debit Cards',
                     textAlign: TextAlign.left,
                   ),
@@ -613,20 +862,19 @@ class _ProfileEditState extends State<ProfileEdit> {
       buttonColors: ((appLoadController.addNewUser.value == "YES" && isChecked && isPaymentInfoChecked) || appLoadController.addNewUser.value == "NO") ? const [Color(0xFFf2b20a), Color(0xFFf34509)] : const [Color(0x19f2b20a), Color(0x19f34509)],
       onPressed: (Offset buttonOffset) async {
         if (appLoadController.addNewUser.value == 'YES') {
-          if (isChecked && isPaymentInfoChecked) {
+          if(appLoadController.loggedUserData.value.ucountry == 'Unknown'){
+            CustomDialog.showAlert(context, 'You are trying to save profile without location enable, please allow the location and try again', false, 14);
+          }else if (isChecked && isPaymentInfoChecked) {
             var response = await addHoroscopeController.addNewProfileWithoutImage(context);
             var string2json = json.decode(response);
             if ((string2json['status'] == 'Success' && string2json['data'] == null)) {
               CustomDialog.showAlert(context, string2json['message'] + ' Please contact admin for more info', false, 14);
             } else {
-              final prefs = await SharedPreferences.getInstance();
-              String? jsonString = prefs.getString('UserInfo');
-              var jsonBody = json.decode(jsonString!);
-              appLoadController.loggedUserData.value = SocialLoginData.fromJson(jsonBody);
-              applicationBaseController.initializeApplication();
               appLoadController.addNewUser.value = 'NO';
-              Navigator.pushReplacement(
-                  context, MaterialPageRoute(builder: (context) => const Dashboard()));
+              CustomDialog.okActionAlert(context, 'Your Profile has been successfully saved , Please login to continue', 'Ok', true, 14, (){
+                Navigator.pushReplacement(
+                    context, MaterialPageRoute(builder: (context) => const WebLogin()));
+              });
             }
           } else {
             showFailedToast('Please read and agree the Terms and conditions & agree the payments');

@@ -22,7 +22,7 @@ class PaymentRecord {
   double? amount;
   bool? isPaid;
   String? paymentReference;
-  String? paymentChanel;
+  int? paymentChanel;
   String? invoiceNumber;
   String? invoiceUrl;
   DateTime? creationDate;

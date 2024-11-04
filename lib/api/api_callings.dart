@@ -556,7 +556,7 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Terms and conditions Url is: $url");
+    print("Invoice List api link: $url");
     if (response.statusCode == 200) {
       return response.body;
     } else {

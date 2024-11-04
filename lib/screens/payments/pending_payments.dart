@@ -22,13 +22,14 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
   final AppLoadController appLoadController =
   Get.put(AppLoadController.getInstance(), permanent: true);
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: GradientAppBar(
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.chevron_left_rounded),
+          icon: const Icon(Icons.chevron_left_rounded, size: 21,),
         ),
         title: LocalizationController.getInstance()
             .getTranslatedValue("Pending Payments"),
@@ -118,6 +119,13 @@ class PaymentCard extends StatelessWidget {
     return tax1 + tax2 + tax3;
   }
 
+  String formatDate(String dateString) {
+    DateTime dateTime = DateTime.parse(dateString);
+    DateFormat formatter = DateFormat("MMMM dd, yyyy");
+    return formatter.format(dateTime);
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -179,6 +187,14 @@ class PaymentCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 8),
+                          DetailRow(
+                            label: 'Chart ID',
+                            value: payment.hid.toString(),
+                          ),
+                          DetailRow(
+                            label: 'Creation Date',
+                            value: formatDate(payment.creationDate.toString()),
+                          ),
                           DetailRow(
                             label: 'Request ID',
                             value: payment.requestId.toString(),

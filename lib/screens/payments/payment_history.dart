@@ -35,6 +35,16 @@ class _PaymentHistoryState extends State<PaymentHistory> {
     return paymentString == 'N' ? 'Pending' : 'Paid';
   }
 
+  String getPaymentMethod(String? channel) {
+    if(channel == "1"){
+      return "PayPal";
+    }else if(channel == "0"){
+      return "UPI";
+    }else{
+      return "Not Updated";
+    }
+  }
+
   String formatIndianRupees(double amount) {
     double roundedAmount = (amount * 100).round() / 100;
     NumberFormat indianRupeesFormat = NumberFormat.currency(
@@ -53,6 +63,17 @@ class _PaymentHistoryState extends State<PaymentHistory> {
 
   double taxCalc(double tax1, double tax2, double tax3) {
     return tax1 + tax2 + tax3;
+  }
+
+  String findReqType(String type) {
+    switch (type) {
+      case "7":
+        return "Chart Request";
+      case "2":
+        return "Daily Request";
+      default:
+        return "Special Request";
+    }
   }
 
   @override
@@ -123,27 +144,27 @@ class _PaymentHistoryState extends State<PaymentHistory> {
                         fontSize: 14,
                       ),
                       const SizedBox(height: 6),
-                      commonText(
+                      commonBoldText(
                         text:
-                        'Amount: ${applicationBaseController.paymentHistory[index].currency} ${formatIndianRupees(applicationBaseController.paymentHistory[index].amount ?? 0)}',
+                        'Chart Id: ${applicationBaseController.paymentHistory[index].hid ?? ""}',
                         fontSize: 14,
                       ),
                       const SizedBox(height: 6),
-                      commonText(
+                      commonBoldText(
                         text:
-                        'Tax: ${applicationBaseController.paymentHistory[index].currency} ${formatIndianRupees(taxCalc(applicationBaseController.paymentHistory[index].tax1Amount ?? 0, applicationBaseController.paymentHistory[index].tax2Amount ?? 0, applicationBaseController.paymentHistory[index].tax3Amount ?? 0))}',
+                        'Request Type: ${findReqType(applicationBaseController.paymentHistory[index].requestType.toString())}',
                         fontSize: 14,
                       ),
                       const SizedBox(height: 6),
-                      commonText(
+                      commonBoldText(
+                        text:
+                        'Request ID: ${findReqType(applicationBaseController.paymentHistory[index].requestId.toString())}',
+                        fontSize: 14,
+                      ),
+                      const SizedBox(height: 6),
+                      commonBoldText(
                         text:
                         'Total: ${applicationBaseController.paymentHistory[index].currency} ${formatIndianRupees(applicationBaseController.paymentHistory[index].totalAmount ?? 0)}',
-                        fontSize: 14,
-                      ),
-                      const SizedBox(height: 6),
-                      commonText(
-                        text:
-                        'Method: ${applicationBaseController.paymentHistory[index].paymentChanel ?? "Not Updated"}',
                         fontSize: 14,
                       ),
                     ],
@@ -152,15 +173,33 @@ class _PaymentHistoryState extends State<PaymentHistory> {
                   backgroundColor: Colors.white,
                   initiallyExpanded: _expandedList[index],
                   expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
-                  childrenPadding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                  childrenPadding: const EdgeInsets.fromLTRB(15, 0, 10, 10),
                   children: [
-                    commonText(
+                    commonBoldText(
+                      text:
+                      'Amount: ${applicationBaseController.paymentHistory[index].currency} ${formatIndianRupees(applicationBaseController.paymentHistory[index].amount ?? 0)}',
+                      fontSize: 14,
+                    ),
+                    const SizedBox(height: 6),
+                    commonBoldText(
+                      text:
+                      'Tax: ${applicationBaseController.paymentHistory[index].currency} ${formatIndianRupees(taxCalc(applicationBaseController.paymentHistory[index].tax1Amount ?? 0, applicationBaseController.paymentHistory[index].tax2Amount ?? 0, applicationBaseController.paymentHistory[index].tax3Amount ?? 0))}',
+                      fontSize: 14,
+                    ),
+                    const SizedBox(height: 6),
+                    commonBoldText(
+                      text:
+                      'Method: ${getPaymentMethod(applicationBaseController.paymentHistory[index].paymentChanel.toString())}',
+                      fontSize: 14,
+                    ),
+                    const SizedBox(height: 6),
+                    commonBoldText(
                       text:
                       'Reference: ${applicationBaseController.paymentHistory[index].paymentReference}',
                       fontSize: 13,
                     ),
                     const SizedBox(height: 8),
-                    commonText(
+                    commonBoldText(
                       text:
                       'Paid Date: ${formatDate(applicationBaseController.paymentHistory[index].paidDate.toString())}',
                       fontSize: 13,
@@ -174,11 +213,21 @@ class _PaymentHistoryState extends State<PaymentHistory> {
                           launchUrl(Uri.parse(url));
                         }
                       },
-                      child: commonText(
-                        text:
-                        'Invoice/Receipt: ${applicationBaseController.paymentHistory[index].invoiceUrl ?? 'Link not available'}',
-                        fontSize: 13,
-                        color: Colors.blue,
+                      child: Row(
+                        children: [
+                          commonText(
+                            text:
+                            'Invoice/Receipt:',
+                            fontSize: 13,
+                          ),
+                          SizedBox(width: 7),
+                          commonText(
+                            text:
+                            (applicationBaseController.paymentHistory[index].invoiceUrl == null || applicationBaseController.paymentHistory[index].invoiceUrl == '' ) ? '' : 'Click here to View Invoice',
+                            fontSize: 13,
+                            color: Colors.blue,
+                          ),
+                        ],
                       ),
                     ),
                   ],

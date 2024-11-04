@@ -41,7 +41,7 @@
 <body>
 <!-- Loader GIF centered in the page -->
 <div class="loader-container" id="loader">
-  <img src="assets/imgs/pload.gif" alt="Loading..." />
+  <img src="assets/imgs/load.gif" alt="Loading..." />
 </div>
 
 <!-- Main Flutter app -->
@@ -52,6 +52,7 @@
   window.addEventListener("flutter-first-frame", function() {
     document.getElementById("loader").style.display = "none";
   });
+  window.flutterWebRenderer = "html";
 </script>
 </body>
 </html>

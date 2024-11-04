@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/api/api_callings.dart';
+import 'package:planetcombo/controllers/applicationbase_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:planetcombo/common/constant.dart';
 
+import '../screens/dashboard.dart';
 import '../screens/payments/payment_progress.dart';
 
 class PaymentController extends GetxController {
@@ -18,6 +20,9 @@ class PaymentController extends GetxController {
   }
 
   Constants constants = Constants();
+
+  final ApplicationBaseController applicationBaseController =
+  Get.put(ApplicationBaseController.getInstance(), permanent: true);
 
   void addOfflineMoney(userId, email, amount, token, context) async{
       CustomDialog.showLoading(context, 'Please wait');
@@ -82,12 +87,31 @@ class PaymentController extends GetxController {
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => PaymentProgressPage(paymentReferenceNumber: paymentReferenceId, onPaymentComplete: (String ) {  },)));
       } else {
         CustomDialog.cancelLoading(context);
-        CustomDialog.showAlert(context, 'Payment initialization failed. Please try again or use an alternative payment method.', false, 14);
+        if(applicationBaseController.paymentForHoroscope.value == true){
+          CustomDialog.okActionAlert(context, 'Payment initialization failed. Please try later', 'Ok', false, 14, (){
+
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const Dashboard()),
+                  (Route<dynamic> route) => false,
+            );
+          });
+        }else{
+          CustomDialog.showAlert(context, 'Payment initialization failed. Please try again or use an alternative payment method.', false, 14);
+        }
       }
     } catch (e) {
       CustomDialog.cancelLoading(context);
       print('Error in Upi Payment: $e');
-      CustomDialog.showAlert(context, 'An error occurred. Please try again later.', false, 14);
+      if(applicationBaseController.paymentForHoroscope.value == true){
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const Dashboard()),
+              (Route<dynamic> route) => false,
+        );
+      }else{
+        CustomDialog.showAlert(context, 'An error occurred. Please try again later.', false, 14);
+      }
     }
   }
 

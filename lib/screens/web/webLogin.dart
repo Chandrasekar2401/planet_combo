@@ -190,30 +190,30 @@ class _WebLoginState extends State<WebLogin> {
                     );
                   },
                 ),
-                const SizedBox(height: 20),
-                LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints constraints) {
-                    double maxWidth = 500;
-                    double width = constraints.maxWidth < maxWidth
-                        ? constraints.maxWidth
-                        : maxWidth;
-                    return SizedBox(
-                      width: width,
-                      child: fullLeftIconColorButton(
-                        title: 'Login with Facebook',
-                        textColor: Colors.white,
-                        iconColor: Colors.white,
-                        buttonColor: appLoadController.facebookBlue,
-                        context: context,
-                        onPressed: () {
-                          SocialLoginController.loginWithFacebook(context);
-                          // Facebook login logic here
-                        },
-                        iconUrl: 'assets/svg/facebook-logo.svg',
-                      ),
-                    );
-                  },
-                )
+                // const SizedBox(height: 20),
+                // LayoutBuilder(
+                //   builder: (BuildContext context, BoxConstraints constraints) {
+                //     double maxWidth = 500;
+                //     double width = constraints.maxWidth < maxWidth
+                //         ? constraints.maxWidth
+                //         : maxWidth;
+                //     return SizedBox(
+                //       width: width,
+                //       child: fullLeftIconColorButton(
+                //         title: 'Login with Facebook',
+                //         textColor: Colors.white,
+                //         iconColor: Colors.white,
+                //         buttonColor: appLoadController.facebookBlue,
+                //         context: context,
+                //         onPressed: () {
+                //           SocialLoginController.loginWithFacebook(context);
+                //           // Facebook login logic here
+                //         },
+                //         iconUrl: 'assets/svg/facebook-logo.svg',
+                //       ),
+                //     );
+                //   },
+                // )
               ],
             ),
           ),

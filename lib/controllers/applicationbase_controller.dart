@@ -38,6 +38,8 @@ class ApplicationBaseController extends GetxController {
 
   RxString getTimeZone = ''.obs;
 
+  RxBool paymentForHoroscope = false.obs;
+
   RxDouble userAccountBalance = 12.0.obs;
 
   final AppLoadController appLoadController =
@@ -52,7 +54,6 @@ class ApplicationBaseController extends GetxController {
     _getTermsAndConditions();
     _getTimeZone();
     _getUserMessages();
-    _getUserWallet();
     _getInvoiceList();
   }
 

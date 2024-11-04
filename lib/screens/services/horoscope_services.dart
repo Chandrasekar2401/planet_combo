@@ -111,7 +111,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
         CustomDialog.showAlert(context, 'Chart is not ready yet', false, 14);
       }else{
           String htmlLink = jsondata['data'];
-          if (!await launchUrl(Uri.parse(htmlLink))) {
+          if (!await launchUrl(Uri.parse(htmlLink))){
             throw Exception('Could not launch $htmlLink');
           }
       }
@@ -170,8 +170,19 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
     }
   }
 
+  void viewTwoPageKundli(String link) async {
+    if(link == null || link.isEmpty) {
+      showFailedToast("Please wait for the view link to generated");
+    } else {
+      // Remove _Chart.html and add .pdf
+      String modifiedLink = link.replaceAll('_Chart.html', '.pdf');
+      await launchUrl(Uri.parse(modifiedLink));
+    }
+  }
+
   @override
   void initState() {
+    applicationBaseController.paymentForHoroscope.value = false;
     super.initState();
   }
 
@@ -315,12 +326,13 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     commonBoldText(text: applicationBaseController.horoscopeList[index].hname!, fontSize: 14),
-                                    commonText(text: 'DOB: ${convertDateFormat(applicationBaseController.horoscopeList[index].hdobnative!.substring(0, applicationBaseController.horoscopeList[index].hdobnative!.indexOf("T")))}', color: Colors.black38, fontSize: 11)
+                                    commonText(text: 'DOB: ${convertDateFormat(applicationBaseController.horoscopeList[index].hdobnative!.substring(0, applicationBaseController.horoscopeList[index].hdobnative!.indexOf("T")))}', color: Colors.black38, fontSize: 11),
+                                    commonText(text: 'Chart ID: ${applicationBaseController.horoscopeList[index].hid}', color: Colors.black38, fontSize: 11)
                                   ],
                                 )
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 6),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
@@ -561,13 +573,13 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                               value: 1,
                                               child: commonText(text: LocalizationController.getInstance().getTranslatedValue('Show Horoscope'), fontSize: 14),
                                             ),
-                                            PopupMenuItem(
+                                            if(applicationBaseController.horoscopeList[index].isPaid != "true")PopupMenuItem(
                                               value: 2,
                                               child: commonText(text: LocalizationController.getInstance().getTranslatedValue('Edit Horoscope'), fontSize: 14),
                                             ),
                                             PopupMenuItem(
                                               value: 3,
-                                              child: commonText(text: LocalizationController.getInstance().getTranslatedValue('Email Horoscope'), fontSize: 14),
+                                              child: commonText(text: LocalizationController.getInstance().getTranslatedValue('Two Page Kundli'), fontSize: 14),
                                             ),
                                             if(applicationBaseController.horoscopeList[index].isPaid != "true")PopupMenuItem(
                                               value: 4,
@@ -602,12 +614,12 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                               }
                                               break;
                                             case 3:
-                                              print('selected value is 3');
-                                              // Handle Menu 3 option
-                                              emailHoroscope(
-                                                applicationBaseController.horoscopeList[index].huserid!,
-                                                applicationBaseController.horoscopeList[index].hid!.trim(),
-                                              );
+                                              print('the value of hpdf ${applicationBaseController.horoscopeList[index].hpdf!}');
+                                              viewTwoPageKundli(applicationBaseController.horoscopeList[index].hpdf!);
+                                              // emailHoroscope(
+                                              //   applicationBaseController.horoscopeList[index].huserid!,
+                                              //   applicationBaseController.horoscopeList[index].hid!.trim(),
+                                              // );
                                               break;
                                             case 4:
                                               print('selected value is 4');

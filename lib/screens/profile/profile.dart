@@ -86,10 +86,12 @@ class _ProfileState extends State<Profile> {
                         children: [
                           IconButton(onPressed: () { Navigator.pop(context); },color: Colors.white, iconSize: 28, icon: const Icon(Icons.chevron_left_rounded)),
                           commonBoldText(text: LocalizationController.getInstance().getTranslatedValue("Profile"), fontSize: 20, color: Colors.white),
-                          SizedBox(width: 60, height: 20, child: commonSmallColorButton(title: 'Edit', fontSize: 13, textColor: Colors.deepOrange, buttonColor: Colors.white, onPressed: (){
-                            Navigator.push(
-                                context, MaterialPageRoute(builder: (context) => const ProfileEdit()));
-                          }))
+                          SizedBox(width: 60, height: 20,
+                          //     child: commonSmallColorButton(title: 'Edit', fontSize: 13, textColor: Colors.deepOrange, buttonColor: Colors.white, onPressed: (){
+                          //   Navigator.push(
+                          //       context, MaterialPageRoute(builder: (context) => const ProfileEdit()));
+                          // })
+                          )
                         ],
                       ),
                     ],
@@ -182,12 +184,13 @@ class _ProfileState extends State<Profile> {
             ),
           ),
           SizedBox(height: 15),
-          SizedBox(width: 180, child: GradientButton(buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], title: 'Delete Profile', textColor: Colors.white, onPressed: (Offset buttonOffset){
-            yesOrNoDialog(context: context,
-                cancelAction: (){},
-                dialogMessage: 'Are you sure you want to delete your profile?', cancelText: 'NO', okText: 'YES', okAction: (){
-              profileController.deleteProfile(context, appLoadController.loggedUserData.value.userid);
-            });
+          SizedBox(width: 180, child: GradientButton(buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], title: 'GO Back', textColor: Colors.white, onPressed: (Offset buttonOffset){
+           Navigator.pop(context);
+            // yesOrNoDialog(context: context,
+            //     cancelAction: (){},
+            //     dialogMessage: 'Are you sure you want to delete your profile?', cancelText: 'NO', okText: 'YES', okAction: (){
+            //   profileController.deleteProfile(context, appLoadController.loggedUserData.value.userid);
+            // });
           }))
         ],
       )),

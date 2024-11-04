@@ -623,6 +623,7 @@ class AddHoroscopeController extends GetxController {
        CustomDialog.cancelLoading(context);
        print('the received response of add horoscope $response');
        if(response != null){
+         applicationBaseController.paymentForHoroscope.value = true;
          var jsonResponse = json.decode(response);
          multiTextYesOrNoDialog(
              context: context,
@@ -643,7 +644,7 @@ class AddHoroscopeController extends GetxController {
                      (Route<dynamic> route) => false,
                );
              },
-             okAction: () {
+             okAction: () async{
                if(appLoadController.loggedUserData!.value.ucurrency!.toLowerCase() == 'inr'){
                  paymentController.payByUpi(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
                }else{
