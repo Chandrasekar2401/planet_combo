@@ -1056,6 +1056,7 @@ class CustomDropdownButton extends StatefulWidget {
   final Color textColor;
   final Color buttonColor;
   final Color? iconColor;
+  final Color placeholderColor;
   final double? iconLeftSize;
   final List<DropdownItem> items;
   final Function(DropdownItem?) onChanged;
@@ -1064,8 +1065,9 @@ class CustomDropdownButton extends StatefulWidget {
     super.key,
     required this.placeholder,
     required this.textColor,
-    required this.buttonColor,
+    this.buttonColor = const Color(0xFFFFEB3B),
     this.iconColor,
+    this.placeholderColor = Colors.black87,
     this.iconLeftSize,
     required this.items,
     required this.onChanged,
@@ -1084,8 +1086,8 @@ class _CustomDropdownButtonState extends State<CustomDropdownButton> {
       height: 45,
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(21),
+        color: widget.buttonColor,
+        borderRadius: BorderRadius.circular(25),
       ),
       child: DropdownButtonHideUnderline(
         child: ButtonTheme(
@@ -1093,7 +1095,13 @@ class _CustomDropdownButtonState extends State<CustomDropdownButton> {
           child: DropdownButton<DropdownItem>(
             isExpanded: true,
             value: selectedItem,
-            icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
+            icon: const Padding(
+              padding:  EdgeInsets.only(right: 12),
+              child: Icon(
+                Icons.keyboard_arrow_down,
+                color: Colors.black87,
+              ),
+            ),
             elevation: 0,
             style: GoogleFonts.lexend(
               fontSize: 15,
@@ -1106,27 +1114,45 @@ class _CustomDropdownButtonState extends State<CustomDropdownButton> {
               });
               widget.onChanged(newValue);
             },
+            hint: Align(
+              alignment: Alignment.center,
+              child: Text(
+                widget.placeholder,
+                style: GoogleFonts.lexend(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: widget.placeholderColor,
+                ),
+              ),
+            ),
             selectedItemBuilder: (BuildContext context) {
               return widget.items.map<Widget>((DropdownItem item) {
                 return Container(
-                  alignment: Alignment.centerLeft,
-                  child: Row(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: Stack(
                     children: [
+                      // Left-aligned icon
                       if (selectedItem != null)
-                        SizedBox(
-                          width: widget.iconLeftSize ?? 20,
-                          child: Image.asset(
-                            selectedItem!.iconUrl,
-                            color: widget.iconColor,
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: SizedBox(
+                            width: widget.iconLeftSize ?? 20,
+                            child: Image.asset(
+                              selectedItem!.iconUrl,
+                              color: widget.iconColor,
+                            ),
                           ),
                         ),
-                      if (selectedItem != null) const SizedBox(width: 8),
-                      Text(
-                        selectedItem?.title ?? widget.placeholder,
-                        style: GoogleFonts.lexend(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: selectedItem != null ? widget.textColor : Colors.grey,
+                      // Centered text
+                      Align(
+                        alignment: Alignment.center,
+                        child: Text(
+                          selectedItem?.title ?? '',
+                          style: GoogleFonts.lexend(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
                         ),
                       ),
                     ],
@@ -1152,6 +1178,7 @@ class _CustomDropdownButtonState extends State<CustomDropdownButton> {
                 ),
               );
             }).toList(),
+            dropdownColor: widget.buttonColor,
           ),
         ),
       ),

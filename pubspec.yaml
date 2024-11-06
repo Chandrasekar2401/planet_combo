@@ -70,6 +70,7 @@ dependencies:
   geocoding: ^3.0.0
   photo_view: ^0.15.0
   youtube_player_iframe: ^2.3.0
+  firebase_storage: ^12.3.4
 
 
 

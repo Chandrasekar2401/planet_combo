@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:planetcombo/controllers/applicationbase_controller.dart';
@@ -10,15 +9,14 @@ import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/controllers/add_horoscope_controller.dart';
 import 'package:planetcombo/models/social_login.dart';
 import 'package:planetcombo/screens/social_login.dart';
-import 'package:planetcombo/screens/policy.dart';
 import 'package:get/get.dart';
-import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:planetcombo/controllers/request_controller.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
 import 'package:planetcombo/screens/web/webLogin.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileEdit extends StatefulWidget {
   const ProfileEdit({Key? key}) : super(key: key);
@@ -69,65 +67,15 @@ class _ProfileEditState extends State<ProfileEdit> {
     if (country == "India" || country == "INDIA") {
       userCurrency.text = "INR";
       appLoadController.loggedUserData.value.ucurrency = "INR";
+      applicationBaseController.getTermsAndConditions();
     } else if (country == "United Arab Emirates" || country == "UAE" || country == "Uae") {
       userCurrency.text = "AED";
       appLoadController.loggedUserData.value.ucurrency = "AED";
+      applicationBaseController.getTermsAndConditions();
     } else {
       userCurrency.text = "USD";
       appLoadController.loggedUserData.value.ucurrency = "USD";
-    }
-  }
-
-  void _openImagePicker() {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: kIsWeb
-              ? ListTile(
-            leading: const Icon(Icons.photo_library),
-            title: commonBoldText(text: 'Choose from Computer'),
-            onTap: () {
-              _getImage(ImageSource.gallery);
-              Navigator.of(context).pop();
-            },
-          )
-              : Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: commonBoldText(text: 'Choose from Gallery'),
-                onTap: () {
-                  _getImage(ImageSource.gallery);
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: commonBoldText(text: 'Take a Photo'),
-                onTap: () {
-                  _getImage(ImageSource.camera);
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _getImage(ImageSource source) async {
-    final picker = ImagePicker();
-    final pickedImage = await picker.pickImage(source: source);
-    if (pickedImage != null) {
-      if (kIsWeb) {
-        final bytes = await pickedImage.readAsBytes();
-        final base64Data = base64Encode(bytes);
-        addHoroscopeController.setEditProfileImageBase64(base64Data);
-      } else {
-        addHoroscopeController.setEditProfileImageFileListFromFile(pickedImage);
-      }
+      applicationBaseController.getTermsAndConditions();
     }
   }
 
@@ -274,7 +222,7 @@ class _ProfileEditState extends State<ProfileEdit> {
                     commonText(text: '3. Refresh the page'),
                     SizedBox(height: 10),
                     commonText(text: LocalizationController.getInstance().getTranslatedValue(
-                        'After enabling location, click ok to continue.'
+                        'Please Go back try to save profile after enable the location'
                     ))
                   ],
                 ),
@@ -283,13 +231,13 @@ class _ProfileEditState extends State<ProfileEdit> {
           ),
           actions: <Widget>[
             TextButton(
-              child: Text(LocalizationController.getInstance().getTranslatedValue('Ok')),
+              child: Text(LocalizationController.getInstance().getTranslatedValue('Go Back')),
               onPressed: () async {
-                Navigator.of(context).pop(true);
-                await Geolocator.requestPermission();
-                setState(() {
-                  _locationFuture = _getCurrentLocationAndCountry();
-                });
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const WebLogin()),
+                      (Route<dynamic> route) => false,
+                );
               },
             ),
           ],
@@ -379,7 +327,6 @@ class _ProfileEditState extends State<ProfileEdit> {
       rethrow;
     }
   }
-
   @override
   void initState() {
     super.initState();
@@ -408,7 +355,6 @@ class _ProfileEditState extends State<ProfileEdit> {
       userCurrency.text = appLoadController.loggedUserData.value.ucurrency!;
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -474,16 +420,6 @@ class _ProfileEditState extends State<ProfileEdit> {
         children: [
           const SizedBox(height: 20),
           _buildProfileImage(),
-          // Padding(
-          //   padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-          //   child: commonText(
-          //     textAlign: TextAlign.center,
-          //     color: Colors.black38,
-          //     fontSize: 14,
-          //     text: LocalizationController.getInstance().getTranslatedValue('upload profile picture'),
-          //   ),
-          // ),
-          // const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
             child: Column(
@@ -558,7 +494,6 @@ class _ProfileEditState extends State<ProfileEdit> {
               ],
             ),
           ),
-          // Display fetched location (optional)
           if (position != null)
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -571,116 +506,80 @@ class _ProfileEditState extends State<ProfileEdit> {
 
   Widget _buildNetworkImage(String imageUrl) {
     if (kIsWeb) {
-      // Web-specific image handling
-      return Image.network(
-        imageUrl,
-        width: 95,
-        height: 95,
-        fit: BoxFit.cover,
-        headers: const {
-          'Access-Control-Allow-Origin': '*',
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
+      // For web platform
+      return ClipOval(
+        child: Container(
+          width: 95,
+          height: 95,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            image: DecorationImage(
+              image: NetworkImage(
+                imageUrl,
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Methods': 'GET',
+                },
+              ),
+              fit: BoxFit.cover,
+              onError: (error, stackTrace) {
+                print('Error loading image: $error');
+              },
+            ),
+          ),
+          child: Image.network(
+            imageUrl,
+            width: 95,
+            height: 95,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              print('Web image error: $error');
+              return Container(
+                width: 95,
+                height: 95,
+                color: Colors.grey[300],
+                child: const Icon(Icons.person, size: 40),
+              );
+            },
+          ),
+        ),
+      );
+    } else {
+      return ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: imageUrl,
+          width: 95,
+          height: 95,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => const CircularProgressIndicator(),
+          errorWidget: (context, url, error) => Container(
             width: 95,
             height: 95,
             color: Colors.grey[300],
             child: const Icon(Icons.person, size: 40),
-          );
-        },
-      );
-    } else {
-      // Mobile-specific image handling
-      return CachedNetworkImage(
-        imageUrl: imageUrl,
-        width: 95,
-        height: 95,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => const CircularProgressIndicator(),
-        errorWidget: (context, url, error) => const Icon(Icons.person),
+          ),
+        ),
       );
     }
   }
 
   Widget _buildProfileImage() {
-    if (addHoroscopeController.editProfileImageFileList!.isNotEmpty ||
-        addHoroscopeController.editProfileImageBase64!.isNotEmpty) {
-      return GestureDetector(
-        onTap: (){},
-        child: Container(
-          height: 90,
-          width: 90,
-          decoration: BoxDecoration(
-            color: appLoadController.appMidColor,
-            borderRadius: BorderRadius.circular(50),
-          ),
-          child: CircleAvatar(
-            radius: 50,
-            child: ClipOval(
-              child: kIsWeb
-                  ? Image.memory(
-                base64Decode(addHoroscopeController.editProfileImageBase64!.value),
-                width: 95,
-                height: 95,
-                fit: BoxFit.cover,
-              )
-                  : Image.file(
-                File(addHoroscopeController.editProfileImageFileList![0].path),
-                width: 95,
-                height: 95,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-        ),
-      );
-    } else {
-      return GestureDetector(
-        onTap: (){},
-        child: (appLoadController.loggedUserData.value.userphoto == '' ||
-            appLoadController.loggedUserData.value.userphoto == null)
-            ? Container(
-          height: 80,
-          width: 80,
-          decoration: BoxDecoration(
-            color: appLoadController.appMidColor,
-            borderRadius: BorderRadius.circular(50),
-          ),
-          child: Center(
-            child: commonBoldText(
-              text: 'Press here to take your photo',
-              textAlign: TextAlign.center,
-              color: Colors.white,
-              fontSize: 10,
-            ),
-          ),
-        )
-            : CircleAvatar(
-          radius: 50,
-          child: ClipOval(
-            child: _buildNetworkImage(
-              appLoadController.loggedUserData.value.userphoto!,
-            ),
-          ),
-        ),
-      );
-    }
+    return _buildNetworkImage(appLoadController.loggedUserData.value.userphoto!);
   }
 
-  Widget _buildInputField({
-    required String label,
-    required TextEditingController controller,
-    required String hintText,
-    bool readOnly = false,
-    bool isAlert = false,
-    Function(String?)? onValidate,
-  }) {
+  Widget _buildInputField({required String label, required TextEditingController controller, required String hintText,
+    bool readOnly = false, bool isAlert = false, Function(String?)? onValidate,}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -700,11 +599,7 @@ class _ProfileEditState extends State<ProfileEdit> {
     );
   }
 
-  Widget _buildDropdown({
-    required String label,
-    required List<String> options,
-    required String currentValue,
-    required Function(String?) onChanged,
+  Widget _buildDropdown({required String label, required List<String> options, required String currentValue, required Function(String?) onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -808,9 +703,7 @@ class _ProfileEditState extends State<ProfileEdit> {
               child: IntrinsicWidth(
                 child: TextButton(
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const TermsConditions()),
-                    );
+                    launchUrl(Uri.parse(applicationBaseController.termsAndConditionsLink.value));
                   },
                   style: TextButton.styleFrom(
                     padding: EdgeInsets.zero,

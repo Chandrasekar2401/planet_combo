@@ -18,7 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:planetcombo/screens/live_chat.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import 'package:planetcombo/youtube_listing.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -39,34 +39,74 @@ class _DashboardState extends State<Dashboard> {
   final AddHoroscopeController addHoroscopeController = Get.put(AddHoroscopeController.getInstance(), permanent: true);
 
   // Profile Image Builder with Error Handling
-  Widget buildProfileImage() {
-    Widget defaultWidget = Image.asset(
-      defaultAvatarAsset,
-      width: width,
-      height: height,
-      fit: BoxFit.cover,
-    );
-
-    return Obx(() {
-      try {
-        final userPhoto = appLoadController.loggedUserData.value.userphoto;
-        if (userPhoto == null || userPhoto.isEmpty) {
-          return defaultWidget;
-        }
-
-        return CachedNetworkImage(
-          imageUrl: userPhoto,
+  Widget _buildNetworkImage(String imageUrl) {
+    if (kIsWeb) {
+      // For web platform
+      return ClipOval(
+        child: Container(
           width: width,
           height: height,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            image: DecorationImage(
+              image: NetworkImage(
+                imageUrl,
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Methods': 'GET',
+                },
+              ),
+              fit: BoxFit.cover,
+              onError: (error, stackTrace) {
+                print('Error loading image: $error');
+              },
+            ),
+          ),
+          child: Image.network(
+            imageUrl,
+            width: width,
+            height: width,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              print('Web image error: $error');
+              return Container(
+                width: width,
+                height: width,
+                color: Colors.grey[300],
+                child: const Icon(Icons.person, size: 22),
+              );
+            },
+          ),
+        ),
+      );
+    } else {
+      return ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: imageUrl,
+          width: 95,
+          height: 95,
           fit: BoxFit.cover,
-          httpHeaders: const {'Access-Control-Allow-Origin': '*'},
-          placeholder: (_, __) => defaultWidget,
-          errorWidget: (_, __, ___) => defaultWidget,
-        );
-      } catch (_) {
-        return defaultWidget;
-      }
-    });
+          placeholder: (context, url) => const CircularProgressIndicator(),
+          errorWidget: (context, url, error) => Container(
+            width: 95,
+            height: 95,
+            color: Colors.grey[300],
+            child: const Icon(Icons.person, size: 40),
+          ),
+        ),
+      );
+    }
   }
 
   // Menu Item Builder
@@ -112,37 +152,6 @@ class _DashboardState extends State<Dashboard> {
     );
   }
 
-  // YouTube Dialog
-  Future<void> showYouTubePopup(BuildContext context, String videoId) async {
-    final controller = YoutubePlayerController(
-      initialVideoId: videoId,
-      params: const YoutubePlayerParams(
-        autoPlay: true,
-        showControls: true,
-      ),
-    );
-
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        content: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.8,
-          height: MediaQuery.of(context).size.height * 0.6,
-          child: YoutubePlayerIFrame(controller: controller),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              controller.close();
-              Navigator.of(context).pop();
-            },
-            child: Text(LocalizationController.getInstance().getTranslatedValue("Close")),
-          ),
-        ],
-      ),
-    );
-  }
-
   // Logout Dialog
   Future<void> showLogoutDialog() async {
     return yesOrNoDialog(
@@ -175,7 +184,7 @@ class _DashboardState extends State<Dashboard> {
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Profile())),
               child: Padding(
                 padding: const EdgeInsets.all(10.0),
-                child: ClipOval(child: buildProfileImage()),
+                child: ClipOval(child: _buildNetworkImage(appLoadController.loggedUserData.value.userphoto!)),
               ),
             ),
           ),
@@ -311,7 +320,11 @@ class _DashboardState extends State<Dashboard> {
                                   buildMenuItem(
                                     iconPath: 'assets/svg/youtube.svg',
                                     text: "How to Use",
-                                    onTap: () => showYouTubePopup(context, 'QM-liOEimVk'),
+                                    onTap: (){
+                                      Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (_) => const YouTubeVideosPage()));
+                                    }
                                   ),
                                   buildMenuItem(
                                     iconPath: 'assets/svg/Terms-conditions.svg',

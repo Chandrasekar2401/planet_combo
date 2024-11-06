@@ -9,6 +9,8 @@ import 'package:planetcombo/models/payment_records.dart';
 import 'package:planetcombo/models/get_request.dart';
 import 'package:planetcombo/models/pending_payment_list.dart';
 
+import '../api/api_endpoints.dart';
+
 class ApplicationBaseController extends GetxController {
   static ApplicationBaseController? _instance;
 
@@ -168,20 +170,14 @@ class ApplicationBaseController extends GetxController {
     _getTermsAndConditions();
   }
 
-  _getTermsAndConditions() async{
-    try{
-      var response = await APICallings.termsAndConditions(userId: appLoadController.loggedUserData.value.userid!, token: appLoadController.loggedUserData.value.token!);
-      print('the response of Terms and condtions');
-      print(response);
-      if(response != null){
-        var jsonBody = json.decode(response);
-        if (jsonBody['Status'] == 'Success') {
-          termsAndConditionsLink.value = jsonBody['Data'];
-        }
-      }
-    }catch(error){
-      print('terms and conditions have api reach error');
-      print(error);
+  void _getTermsAndConditions(){
+    print('the value of Ucurrency for terms and conditions ${appLoadController.loggedUserData.value.ucurrency}');
+    if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'){
+      termsAndConditionsLink.value = '${APIEndPoints.baseUrl}api/File/INR%2FTerms%20and%20Conditions_Launch.pdf';
+    }else if(appLoadController.loggedUserData.value.ucurrency.toString() == 'aed'){
+      termsAndConditionsLink.value = '${APIEndPoints.baseUrl}api/File/AED%2FTerms%20and%20Conditions_Launch.pdf';
+    }else{
+      termsAndConditionsLink.value = '${APIEndPoints.baseUrl}api/File/USD%2FTerms%20and%20Conditions_Launch.pdf';
     }
   }
 

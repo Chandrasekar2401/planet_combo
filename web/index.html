@@ -16,6 +16,28 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCXAw8BQBx4OPMOWyNaI4bv7gh5GUXa0lQ",
+      authDomain: "flutterplanetcombo-ff367.firebaseapp.com",
+      databaseURL: "https://flutterplanetcombo-ff367-default-rtdb.firebaseio.com",
+      projectId: "flutterplanetcombo-ff367",
+      storageBucket: "flutterplanetcombo-ff367.appspot.com",
+      messagingSenderId: "488939796804",
+      appId: "1:488939796804:web:5c94e0a3b5f03ca2abbf11",
+      measurementId: "G-MLW4X9WR7H"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
   <!-- Google Maps JavaScript API for web support -->
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRX8p3QXbJtS6vVpNgelztCe2RAQBgN44"></script>
 
@@ -23,7 +45,6 @@
   <link rel="manifest" href="manifest.json">
 
   <style>
-    /* Center the loader */
     .loader-container {
       display: flex;
       justify-content: center;
@@ -33,22 +54,19 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(255, 255, 255, 0.8); /* Optional semi-transparent background */
+      background-color: rgba(255, 255, 255, 0.8);
       z-index: 1000;
     }
   </style>
 </head>
 <body>
-<!-- Loader GIF centered in the page -->
 <div class="loader-container" id="loader">
   <img src="assets/imgs/load.gif" alt="Loading..." />
 </div>
 
-<!-- Main Flutter app -->
 <script src="flutter_bootstrap.js" async></script>
 
 <script>
-  // Listen for the first Flutter frame event to hide the loader
   window.addEventListener("flutter-first-frame", function() {
     document.getElementById("loader").style.display = "none";
   });

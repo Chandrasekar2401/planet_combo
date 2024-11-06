@@ -5,7 +5,6 @@ import 'package:planetcombo/api/api_callings.dart';
 
 import 'package:planetcombo/models/get_request.dart';
 import 'package:planetcombo/models/preictions_list.dart';
-import 'package:intl/intl.dart';
 
 
 class HoroscopeServiceController extends GetxController {

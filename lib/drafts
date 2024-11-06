@@ -1,0 +1,54 @@
+// Profile page
+
+  void _openImagePicker() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: kIsWeb
+              ? ListTile(
+            leading: const Icon(Icons.photo_library),
+            title: commonBoldText(text: 'Choose from Computer'),
+            onTap: () {
+              _getImage(ImageSource.gallery);
+              Navigator.of(context).pop();
+            },
+          )
+              : Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: commonBoldText(text: 'Choose from Gallery'),
+                onTap: () {
+                  _getImage(ImageSource.gallery);
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: commonBoldText(text: 'Take a Photo'),
+                onTap: () {
+                  _getImage(ImageSource.camera);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _getImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: source);
+    if (pickedImage != null) {
+      if (kIsWeb) {
+        final bytes = await pickedImage.readAsBytes();
+        final base64Data = base64Encode(bytes);
+        addHoroscopeController.setEditProfileImageBase64(base64Data);
+      } else {
+        addHoroscopeController.setEditProfileImageFileListFromFile(pickedImage);
+      }
+    }
+  }

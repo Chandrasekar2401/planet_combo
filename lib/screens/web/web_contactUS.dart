@@ -1,5 +1,23 @@
+@JS('emailjs')
+library emailjs;
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:universal_html/html.dart' as html;
+import 'package:js/js.dart';
+
+
+
+@JS()
+external void send(
+    String serviceId,
+    String templateId,
+    dynamic templateParams,
+    String userId,
+    );
+
+@JS('emailjs.init')
+external void init(String publicKey);
 
 Widget buildWebContactUs() {
   return ContactPage();
@@ -30,10 +48,12 @@ class ContactPage extends StatelessWidget {
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: Padding(
-                            padding: const EdgeInsets.fromLTRB(0, 30, 0, 0),
-                            child: MapSection(),
-                          )),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 30, 0, 0),
+                              child: MapSection(),
+                            ),
+                          ),
                           SizedBox(width: 20),
                           Expanded(child: MessageForm()),
                         ],
@@ -89,7 +109,11 @@ class ContactInfoItem extends StatelessWidget {
   final String title;
   final String content;
 
-  ContactInfoItem({required this.icon, required this.title, required this.content});
+  ContactInfoItem({
+    required this.icon,
+    required this.title,
+    required this.content,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -97,9 +121,15 @@ class ContactInfoItem extends StatelessWidget {
       children: [
         Icon(icon, color: Colors.orangeAccent, size: 40),
         SizedBox(height: 10),
-        Text(title, style: TextStyle(color: Colors.white, fontSize: 18)),
+        Text(
+          title,
+          style: TextStyle(color: Colors.white, fontSize: 18),
+        ),
         SizedBox(height: 5),
-        Text(content, style: TextStyle(color: Colors.white, fontSize: 14)),
+        Text(
+          content,
+          style: TextStyle(color: Colors.white, fontSize: 14),
+        ),
       ],
     );
   }
@@ -112,7 +142,7 @@ class MapSection extends StatelessWidget {
       height: 300,
       child: GoogleMap(
         initialCameraPosition: CameraPosition(
-          target: LatLng(45.5231, -122.6765),  // Portland, OR coordinates
+          target: LatLng(45.5231, -122.6765), // Portland, OR coordinates
           zoom: 6,
         ),
       ),
@@ -120,72 +150,208 @@ class MapSection extends StatelessWidget {
   }
 }
 
-class MessageForm extends StatelessWidget {
+class MessageForm extends StatefulWidget {
+  @override
+  _MessageFormState createState() => _MessageFormState();
+}
+
+class _MessageFormState extends State<MessageForm> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _subjectController = TextEditingController();
+  final _messageController = TextEditingController();
+  bool _isSending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeEmailJS();
+  }
+
+  void _initializeEmailJS() {
+    final script = html.ScriptElement()
+      ..src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js';
+    html.document.head!.append(script);
+
+    script.onLoad.listen((_) {
+      init('YOUR_EMAILJS_PUBLIC_KEY');
+    });
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Email is required';
+    }
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+      return 'Please enter a valid email';
+    }
+    return null;
+  }
+
+  String? _validateRequired(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'This field is required';
+    }
+    return null;
+  }
+
+  Future<void> _sendEmail() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSending = true);
+
+    try {
+      send(
+        'YOUR_EMAILJS_SERVICE_ID',
+        'YOUR_EMAILJS_TEMPLATE_ID',
+        {
+          'from_name': _nameController.text,
+          'from_email': _emailController.text,
+          'phone': _phoneController.text,
+          'subject': _subjectController.text,
+          'message': _messageController.text,
+          'to_email': 'purushothaman7995@gmail.com',
+        },
+        'YOUR_EMAILJS_PUBLIC_KEY',
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Message sent successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _formKey.currentState?.reset();
+        _nameController.clear();
+        _emailController.clear();
+        _phoneController.clear();
+        _subjectController.clear();
+        _messageController.clear();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send message. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      print('Error sending email: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Leave a Message',
-            style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 20),
-          TextFormField(
-            decoration: InputDecoration(
-              fillColor: Colors.white,
-              filled: true,
-              hintText: 'Name',
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Leave a Message',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          SizedBox(height: 10),
-          TextFormField(
-            decoration: InputDecoration(
-              fillColor: Colors.white,
-              filled: true,
-              hintText: 'Email',
+            SizedBox(height: 20),
+            TextFormField(
+              controller: _nameController,
+              validator: _validateRequired,
+              decoration: InputDecoration(
+                fillColor: Colors.white,
+                filled: true,
+                hintText: 'Name',
+                border: OutlineInputBorder(),
+              ),
             ),
-          ),
-          SizedBox(height: 10),
-          TextFormField(
-            decoration: InputDecoration(
-              fillColor: Colors.white,
-              filled: true,
-              hintText: 'Phone',
+            SizedBox(height: 10),
+            TextFormField(
+              controller: _emailController,
+              validator: _validateEmail,
+              decoration: InputDecoration(
+                fillColor: Colors.white,
+                filled: true,
+                hintText: 'Email',
+                border: OutlineInputBorder(),
+              ),
             ),
-          ),
-          SizedBox(height: 10),
-          TextFormField(
-            decoration: InputDecoration(
-              fillColor: Colors.white,
-              filled: true,
-              hintText: 'Subject',
+            SizedBox(height: 10),
+            TextFormField(
+              controller: _phoneController,
+              decoration: InputDecoration(
+                fillColor: Colors.white,
+                filled: true,
+                hintText: 'Phone',
+                border: OutlineInputBorder(),
+              ),
             ),
-          ),
-          SizedBox(height: 10),
-          TextFormField(
-            decoration: InputDecoration(
-              fillColor: Colors.white,
-              filled: true,
-              hintText: 'Message',
+            SizedBox(height: 10),
+            TextFormField(
+              controller: _subjectController,
+              validator: _validateRequired,
+              decoration: InputDecoration(
+                fillColor: Colors.white,
+                filled: true,
+                hintText: 'Subject',
+                border: OutlineInputBorder(),
+              ),
             ),
-            maxLines: 4,
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            child: Text('Submit'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orangeAccent,
-              padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+            SizedBox(height: 10),
+            TextFormField(
+              controller: _messageController,
+              validator: _validateRequired,
+              decoration: InputDecoration(
+                fillColor: Colors.white,
+                filled: true,
+                hintText: 'Message',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 4,
             ),
-            onPressed: () {
-              // Handle form submission
-            },
-          ),
-        ],
+            SizedBox(height: 20),
+            Center(
+              child: ElevatedButton(
+                onPressed: _isSending ? null : _sendEmail,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orangeAccent,
+                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                ),
+                child: _isSending
+                    ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
+                )
+                    : Text('Submit'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _subjectController.dispose();
+    _messageController.dispose();
+    super.dispose();
   }
 }
