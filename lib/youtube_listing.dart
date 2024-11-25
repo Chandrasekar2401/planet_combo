@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 class YouTubeVideosPage extends StatefulWidget {
   const YouTubeVideosPage({Key? key}) : super(key: key);
@@ -15,20 +15,34 @@ class _YouTubeVideosPageState extends State<YouTubeVideosPage> {
   // Sample video data - Replace with your actual video data
   final List<Map<String, String>> videos = [
     {
-      'id': 'c6Akc4UQpwc',
+      'id': 'eJd5DM0irk8',
       'title': 'Usability Video - Guide to login | Planetcombo.com',
       'description': 'Learn how to easily log in to Planetcombo.com. A step-by-step tutorial showing user registration, login process, and account features.',
+      'thumbnail': 'https://static.vecteezy.com/system/resources/thumbnails/005/048/106/small/black-and-yellow-grunge-modern-thumbnail-background-free-vector.jpg',
+    },
+    {
+      'id': 'jNuQsGWgJ7Q',
+      'title': 'Usability Video - How to create a chart | Planetcombo.com',
+      'description': 'Learn how to easily crate a chart in to Planetcombo.com. A step-by-step tutorial',
+      'thumbnail': 'https://static.vecteezy.com/system/resources/thumbnails/005/048/106/small/black-and-yellow-grunge-modern-thumbnail-background-free-vector.jpg',
+    },
+    {
+      'id': 'X48QAXvEflQ',
+      'title': 'Usability Video - Guide to INR payment | Planetcombo.com',
+      'description': 'Learn how to easily pay in INR in to Planetcombo.com. A step-by-step tutorial',
       'thumbnail': 'https://static.vecteezy.com/system/resources/thumbnails/005/048/106/small/black-and-yellow-grunge-modern-thumbnail-background-free-vector.jpg',
     },
     // Add more videos as needed
   ];
 
   Future<void> showYouTubePopup(BuildContext context, String videoId) async {
-    final controller = YoutubePlayerController(
-      initialVideoId: videoId,
+    final controller = YoutubePlayerController.fromVideoId(
+      videoId: videoId,
+      autoPlay: true,
       params: const YoutubePlayerParams(
-        autoPlay: true,
         showControls: true,
+        showFullscreenButton: true,
+        mute: false,
       ),
     );
 
@@ -38,7 +52,10 @@ class _YouTubeVideosPageState extends State<YouTubeVideosPage> {
         content: SizedBox(
           width: MediaQuery.of(context).size.width * 0.8,
           height: MediaQuery.of(context).size.height * 0.6,
-          child: YoutubePlayerIFrame(controller: controller),
+          child: YoutubePlayer(
+            controller: controller,
+            aspectRatio: 16 / 9,
+          ),
         ),
         actions: [
           TextButton(
@@ -83,51 +100,31 @@ class _YouTubeVideosPageState extends State<YouTubeVideosPage> {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      Container(
+                      Image.network(
+                        video['thumbnail']!,
                         width: 120,
                         height: 80,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.rectangle,
-                          image: DecorationImage(
-                            image: NetworkImage(
-                              video['thumbnail']!,
-                              headers: {
-                                'Access-Control-Allow-Origin': '*',
-                                'Access-Control-Allow-Methods': 'GET',
-                              },
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                                  : null,
                             ),
-                            fit: BoxFit.cover,
-                            onError: (error, stackTrace) {
-                              print('Error loading image: $error');
-                            },
-                          ),
-                        ),
-                        child: Image.network(
-                            video['thumbnail']!,
-                          width: 120,
-                          height: 80,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                                    : null,
-                              ),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            print('Web image error: $error');
-                            return Container(
-                              width: 120,
-                              height: 80,
-                              color: Colors.red[300],
-                              child: const Icon(Icons.play_circle, size: 40),
-                            );
-                          },
-                        ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          print('Web image error: $error');
+                          return Container(
+                            width: 120,
+                            height: 80,
+                            color: Colors.red[300],
+                            child: const Icon(Icons.play_circle, size: 40),
+                          );
+                        },
                       ),
                       Container(
                         width: 40,

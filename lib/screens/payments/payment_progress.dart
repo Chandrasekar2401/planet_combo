@@ -108,7 +108,7 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
   }
 
   void _showPaymentCompleteToast() {
-    CustomDialog.okActionAlert(context, 'Payment completed Successfully', 'OK', true, 14, (){
+    CustomDialog.okActionAlert(context, 'Your Request Saved Successfully, Our Team Revert Shortly', 'OK', true, 14, (){
       applicationBaseController.updateHoroscopeUiList();
       Navigator.pushAndRemoveUntil(
         context,
@@ -185,7 +185,7 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
                   child: Center(
                     child: appLoadController.loggedUserData.value.ucurrency!.toLowerCase().compareTo('INR'.toLowerCase()) == 0 ?
                     SizedBox(height: 35, child: SvgPicture.asset('assets/svg/upi-icon.svg')) :
-                    SizedBox(height: 40, child: SvgPicture.asset('assets/svg/paypal.svg')),
+                    SizedBox(height: 40, child: SvgPicture.asset('assets/svg/stripe.svg')),
                   ),
                 ),
               ),

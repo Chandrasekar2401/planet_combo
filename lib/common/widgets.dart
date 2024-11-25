@@ -313,7 +313,7 @@ class CustomDialog{
               mainAxisSize: MainAxisSize.min,
               children: [
                 success != null ? Icon(
-                  success ? Icons.check_circle : Icons.clear,
+                  success ? Icons.check_circle : Icons.error_outline,
                   color: success ? Colors.green : Colors.red,
                   size: 40,
                 ):Container(),
@@ -1347,6 +1347,7 @@ Future yesOrNoDialog({required BuildContext context, required String dialogMessa
 
 Future multiTextYesOrNoDialog({
   required BuildContext context,
+  String? iconUrl, // Add iconUrl parameter
   String? subText1Key,
   String? subText1Value,
   String? subText2Key,
@@ -1367,12 +1368,20 @@ Future multiTextYesOrNoDialog({
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            // Conditional icon rendering
+            iconUrl != null
+                ? Image.asset(
+              iconUrl,
+              width: 80,
+              height: 80,
+              fit: BoxFit.contain,
+            )
+                : const Icon(
               Icons.info,
               color: Colors.red,
               size: 40,
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 10),
             Text(
               dialogMessage,
               textAlign: TextAlign.center,
@@ -1400,7 +1409,7 @@ Future multiTextYesOrNoDialog({
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    subText1Value!, // Replace with dynamic amount if necessary
+                    subText1Value!,
                     textAlign: TextAlign.right,
                     style: GoogleFonts.lexend(
                       fontSize: 14,
@@ -1429,7 +1438,7 @@ Future multiTextYesOrNoDialog({
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    subText2Value!, // Replace with dynamic amount if necessary
+                    subText2Value!,
                     textAlign: TextAlign.right,
                     style: GoogleFonts.lexend(
                       fontSize: 14,
@@ -1458,7 +1467,7 @@ Future multiTextYesOrNoDialog({
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    subText3Value!, // Replace with dynamic amount if necessary
+                    subText3Value!,
                     textAlign: TextAlign.right,
                     style: GoogleFonts.lexend(
                       fontSize: 14,

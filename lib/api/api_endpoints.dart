@@ -1,7 +1,10 @@
 class APIEndPoints {
 
-  //application api base Url
+  //application dev api base Url
   static String baseUrl = 'https://dev.planetcombo.com/';
+
+  // //application Production api base Url
+  // static String baseUrl = 'https://planetcombo.com/';
 
   ///Social Login
   static String socialLogin = '${baseUrl}api/Profile/login';
@@ -27,6 +30,9 @@ class APIEndPoints {
 
   ///Pay Payment by Paypal
   static String payByPaypal = '${baseUrl}api/Payments/create-paypal-payment';
+
+  ///endpoint changed to stripe
+  static String payByStripe = '${baseUrl}api/Payments/create-stripPay-payment';
 
   ///Pay Payment by Upi
   static String payByUpi = '${baseUrl}api/Payments/create-UpiPay-payment';
@@ -96,6 +102,9 @@ class APIEndPoints {
 
   ///update Profile
   static String updateProfile = '${baseUrl}api/profile/updateProfile';
+
+  ///update Horoscope Profile
+  static String updateHoroscopeImage = '${baseUrl}api/Horoscope/updateHoroscopeImage/';
 
 
   ///Add New Profile

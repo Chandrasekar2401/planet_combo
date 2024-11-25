@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
@@ -22,6 +24,35 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
   final AppLoadController appLoadController =
   Get.put(AppLoadController.getInstance(), permanent: true);
 
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+    _startAutoRefresh();
+  }
+
+  void _startAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 20), (timer) {
+      if (mounted) {
+        _loadData();
+      }
+    });
+  }
+
+  Future<void> _loadData() async {
+    if (!applicationBaseController.pendingPayment.value) {
+      await applicationBaseController.getUserPendingPayments();
+    }
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,10 +80,75 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
         ],
       ),
       body: Obx(() {
-        if (applicationBaseController.pendingPaymentsList.isEmpty) {
-          return const Center(child: Text("No pending payments"));
-        }
-        return ListView.builder(
+      // Show loading indicator
+      if (applicationBaseController.pendingPayment.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      // Show error if exists
+      if (applicationBaseController.pendingPaymentsError.value.isNotEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 70,
+                color: Colors.red[400],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red[200]!),
+                ),
+                child: Text(
+                  applicationBaseController.pendingPaymentsError.value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.red[700],
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _loadData,
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                label: const Text(
+                  'Retry',
+                  style: TextStyle(color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFf34509),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      // Show empty state
+      if (applicationBaseController.pendingPaymentsList.isEmpty) {
+        return const Center(child: Text("No pending payments"));
+      }
+
+      // Show list of payments
+      return RefreshIndicator(
+        onRefresh: _loadData,
+        child: ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: applicationBaseController.pendingPaymentsList.length,
           itemBuilder: (context, index) {
@@ -62,8 +158,9 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
               child: PaymentCard(payment: payment),
             );
           },
-        );
-      }),
+        ),
+      );
+    }),
     );
   }
 }
@@ -265,8 +362,18 @@ class PaymentCard extends StatelessWidget {
                                       payment.totalAmount!,
                                       appLoadController.loggedUserData.value.token!,
                                       context);
+                                }else if (appLoadController.loggedUserData!.value.ucurrency!
+                                    .toLowerCase()
+                                    .compareTo('AED'.toLowerCase()) ==
+                                    0) {
+                                  paymentController.payByStripe(
+                                      payment.userId!,
+                                      payment.requestId!,
+                                      payment.totalAmount!,
+                                      appLoadController.loggedUserData.value.token!,
+                                      context);
                                 } else {
-                                  paymentController.payByPaypal(
+                                  paymentController.payByStripe(
                                       payment.userId!,
                                       payment.requestId!,
                                       payment.totalAmount!,

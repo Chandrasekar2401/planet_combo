@@ -21,6 +21,7 @@ class PaymentRecord {
   int? requestType;
   double? amount;
   bool? isPaid;
+  String? gatewayReference;
   String? paymentReference;
   int? paymentChanel;
   String? invoiceNumber;
@@ -46,6 +47,7 @@ class PaymentRecord {
     this.requestType,
     this.amount,
     this.isPaid,
+    this.gatewayReference,
     this.paymentReference,
     this.paymentChanel,
     this.invoiceNumber,
@@ -72,6 +74,7 @@ class PaymentRecord {
     requestType: json["requestType"],
     amount: json["amount"]?.toDouble(),
     isPaid: json["isPaid"],
+    gatewayReference: json["gatewayReference"] ?? "",
     paymentReference: json["paymentReference"],
     paymentChanel: json["paymentChanel"],
     invoiceNumber: json["invoiceNumber"],
@@ -97,6 +100,7 @@ class PaymentRecord {
     "requestType": requestType,
     "amount": amount,
     "isPaid": isPaid,
+    "gatewayReference": gatewayReference,
     "paymentReference": paymentReference,
     "paymentChanel": paymentChanel,
     "invoiceNumber": invoiceNumber,

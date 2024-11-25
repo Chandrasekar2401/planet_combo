@@ -297,7 +297,7 @@ class _DashboardState extends State<Dashboard> {
                                   ),
                                   buildMenuItem(
                                     iconPath: 'assets/svg/support.svg',
-                                    text: "Technical Support",
+                                    text: "Live Chat",
                                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LiveChat())),
                                     showBorder: false,
                                   ),
@@ -331,7 +331,13 @@ class _DashboardState extends State<Dashboard> {
                                     text: "Terms and Conditions",
                                     onTap: () {
                                       if (kIsWeb) {
-                                        launchUrl(Uri.parse(ApplicationBaseController.getInstance().termsAndConditionsLink.value));
+                                        if(ApplicationBaseController.getInstance().termsAndConditionsLink.value == '' ||
+                                            ApplicationBaseController.getInstance().termsAndConditionsLink.value == null
+                                        ){
+                                          showFailedToast('Error : Link Not found');
+                                        }else{
+                                          launchUrl(Uri.parse(ApplicationBaseController.getInstance().termsAndConditionsLink.value));
+                                        }
                                       } else {
                                         Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsConditions()));
                                       }
@@ -368,22 +374,41 @@ class _DashboardState extends State<Dashboard> {
                         ),
                       ],
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SvgPicture.asset(
-                          'assets/svg/logout.svg',
-                          width: 16,
-                          height: 16,
-                          color: appLoadController.appPrimaryColor,
-                        ),
-                        const SizedBox(width: 12),
-                        commonBoldText(
-                          text: LocalizationController.getInstance().getTranslatedValue("Logout - (${appLoadController.loggedUserData.value.userid})"),
-                          color: appLoadController.appPrimaryColor,
-                          fontSize: 16,
-                        ),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SvgPicture.asset(
+                                  'assets/svg/logout.svg',
+                                  width: 16,
+                                  height: 16,
+                                  color: appLoadController.appPrimaryColor,
+                                ),
+                                const SizedBox(width: 12),
+                                Flexible(
+                                  child: Text(
+                                    LocalizationController.getInstance().getTranslatedValue(
+                                        "Logout - (${appLoadController.loggedUserData.value.userid})"
+                                    ),
+                                    style: TextStyle(
+                                      color: appLoadController.appPrimaryColor,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

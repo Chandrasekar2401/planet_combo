@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:planetcombo/api/api_endpoints.dart';
+import 'package:planetcombo/common/app_widgets.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:planetcombo/controllers/payment_controller.dart';
@@ -74,6 +75,10 @@ class AddHoroscopeController extends GetxController {
   Rx<TimeOfDay>? addSelectedEventTime;
   TextEditingController eventPlace = TextEditingController();
 
+  final Rx<XFile?> selectedImageFile = Rx<XFile?>(null);
+
+  final Rx<XFile?> updateHoroscopeImage = Rx<XFile?>(null);
+
   RxString hNativePhoto = ''.obs;
   RxString hUserId = ''.obs;
   RxString hid = '0'.obs;
@@ -109,12 +114,18 @@ class AddHoroscopeController extends GetxController {
   RxString? setHoroscopeWebProfileImageBase64 = ''.obs;
 
   RxList<XFile>? webDisplayImageFileList = <XFile>[].obs;
-  Rx<XFile>? webNewHoroscopeImageFile;
 
   RxList<XFile>? editProfileImageFileList = <XFile>[].obs;
   RxString? editProfileImageBase64 = ''.obs;
 
   XFile? image;
+
+  void resetImageValues() {
+    selectedImageFile.value = null;
+    imageFileList!.clear();
+    webDisplayImageFileList?.value = [];
+    setHoroscopeWebProfileImageBase64!.value = '';
+  }
 
   void setImageFileListFromFile(XFile? value) {
     hNativePhoto.value = '';
@@ -457,6 +468,8 @@ class AddHoroscopeController extends GetxController {
     }
   }
 
+
+
   updateProfile(context ,String username) async{
     if(editProfileImageFileList!.isNotEmpty || editProfileImageBase64!.isNotEmpty){
         updateProfileWithImage(context, username);
@@ -547,12 +560,12 @@ class AddHoroscopeController extends GetxController {
     }
   }
 
-  double taxCalc(double tax1, double tax2, double tax3){
+  String taxCalc(double tax1, double tax2, double tax3){
     double totalTax = tax1 + tax2 + tax3;
-    return totalTax;
+    return applicationBaseController.formatDecimalString(totalTax);
   }
 
-  addNewHoroscope(context) async{
+  void addNewHoroscope(context) async{
     if(imageFileList!.isNotEmpty || setHoroscopeWebProfileImageBase64!.isNotEmpty){
       uploadImage(context);
     }else{
@@ -625,15 +638,19 @@ class AddHoroscopeController extends GetxController {
        if(response != null){
          applicationBaseController.paymentForHoroscope.value = true;
          var jsonResponse = json.decode(response);
-         multiTextYesOrNoDialog(
+         AppWidgets().multiTextAlignYesOrNoDialog(
+             iconUrl: 'assets/images/headletters.png',
              context: context,
              dialogMessage: 'Your Kundli has been Saved, please pay',
              subText1Key: 'Amount',
-             subText1Value: '${appLoadController.loggedUserData.value.ucurrency} ${applicationBaseController.formatDecimalString(jsonResponse['data']['amount'])}',
+             subText1Value: appLoadController.loggedUserData.value.ucurrency,
+             subText1Value1: applicationBaseController.formatDecimalString(jsonResponse['data']['amount']),
              subText2Key: 'Tax Amount',
-             subText2Value: '${appLoadController.loggedUserData.value.ucurrency} ${taxCalc(jsonResponse['data']['tax1_amount'], jsonResponse['data']['tax3_amount'], jsonResponse['data']['tax3_amount'])}',
+             subText2Value: appLoadController.loggedUserData.value.ucurrency,
+             subText2Value2: '${taxCalc(jsonResponse['data']['tax1_amount'], jsonResponse['data']['tax3_amount'], jsonResponse['data']['tax3_amount'])}',
              subText3Key: 'Total Amount',
-             subText3Value: '${appLoadController.loggedUserData.value.ucurrency} ${applicationBaseController.formatDecimalString(jsonResponse['data']['total_amount'])}',
+             subText3Value: appLoadController.loggedUserData.value.ucurrency,
+             subText3Value3: applicationBaseController.formatDecimalString(jsonResponse['data']['total_amount']),
              cancelText: 'Pay Later', okText: 'Pay Now',
              cancelAction: (){
               Navigator.pop(context);
@@ -647,8 +664,10 @@ class AddHoroscopeController extends GetxController {
              okAction: () async{
                if(appLoadController.loggedUserData!.value.ucurrency!.toLowerCase() == 'inr'){
                  paymentController.payByUpi(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
+               }else if(appLoadController.loggedUserData!.value.ucurrency!.toLowerCase() == 'aed'){
+                 paymentController.payByStripe(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
                }else{
-                 paymentController.payByPaypal(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
+                 paymentController.payByStripe(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
                }
          });
        }else{
@@ -733,9 +752,7 @@ class AddHoroscopeController extends GetxController {
 
     // Send the request and get the response
     var requestResponse = await request.send();
-
-    print('the passing request response is ${requestResponse.statusCode}');
-
+      print('the passing request response is ${requestResponse.statusCode}');
     requestResponse.stream.transform(utf8.decoder).listen((event) async{
       var jsonResponse = jsonDecode(event) as Map<String, dynamic>;
       print('the received profile response is ${jsonResponse['Data']}');
@@ -772,100 +789,154 @@ class AddHoroscopeController extends GetxController {
     });
   }
 
-  Future<void> uploadImage(context) async {
-    CustomDialog.showLoading(context, 'Please wait');
-
-    // Create a unique filename
-    String filename = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-
-    // Create the HTTP headers
-    Map<String, String> headers = {
-      'TOKEN': appLoadController.loggedUserData.value.token!,
-    };
-
-    String fileKey = 'hNativePhoto';
-    String url = '';
-    if(hid.value == '0'){
-      url = '${APIEndPoints.baseUrl}api/horoscope/addNew?fileKey=$fileKey';
-    } else {
-      url = '${APIEndPoints.baseUrl}api/horoscope/updateHoroscope?fileKey=$fileKey';
-    }
-
-    // Common fields for both web and mobile
-    Map<String, String> fields = {
-      'HUSERID': appLoadController.loggedUserData.value.userid!,
-      'HID': hid.value == '0' ? '0' : hid.value.trim(),
-      'HNAME': horoscopeName.text,
-      'HGENDER': findGender()!,
-      'HDOBNATIVE': addHoroscopeBirthSelectedDate!.value.toString(),
-      'HHOURS': convertTo12HourFormat(addHoroscopeBirthSelectedTime!.value.hour),
-      'HMIN': addHoroscopeBirthSelectedTime!.value.minute.toString(),
-      'HSS': "0",
-      'HAMPM': addHoroscopeBirthSelectedTime!.value.period == DayPeriod.pm ? "PM": "AM",
-      'HPLACE': placeStateCountryOfBirth.text,
-      'HLANDMARK': landmarkOfBirth.text,
-      'HMARRIAGEDATE': addSelectedMarriageDate != null ? addSelectedMarriageDate!.value.toString(): '',
-      'HMARRIAGEPLACE': placeStateCountryOfMarriage.text,
-      'HMARRIAGETIME': addSelectedMarriageTime != null ? timeToCustomFormat(addSelectedMarriageTime!.value) : '',
-      'HMARRIAGEAMPM': (addSelectedMarriageTime != null ? findMarriageSession(addSelectedMarriageTime!.value) : '')!,
-      'HFIRSTCHILDDATE': addSelectedChildBirthDate != null ? addSelectedChildBirthDate!.value.toString() : '',
-      'HFIRSTCHILDPLACE': placeStateCountryOfChildBirth.text,
-      'HFIRSTCHILDTIME': addSelectedChildBirthTime != null ? timeToCustomFormat(addSelectedChildBirthTime!.value) : '',
-      'HFIRSTCHILDTIMEAMPM': (addSelectedChildBirthTime != null ? findMarriageSession(addSelectedChildBirthTime!.value) : '')!,
-      'HATDATE': addSelectedTravelDate != null ? addSelectedTravelDate!.value.toString():'',
-      'HATPLACE': whereDidYouTraveled.text,
-      'HATTIME': addSelectedTravelTime != null ? timeToCustomFormat(addSelectedTravelTime!.value) : '',
-      'HATTAMPM': (addSelectedTravelTime != null ? findMarriageSession(addSelectedTravelTime!.value) : '')!,
-      'HAFLIGHTNO': '',
-      'HCRDATE': addSelectedMessageReceivedDate != null ? addSelectedMessageReceivedDate!.value.toString():'',
-      'HCRTIME': addSelectedMessageReceivedTime != null ? timeToCustomFormat(addSelectedMessageReceivedTime!.value) : '',
-      'HCRPLACE': whereMessageReceived.text,
-      'HCRTAMPM': (addSelectedMessageReceivedTime != null ? findMarriageSession(addSelectedMessageReceivedTime!.value) : '')!,
-      'HDRR': relationShipWithOwner.text,
-      'HDRRD': addSelectedEventDate != null ? addSelectedEventDate!.value.toString() : '',
-      'HDRRT': addSelectedEventTime != null ? timeToCustomFormat(addSelectedEventTime!.value) : '',
-      'HDRRP': eventPlace.text,
-      'HDRRTAMPM': (addSelectedEventTime != null ? findMarriageSession(addSelectedEventTime!.value): '')!,
-      'RECTIFIEDDST': '',
-      'RECTIFIEDDATE': '',
-      'RECTIFIEDTIME': '',
-      'RECTIFIEDPLACE': '',
-      'RECTIFIEDLONGTITUDE': '',
-      'RECTIFIEDLONGTITUDEEW': '',
-      'RECTIFIEDLATITUDE': '',
-      'RECTIFIEDLATITUDENS': '',
-      'HPDF': '',
-      'LASTREQUESTID': '',
-      'LASTMESSAGEID': '',
-      'LASTWPDATE': DateTime.now().toString(),
-      'LASTDPDATE': DateTime.now().toString(),
-      'HLOCKED': '',
-      'HRECDELETED': '',
-      'HCREATIONDATE': DateTime.now().toString(),
-      'HRECDELETEDD': '',
-      'HTOTALTRUE': '',
-      'HTOTALFALSE': '',
-      'HTOTALPARTIAL': '',
-      'HUNIQUE': '',
-      'HSTATUS': "1",
-      'HBIRTHORDER': birthOrder.value,
-    };
-
+  Future<void> updateHoroscopeImageOnly(String hid) async{
     try {
-      http.Response response;
+      print('its showing you reached');
+      final String filename = 'horoscope_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      // Headers setup
+      final Map<String, String> headers = {
+        'TOKEN': appLoadController.loggedUserData.value.token!,
+      };
+      final String url = '${APIEndPoints.baseUrl}api/Horoscope/updateHoroscopeImage/${appLoadController.loggedUserData.value.userid}/$hid';
+      final request = http.MultipartRequest('POST', Uri.parse(url))
+        ..headers.addAll(headers);
+      if (kIsWeb && updateHoroscopeImage?.value != null) {
+        try {
+          final bytes = await updateHoroscopeImage!.value!.readAsBytes();
+          final multipartFile = http.MultipartFile.fromBytes(
+            'file',
+            bytes,
+            filename: filename,
+            contentType: MediaType('image', 'jpeg'),
+          );
+          request.files.add(multipartFile);
+          final streamedResponse = await request.send().timeout(
+            const Duration(minutes: 2),
+            onTimeout: () {
+              throw 'Connection timeout. Please check your internet connection.';
+            },
+          );
+          final response = await http.Response.fromStream(streamedResponse);
+          resetImageValues();
+          // Process response
+          if (response.statusCode == 200) {
+            applicationBaseController.getUserHoroscopeList();
+          }else{
+            showFailedToast('Something went wrong');
+          }
+        } catch (e) {
+          throw 'Failed to process web image: $e';
+        }
+      }
+    }catch (e) {
+      showFailedToast('Error $e');
+    }
+  }
 
-      if (kIsWeb) {
-        // Web implementation using MultipartRequest
-        print('you reached latest web call');
-        var request = http.MultipartRequest('POST', Uri.parse(url));
-        request.headers.addAll(headers);
-        request.fields.addAll(fields);
+  Future<void> uploadImage(BuildContext context) async {
+    try {
+      CustomDialog.showLoading(context, 'Please wait');
+      // Create a unique filename with timestamp
+      final String filename = 'horoscope_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      // Headers setup
+      final Map<String, String> headers = {
+        'TOKEN': appLoadController.loggedUserData.value.token!,
+      };
 
-        if (webNewHoroscopeImageFile?.value != null) {
-          // Convert XFile to bytes for web
-          final bytes = await webNewHoroscopeImageFile!.value.readAsBytes();
+      // API URL setup
+      const String fileKey = 'hNativePhoto';
+      final String url = hid.value == '0'
+          ? '${APIEndPoints.baseUrl}api/horoscope/addNew?fileKey=$fileKey'
+          : '${APIEndPoints.baseUrl}api/horoscope/updateHoroscope?fileKey=$fileKey';
 
-          // Add file to request
+      // Prepare the form fields
+      final Map<String, String> fields = {
+        'HUSERID': appLoadController.loggedUserData.value.userid!,
+        'HID': hid.value == '0' ? '0' : hid.value.trim(),
+        'HNAME': horoscopeName.text,
+        'HGENDER': findGender()!,
+        'HDOBNATIVE': addHoroscopeBirthSelectedDate!.value.toString(),
+        'HHOURS': convertTo12HourFormat(addHoroscopeBirthSelectedTime!.value.hour),
+        'HMIN': addHoroscopeBirthSelectedTime!.value.minute.toString(),
+        'HSS': "0",
+        'HAMPM': addHoroscopeBirthSelectedTime!.value.period == DayPeriod.pm ? "PM": "AM",
+        'HPLACE': placeStateCountryOfBirth.text,
+        'HLANDMARK': landmarkOfBirth.text,
+        'HMARRIAGEDATE': addSelectedMarriageDate?.value?.toString() ?? '',
+        'HMARRIAGEPLACE': placeStateCountryOfMarriage.text,
+        'HMARRIAGETIME': addSelectedMarriageTime != null
+            ? timeToCustomFormat(addSelectedMarriageTime!.value)
+            : '',
+        'HMARRIAGEAMPM': (addSelectedMarriageTime != null
+            ? findMarriageSession(addSelectedMarriageTime!.value)
+            : '')!,
+        'HFIRSTCHILDDATE': addSelectedChildBirthDate?.value?.toString() ?? '',
+        'HFIRSTCHILDPLACE': placeStateCountryOfChildBirth.text,
+        'HFIRSTCHILDTIME': addSelectedChildBirthTime != null
+            ? timeToCustomFormat(addSelectedChildBirthTime!.value)
+            : '',
+        'HFIRSTCHILDTIMEAMPM': (addSelectedChildBirthTime != null
+            ? findMarriageSession(addSelectedChildBirthTime!.value)
+            : '')!,
+        'HATDATE': addSelectedTravelDate?.value?.toString() ?? '',
+        'HATPLACE': whereDidYouTraveled.text,
+        'HATTIME': addSelectedTravelTime != null
+            ? timeToCustomFormat(addSelectedTravelTime!.value)
+            : '',
+        'HATTAMPM': (addSelectedTravelTime != null
+            ? findMarriageSession(addSelectedTravelTime!.value)
+            : '')!,
+        'HAFLIGHTNO': '',
+        'HCRDATE': addSelectedMessageReceivedDate?.value?.toString() ?? '',
+        'HCRTIME': addSelectedMessageReceivedTime != null
+            ? timeToCustomFormat(addSelectedMessageReceivedTime!.value)
+            : '',
+        'HCRPLACE': whereMessageReceived.text,
+        'HCRTAMPM': (addSelectedMessageReceivedTime != null
+            ? findMarriageSession(addSelectedMessageReceivedTime!.value)
+            : '')!,
+        'HDRR': relationShipWithOwner.text,
+        'HDRRD': addSelectedEventDate?.value?.toString() ?? '',
+        'HDRRT': addSelectedEventTime != null
+            ? timeToCustomFormat(addSelectedEventTime!.value)
+            : '',
+        'HDRRP': eventPlace.text,
+        'HDRRTAMPM': (addSelectedEventTime != null
+            ? findMarriageSession(addSelectedEventTime!.value)
+            : '')!,
+        'RECTIFIEDDST': '',
+        'RECTIFIEDDATE': '',
+        'RECTIFIEDTIME': '',
+        'RECTIFIEDPLACE': '',
+        'RECTIFIEDLONGTITUDE': '',
+        'RECTIFIEDLONGTITUDEEW': '',
+        'RECTIFIEDLATITUDE': '',
+        'RECTIFIEDLATITUDENS': '',
+        'HPDF': '',
+        'LASTREQUESTID': '',
+        'LASTMESSAGEID': '',
+        'LASTWPDATE': DateTime.now().toString(),
+        'LASTDPDATE': DateTime.now().toString(),
+        'HLOCKED': '',
+        'HRECDELETED': '',
+        'HCREATIONDATE': DateTime.now().toString(),
+        'HRECDELETEDD': '',
+        'HTOTALTRUE': '',
+        'HTOTALFALSE': '',
+        'HTOTALPARTIAL': '',
+        'HUNIQUE': '',
+        'HSTATUS': "1",
+        'HBIRTHORDER': birthOrder.value,
+      };
+
+      // Create MultipartRequest
+      final request = http.MultipartRequest('POST', Uri.parse(url))
+        ..headers.addAll(headers)
+        ..fields.addAll(fields);
+      // Handle file upload based on platform
+      if (kIsWeb && selectedImageFile?.value != null) {
+        try {
+          final bytes = await selectedImageFile!.value!.readAsBytes();
           final multipartFile = http.MultipartFile.fromBytes(
             'hNativePhoto',
             bytes,
@@ -873,199 +944,130 @@ class AddHoroscopeController extends GetxController {
             contentType: MediaType('image', 'jpeg'),
           );
           request.files.add(multipartFile);
+        } catch (e) {
+          throw 'Failed to process web image: $e';
         }
-
-        var streamedResponse = await request.send();
-        response = await http.Response.fromStream(streamedResponse);
-      } else {
-        // Mobile implementation using MultipartRequest
-        var request = http.MultipartRequest('POST', Uri.parse(url));
-        request.headers.addAll(headers);
-        request.fields.addAll(fields);
-
+      }else {
         if (imageFileList != null && imageFileList!.isNotEmpty) {
-          image = XFile(imageFileList![0].path);
-          var multipartFile = await http.MultipartFile.fromPath('hNativePhoto', image!.path);
-          request.files.add(multipartFile);
+          try {
+            final multipartFile = await http.MultipartFile.fromPath(
+              'hNativePhoto',
+              imageFileList![0].path,
+              contentType: MediaType('image', 'jpeg'),
+            );
+            request.files.add(multipartFile);
+          } catch (e) {
+            throw 'Failed to process mobile image: $e';
+          }
         }
-
-        var streamedResponse = await request.send();
-        response = await http.Response.fromStream(streamedResponse);
       }
 
-      // Handle response
+      // Send request and handle response
+      final streamedResponse = await request.send().timeout(
+        const Duration(minutes: 2),
+        onTimeout: () {
+          throw 'Connection timeout. Please check your internet connection.';
+        },
+      );
+       print('before the response call');
+      final response = await http.Response.fromStream(streamedResponse);
+      print('after the responsesssssssssssssssss');
+      // Process response
+      if (!context.mounted) return;
       if (response.statusCode == 200) {
-        var jsonResponse = jsonDecode(response.body);
-        CustomDialog.cancelLoading(context);
-        CustomDialog.okActionAlert(
-            context,
-            'Horoscope added successfully',
-            'OK',
-            true,
-            14,
-                () {
-              applicationBaseController.getUserHoroscopeList();
-              CustomDialog.showLoading(context, 'Please wait');
-              Future.delayed(Duration(seconds: 2), () {
-                CustomDialog.cancelLoading(context);
+        resetImageValues();
+        applicationBaseController.paymentForHoroscope.value = true;
+        if(hid.value == '0'){
+          final jsonResponse = jsonDecode(response.body);
+          // Handle success
+          AppWidgets().multiTextAlignYesOrNoDialog(
+              iconUrl: 'assets/images/headletters.png',
+              context: context,
+              dialogMessage: 'Your Kundli has been Saved, please pay',
+              subText1Key: 'Amount',
+              subText1Value: appLoadController.loggedUserData.value.ucurrency,
+              subText1Value1: applicationBaseController.formatDecimalString(jsonResponse['data']['amount']),
+              subText2Key: 'Tax Amount',
+              subText2Value: appLoadController.loggedUserData.value.ucurrency,
+              subText2Value2: '${taxCalc(jsonResponse['data']['tax1_amount'], jsonResponse['data']['tax3_amount'], jsonResponse['data']['tax3_amount'])}',
+              subText3Key: 'Total Amount',
+              subText3Value: appLoadController.loggedUserData.value.ucurrency,
+              subText3Value3: applicationBaseController.formatDecimalString(jsonResponse['data']['total_amount']),
+              cancelText: 'Pay Later', okText: 'Pay Now',
+              cancelAction: (){
+                Navigator.pop(context);
+                applicationBaseController.updateHoroscopeUiList();
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const HoroscopeServices()),
                       (Route<dynamic> route) => false,
                 );
+              },
+              okAction: () async{
+                if(appLoadController.loggedUserData!.value.ucurrency!.toLowerCase() == 'inr'){
+                  paymentController.payByUpi(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
+                }else if(appLoadController.loggedUserData!.value.ucurrency!.toLowerCase() == 'aed'){
+                  paymentController.payByStripe(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
+                }else{
+                  paymentController.payByStripe(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
+                }
               });
-            }
-        );
+        }else{
+          _handleSuccess(context);
+        }
       } else {
-        print('Failed with status code: ${response.statusCode}');
-        CustomDialog.cancelLoading(context);
-        CustomDialog.okActionAlert(
-            context,
-            'Failed to upload horoscope',
-            'OK',
-            false,
-            14,
-                () => Navigator.pop(context)
-        );
+        throw 'Server returned status code: ${response.statusCode}';
       }
     } catch (e) {
-      print('Error uploading image: $e');
+      if (!context.mounted) return;
+
+      // Handle all errors
       CustomDialog.cancelLoading(context);
-      CustomDialog.okActionAlert(
-          context,
-          'Error uploading horoscope: $e',
-          'OK',
-          false,
-          14,
-              () => Navigator.pop(context)
-      );
+      _handleError(context, e.toString());
     }
   }
 
-  // Future<void> uploadImage(context) async {
-  //   // Create a unique filename
-  //   CustomDialog.showLoading(context, 'Please wait');
-  //   String filename =
-  //       '${DateTime.now().millisecondsSinceEpoch}.jpg';
-  //
-  //   // Get the image file (replace with your actual image file)
-  //   // Replace this with your actual image file
-  //
-  //   // Create the HTTP headers
-  //   Map<String, String> headers = {
-  //     'TOKEN': appLoadController.loggedUserData.value.token!,
-  //   };
-  //   String fileKey = 'hNativePhoto';
-  //   String url = '';
-  //   if(hid.value == '0'){
-  //     url = '${APIEndPoints.baseUrl}api/horoscope/addNew?fileKey=$fileKey';
-  //   }else{
-  //     url = '${APIEndPoints.baseUrl}api/horoscope/updateHoroscope?fileKey=$fileKey';
-  //   }
-  //
-  //
-  //   // Create the multipart request
-  //   var request = http.MultipartRequest('POST', Uri.parse(url));
-  //   print('the value of imageFileList is ${imageFileList}');
-  //   image = XFile(imageFileList![0].path);
-  //   // Attach the image file to the request
-  //   var fileStream = http.ByteStream(image!.openRead());
-  //   var length = image!.length;
-  //
-  //   print('fileStream is $fileStream');
-  //   print('the file length is $length');
-  //
-  //   // Set the headers and parameters
-  //   request.headers.addAll(headers);
-  //   request.fields['HUSERID'] = appLoadController.loggedUserData.value.userid!;
-  //   request.fields["HID"] = hid.value == '0' ? '0' : hid.value.trim();
-  //   request.fields["HNAME"]= horoscopeName.text;
-  //   request.fields["HGENDER"]=findGender()!;
-  //   request.fields["HDOBNATIVE"]=returnIntDate(addHoroscopeBirthSelectedDate!.value).toString();
-  //   request.fields["HHOURS"]= convertTo12HourFormat(addHoroscopeBirthSelectedTime!.value.hour);
-  //   request.fields["HMIN"]=addHoroscopeBirthSelectedTime!.value.minute.toString();
-  //   request.fields["HSS"]="0";
-  //   request.fields["HAMPM"]=addHoroscopeBirthSelectedTime!.value.period == DayPeriod.pm ? "PM": "AM";
-  //   request.fields["HPLACE"]=placeStateCountryOfBirth.text;
-  //   request.fields["HLANDMARK"]=landmarkOfBirth.text;
-  //   request.fields["HMARRIAGEDATE"]=addSelectedMarriageDate != null ?addSelectedMarriageDate!.value.toString(): '';
-  //   request.fields["HMARRIAGEPLACE"]=placeStateCountryOfMarriage.text;
-  //   request.fields["HMARRIAGETIME"]=addSelectedMarriageTime != null ? timeToCustomFormat(addSelectedMarriageTime!.value) : '';
-  //   request.fields["HMARRIAGEAMPM"]=(addSelectedMarriageTime != null ? findMarriageSession(addSelectedMarriageTime!.value) : '')!;
-  //   request.fields["HFIRSTCHILDDATE"]=addSelectedChildBirthDate != null ?addSelectedChildBirthDate!.value.toString() : '';
-  //   request.fields["HFIRSTCHILDPLACE"]=placeStateCountryOfChildBirth.text;
-  //   request.fields["HFIRSTCHILDTIME"]=addSelectedChildBirthTime != null ? timeToCustomFormat(addSelectedChildBirthTime!.value) : '';
-  //   request.fields["HFIRSTCHILDTIMEAMPM"]=(addSelectedChildBirthTime != null ? findMarriageSession(addSelectedChildBirthTime!.value) : '')!;
-  //   request.fields["HATDATE"]=addSelectedTravelDate != null ?addSelectedTravelDate!.value.toString():'';
-  //   request.fields["HATPLACE"]=whereDidYouTraveled.text;
-  //   request.fields['HATTIME']=addSelectedTravelTime != null ? timeToCustomFormat(addSelectedTravelTime!.value) : '';
-  //   request.fields["HATTAMPM"]=(addSelectedTravelTime != null ? findMarriageSession(addSelectedTravelTime!.value) : '')!;
-  //   request.fields["HAFLIGHTNO"]='';
-  //   request.fields["HCRDATE"]=addSelectedMessageReceivedDate != null ?addSelectedMessageReceivedDate!.value.toString():'';
-  //   request.fields["HCRTIME"]=addSelectedMessageReceivedTime != null ? timeToCustomFormat(addSelectedMessageReceivedTime!.value) : '';
-  //   request.fields["HCRPLACE"]= whereMessageReceived.text;
-  //   request.fields["HCRTAMPM"]=(addSelectedMessageReceivedTime != null ? findMarriageSession(addSelectedMessageReceivedTime!.value) : '')!;
-  //   request.fields["HDRR"]=relationShipWithOwner.text;
-  //   request.fields["HDRRD"]=addSelectedEventDate != null ?addSelectedEventDate!.value.toString() : '';
-  //   request.fields["HDRRT"]=addSelectedEventTime != null ? timeToCustomFormat(addSelectedEventTime!.value) : '';
-  //   request.fields['HDRRP']=eventPlace.text;
-  //   request.fields['HDRRTAMPM']=(addSelectedEventTime != null ? findMarriageSession(addSelectedEventTime!.value): '')!;
-  //   request.fields['RECTIFIEDDST']='';
-  //   request.fields['RECTIFIEDDATE']='';
-  //   request.fields['RECTIFIEDTIME']='';
-  //   request.fields['RECTIFIEDPLACE']='';
-  //   request.fields['RECTIFIEDLONGTITUDE']='';
-  //   request.fields['RECTIFIEDLONGTITUDEEW']='';
-  //   request.fields['RECTIFIEDLATITUDE']='';
-  //   request.fields['RECTIFIEDLATITUDENS']='';
-  //   request.fields['HPDF']='';
-  //   request.fields['LASTREQUESTID']='';
-  //   request.fields['LASTMESSAGEID']='';
-  //   request.fields['LASTWPDATE']=DateTime.now().toString();
-  //   request.fields["LASTDPDATE"]=DateTime.now().toString();
-  //   request.fields["HLOCKED"]='';
-  //   request.fields["HRECDELETED"]='';
-  //   request.fields["HCREATIONDATE"]=DateTime.now().toString();
-  //   request.fields["HRECDELETEDD"]='';
-  //   request.fields["HTOTALTRUE"]='';
-  //   request.fields["HTOTALFALSE"]='';
-  //   request.fields["HTOTALPARTIAL"]='';
-  //   request.fields["HUNIQUE"]='';
-  //   request.fields["HSTATUS"]= "1";
-  //   request.fields["HBIRTHORDER"] = birthOrder.value;
-  //
-  //   print('request sent received ${request.fields}');
-  //   print('the passing image file is ${image!.path}');
-  //   var multipartFile =await http.MultipartFile.fromPath('hNativePhoto', image!.path);
-  //   request.files.add(multipartFile);
-  //
-  //   // Send the request and get the response
-  //   var requestResponse = await request.send();
-  //
-  //   print('the passing request response is ${requestResponse.statusCode}');
-  //
-  //   requestResponse.stream.transform(utf8.decoder).listen((event) {
-  //     var jsonResponse = jsonDecode(event) as Map<String, dynamic>;
-  //     if(requestResponse.statusCode == 200){
-  //       CustomDialog.cancelLoading(context);
-  //       CustomDialog.okActionAlert(context, 'Horoscope added successfully', 'OK', true, 14, () {
-  //         applicationBaseController.getUserHoroscopeList();
-  //         CustomDialog.showLoading(context, 'Please wait');
-  //         Future.delayed(Duration(seconds: 2), () {
-  //           CustomDialog.cancelLoading(context);
-  //           Navigator.pushAndRemoveUntil(
-  //             context,
-  //             MaterialPageRoute(builder: (context) => const HoroscopeServices()),
-  //                 (Route<dynamic> route) => false,
-  //           );
-  //         });
-  //       });
-  //     }else{
-  //       print('the failed response code is ${requestResponse.statusCode}');
-  //       CustomDialog.cancelLoading(context);
-  //     }
-  //   });
-  //   // Check the response
-  // }
+// Helper method for success handling
+  Future<void> _handleSuccess(BuildContext context) async {
+    CustomDialog.okActionAlert(
+      context,
+      hid.value == '0' ? 'Kundli added successfully' : 'Kundli has been updated Successfully',
+      'OK',
+      true,
+      14,
+          () async {
+        try {
+          await applicationBaseController.getUserHoroscopeList();
+          CustomDialog.showLoading(context, 'Please wait');
+
+          await Future.delayed(const Duration(seconds: 2));
+
+          if (!context.mounted) return;
+          CustomDialog.cancelLoading(context);
+
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const HoroscopeServices()),
+                (Route<dynamic> route) => false,
+          );
+        } catch (e) {
+          CustomDialog.cancelLoading(context);
+          _handleError(context, 'Error updating horoscope list: $e');
+        }
+      },
+    );
+  }
+
+// Helper method for error handling
+  void _handleError(BuildContext context, String error) {
+    CustomDialog.okActionAlert(
+      context,
+      'Error: $error',
+      'OK',
+      false,
+      14,
+          () => Navigator.pop(context),
+    );
+  }
 
 }

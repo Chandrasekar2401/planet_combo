@@ -44,6 +44,12 @@ class ApplicationBaseController extends GetxController {
 
   RxDouble userAccountBalance = 12.0.obs;
 
+
+  //Error Responses
+  RxString invoiceListApiError = ''.obs;
+  RxString pendingPaymentsError = ''.obs;
+  RxString horoscopeListError = ''.obs;
+
   final AppLoadController appLoadController =
   Get.put(AppLoadController.getInstance(), permanent: true);
 
@@ -59,21 +65,28 @@ class ApplicationBaseController extends GetxController {
     _getInvoiceList();
   }
 
-  String formatDecimalString(input) {
+  String formatDecimalString(dynamic input) {
     String val = input.toString();
-    double value = double.parse(val);
-
-    // Check if value has a decimal part
-    if (value % 1 == 0) {
-      return value.toStringAsFixed(1); // Adds ".0" if it's an integer
+    List<String> parts = val.split('.');
+    if (parts.length == 1) {
+      return '$val.00';
     } else {
-      return value.toString();         // Keeps original decimal form if not an integer
+      String decimal = parts[1];
+      if (decimal.length == 1) {
+        return '${val}0';  // Fixed: Changed '$val0' to '${val}0'
+      } else {
+        return '${parts[0]}.${decimal.substring(0, 2)}';
+      }
     }
   }
 
   void updateHoroscopeUiList(){
     _getUserHoroscopeList();
     _getUserPendingPayments();
+    _getInvoiceList();
+  }
+
+  void getInvoice(){
     _getInvoiceList();
   }
 
@@ -181,7 +194,12 @@ class ApplicationBaseController extends GetxController {
     }
   }
 
+  getInvoiceList(){
+    _getInvoiceList();
+  }
+
   _getInvoiceList() async {
+    invoiceListApiError.value = '';
     try {
       var response = await APICallings.getInvoiceList(
           userId: appLoadController.loggedUserData.value.userid!,
@@ -191,33 +209,39 @@ class ApplicationBaseController extends GetxController {
       print(response);
       if (response != null) {
         var jsonBody = json.decode(response);
-        // Assuming the API still returns a status field
         if (jsonBody is List) {
-          // If the API directly returns a list of payment records
           paymentHistory.value = paymentRecordsFromJson(response);
         } else if (jsonBody is Map && jsonBody['status'] == 'Success' && jsonBody['data'] is List) {
-          // If the API returns a wrapper object with a data field containing the list
           paymentHistory.value = paymentRecordsFromJson(json.encode(jsonBody['data']));
         } else {
-          print('Unexpected API response format');
+          invoiceListApiError.value = 'Error: Unexpected API response format';
+          paymentHistory.clear(); // Clear the list when there's an error
         }
-        print('The received value of payment length is ${paymentHistory.length}');
+      } else {
+        invoiceListApiError.value = 'Error: Unable to fetch payment records';
+        paymentHistory.clear();
       }
     } catch (error) {
       print('Payment history API request error:');
       print(error);
+      invoiceListApiError.value = error.toString();
+      paymentHistory.clear();
     }
+  }
+
+  getUserPendingPayments(){
+    _getUserPendingPayments();
   }
 
   Future<void> _getUserPendingPayments() async {
     try {
       pendingPayment.value = true;
+      pendingPaymentsError.value = ''; // Reset error message
+
       var response = await APICallings.getPendingPayments(
           userId: appLoadController.loggedUserData.value.userid!,
           token: appLoadController.loggedUserData.value.token!
       );
-      pendingPayment.value = false;
-      print("Get payments List Response : $response");
 
       if (response != null) {
         var jsonBody = json.decode(response);
@@ -225,68 +249,34 @@ class ApplicationBaseController extends GetxController {
 
         // Sort the pending payments list by date
         pendingPaymentsList.value.sort((a, b) {
-          // Assuming there's a 'date' field of type DateTime? in your payment object
-          // Replace 'date' with the actual field name in your model
           final dateA = a.creationDate;
           final dateB = b.creationDate;
-
-          // Handle null dates by placing them at the end
           if (dateA == null && dateB == null) return 0;
           if (dateA == null) return 1;
           if (dateB == null) return -1;
-
-          // Sort in descending order (latest first)
           return dateB.compareTo(dateA);
         });
-
-        print('The value of pending payments ${pendingPaymentsList.length}');
-        print('The value of pending payments $pendingPaymentsList');
       } else {
         pendingPaymentsList.value = [];
       }
     } catch (error) {
       print("Error in _getUserPendingPayments: $error");
+      pendingPaymentsError.value = error.toString();
       pendingPaymentsList.value = [];
     } finally {
       pendingPayment.value = false;
     }
   }
 
-
-  // _getUserHoroscopeList() async{
-  //   try{
-  //     horoscopeListPageLoad.value = true;
-  //     var response = await APICallings.getHoroscope(userId: appLoadController.loggedUserData.value.userid!, token: appLoadController.loggedUserData.value.token!);
-  //     horoscopeListPageLoad.value = false;
-  //     print("Get Horoscope List Response : $response");
-  //     if (response != null) {
-  //       var jsonBody = json.decode(response);
-  //       if (jsonBody['Status'] == 'Success') {
-  //         if(jsonBody['Data'] == null){
-  //           print('the length of the horoscopes ${horoscopeList.length}');
-  //           horoscopeList.value = [];
-  //         }else{
-  //           horoscopeList.value = horoscopesListFromJson(response);
-  //           print('the length of the horoscopes ${horoscopeList.length}');
-  //         }
-  //       } else {
-  //         horoscopeList.value = [];
-  //         print(jsonBody['Message']);
-  //       }
-  //     }
-  //   }finally {}
-  // }
-
-//Ai code
-  _getUserHoroscopeList() async {
+  Future<void> _getUserHoroscopeList() async {
     try {
+      horoscopeListError.value = '';
       horoscopeListPageLoad.value = true;
       var response = await APICallings.getHoroscope(
           userId: appLoadController.loggedUserData.value.userid!,
           token: appLoadController.loggedUserData.value.token!
       );
-      horoscopeListPageLoad.value = false;
-      print("Get Horoscope List Response : $response");
+
       if (response != null) {
         var jsonBody = json.decode(response);
         if (jsonBody['status'] == 'Success') {
@@ -294,25 +284,23 @@ class ApplicationBaseController extends GetxController {
             horoscopeList.value = [];
           } else {
             horoscopeList.value = horoscopesListFromJson(response);
-            // Sort the horoscopeList by hcreationdate
             horoscopeList.value.sort((a, b) {
-              // Parse the date strings to DateTime objects
               DateTime dateA = DateTime.parse(a.hcreationdate ?? "1970-01-01T00:00:00.00");
               DateTime dateB = DateTime.parse(b.hcreationdate ?? "1970-01-01T00:00:00.00");
-              // Sort in descending order (latest first)
               return dateB.compareTo(dateA);
             });
-
-            print('the length of the horoscopes ${horoscopeList.length}');
           }
         } else {
           horoscopeList.value = [];
-          print(jsonBody['Message']);
+          horoscopeListError.value = jsonBody['Message'] ?? 'Unknown error occurred';
         }
       }
     } catch (e) {
       print("Error in _getUserHoroscopeList: $e");
+      horoscopeListError.value = e.toString();
       horoscopeList.value = [];
+    } finally {
+      horoscopeListPageLoad.value = false;
     }
   }
 

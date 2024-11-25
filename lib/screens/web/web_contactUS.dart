@@ -1,23 +1,6 @@
-@JS('emailjs')
-library emailjs;
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:universal_html/html.dart' as html;
-import 'package:js/js.dart';
-
-
-
-@JS()
-external void send(
-    String serviceId,
-    String templateId,
-    dynamic templateParams,
-    String userId,
-    );
-
-@JS('emailjs.init')
-external void init(String publicKey);
 
 Widget buildWebContactUs() {
   return ContactPage();
@@ -167,18 +150,8 @@ class _MessageFormState extends State<MessageForm> {
   @override
   void initState() {
     super.initState();
-    _initializeEmailJS();
   }
 
-  void _initializeEmailJS() {
-    final script = html.ScriptElement()
-      ..src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js';
-    html.document.head!.append(script);
-
-    script.onLoad.listen((_) {
-      init('YOUR_EMAILJS_PUBLIC_KEY');
-    });
-  }
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
@@ -203,19 +176,6 @@ class _MessageFormState extends State<MessageForm> {
     setState(() => _isSending = true);
 
     try {
-      send(
-        'YOUR_EMAILJS_SERVICE_ID',
-        'YOUR_EMAILJS_TEMPLATE_ID',
-        {
-          'from_name': _nameController.text,
-          'from_email': _emailController.text,
-          'phone': _phoneController.text,
-          'subject': _subjectController.text,
-          'message': _messageController.text,
-          'to_email': 'purushothaman7995@gmail.com',
-        },
-        'YOUR_EMAILJS_PUBLIC_KEY',
-      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

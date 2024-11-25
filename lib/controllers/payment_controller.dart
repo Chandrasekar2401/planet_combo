@@ -89,7 +89,55 @@ class PaymentController extends GetxController {
         CustomDialog.cancelLoading(context);
         if(applicationBaseController.paymentForHoroscope.value == true){
           CustomDialog.okActionAlert(context, 'Payment initialization failed. Please try later', 'Ok', false, 14, (){
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const Dashboard()),
+                  (Route<dynamic> route) => false,
+            );
+          });
+        }else{
+          CustomDialog.showAlert(context, 'Payment initialization failed. Please try again or use an alternative payment method.', false, 14);
+        }
+      }
+    } catch (e) {
+      CustomDialog.cancelLoading(context);
+      print('Error in Upi Payment: $e');
+      if(applicationBaseController.paymentForHoroscope.value == true){
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const Dashboard()),
+              (Route<dynamic> route) => false,
+        );
+      }else{
+        CustomDialog.showAlert(context, 'An error occurred. Please try again later.', false, 14);
+      }
+    }
+  }
 
+  void payByStripe(String userId, int reqId, double amount, String token, context) async {
+    try {
+      CustomDialog.showLoading(context, 'Please wait');
+      var response = await APICallings.payByStripe(token: token, amount: amount, reqId: reqId, userId: userId);
+      print(response!.body);
+      var jsonBody = json.decode(response.body);
+      if (jsonBody['url'] != null) {
+        // var data = jsonBody['data'];
+        // var data1 = data['data'];
+        String approvalUrl = jsonBody['url'];
+        var paymentId = jsonBody['referenceId'] ?? "ID value not received";
+        String paymentReferenceId = paymentId.toString();
+        // Store the paymentReferenceId if needed for later verification
+        // You might want to save this in a state management solution or pass it to the next screen
+        CustomDialog.cancelLoading(context);
+        // Open the PayPal approval URL
+        await launchUrl(Uri.parse(approvalUrl));
+        // After opening the URL, you might want to navigate to a confirmation page
+        // or set up a listener for the PayPal callback
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => PaymentProgressPage(paymentReferenceNumber: paymentReferenceId, onPaymentComplete: (String ) {  },)));
+      } else {
+        CustomDialog.cancelLoading(context);
+        if(applicationBaseController.paymentForHoroscope.value == true){
+          CustomDialog.okActionAlert(context, 'Payment initialization failed. Please try later', 'Ok', false, 14, (){
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const Dashboard()),

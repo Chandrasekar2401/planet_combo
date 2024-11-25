@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import 'package:planetcombo/api/api_endpoints.dart';
+import 'package:planetcombo/controllers/applicationbase_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class APIResponse {
@@ -179,6 +180,45 @@ class APICallings {
   }
 
 
+  ///Update Profile
+  static Future updateHoroscopeImage(
+      {required Map<String, dynamic> updateProfile,required String userId,required String hid,  required String token}) async {
+    Map<String, dynamic> registerObject = updateProfile;
+    var url = Uri.parse('${APIEndPoints.updateHoroscopeImage}/$userId/$hid');
+    print('URL : $url');
+    print("Body: ${json.encode(registerObject)}");
+    try{
+      var response = await http.post(
+          url,
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            "token": token
+          },
+          body: registerObject
+      );
+      print('the response are crossed 4');
+      print(response.statusCode);
+      if(response.statusCode == 403){
+        return '403 Error';
+      }else if(response.statusCode == 200){
+        var jsonResponse = json.decode(response.body);
+        print(jsonResponse);
+        if(jsonResponse['status'] == 'Success'){
+          return response.body;
+        }else{
+          return jsonResponse['errorMessage'];
+        }
+      }else if(response.statusCode == 500){
+        return '500';
+      }else{
+        return response.body;
+      }
+    }catch(error){
+      return error;
+    }
+  }
+
+
   ///Add New Profile
   static Future addProfile(
       {required Map<String, dynamic> addProfile}) async {
@@ -221,84 +261,91 @@ class APICallings {
     }
   }
 
-  // static Future updateHoroscope(
-  //     {required Map<String, dynamic> addNewHoroscope,  required String token}) async {
-  //   Map<String, dynamic> registerObject = addNewHoroscope;
-  //   var url = Uri.parse(APIEndPoints.updateHoroscope);
-  //   print('URL : $url');
-  //   print("Body: ${json.encode(registerObject)}");
-  //   var response = await http.post(
-  //       url,
-  //       headers: {
-  //         'Content-Type': 'application/x-www-form-urlencoded',
-  //         "token": token
-  //       },
-  //       body: registerObject
-  //   );
-  //   print('the response are crossed 6');
-  //   print(response.statusCode);
-  //   if(response.statusCode == 403){
-  //     return '403 Error';
-  //   }else if(response.statusCode == 200){
-  //     var jsonResponse = json.decode(response.body);
-  //     print('the response of the status ' +jsonResponse['Status'] + jsonResponse);
-  //     if(jsonResponse['Status'] == 'Success'){
-  //       SharedPreferences prefs = await SharedPreferences.getInstance();
-  //       await prefs.setString('UserInfo', json.encode(jsonResponse['Data']));
-  //       return response.body;
-  //     }else{
-  //       return jsonResponse['ErrorMessage'];
-  //     }
-  //   }else{
-  //     return 'Something went wrong';
-  //   }
-  // }
-
-  ///get horoscope
   static Future<String?> getHoroscope({required String userId, required String token}) async {
-    Map<String, String> headers = {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-      "token": token
-      // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
-    };
-    var url = Uri.parse(APIEndPoints.getHoroscope+userId);
-    var response = await http.get(
-      url,
-      headers: headers,
-    );
-    print("Get Vendor Profile URL : $url");
-    if (response.statusCode == 200) {
-      return response.body;
-    } else {
-      return null;
+    try {
+      Map<String, String> headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "token": token
+      };
+      var url = Uri.parse(APIEndPoints.getHoroscope+userId);
+      var response = await http.get(
+        url,
+        headers: headers,
+      );
+      print("Get Vendor Profile URL : $url");
+
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+        // Try to parse error message from response body
+        try {
+          var errorBody = json.decode(response.body);
+          throw 'Error ${response.statusCode}: ${errorBody['message'] ?? 'Unknown error occurred'}';
+        } catch (e) {
+          throw 'Error ${response.statusCode}: ${_getStatusCodeMessage(response.statusCode)}';
+        }
+      }
+    } catch (e) {
+      throw e.toString();
     }
   }
 
 
-  ///get pending Payments
   static Future<String?> getPendingPayments({required String userId, required String token}) async {
-    Map<String, String> headers = {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-      "token": token
-      // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
-    };
-    var url = Uri.parse(APIEndPoints.getPendingPayments+userId);
-    var response = await http.get(
-      url,
-      headers: headers,
-    );
-    print("Get Vendor Profile URL : $url");
-    if (response.statusCode == 200) {
-      return response.body;
-    } else {
-      return null;
+    try {
+      Map<String, String> headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "token": token
+      };
+      var url = Uri.parse(APIEndPoints.getPendingPayments+userId);
+      var response = await http.get(
+        url,
+        headers: headers,
+      );
+      print("Get Vendor Profile URL : $url");
+
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+        // Try to parse error message from response body
+        try {
+          var errorBody = json.decode(response.body);
+          throw 'Error ${response.statusCode}: ${errorBody['message'] ?? 'Unknown error occurred'}';
+        } catch (e) {
+          throw 'Error ${response.statusCode}: ${_getStatusCodeMessage(response.statusCode)}';
+        }
+      }
+    } catch (e) {
+      throw e.toString();
+    }
+  }
+  ///check Duplicate request
+
+// Helper method to get standard HTTP status messages
+  static String _getStatusCodeMessage(int statusCode) {
+    switch (statusCode) {
+      case 400:
+        return 'Bad Request';
+      case 401:
+        return 'Unauthorized';
+      case 403:
+        return 'Forbidden';
+      case 404:
+        return 'Not Found';
+      case 500:
+        return 'Internal Server Error';
+      case 502:
+        return 'Bad Gateway';
+      case 503:
+        return 'Service Unavailable';
+      default:
+        return 'Unknown Error';
     }
   }
 
 
-  ///check Duplicate request
   static Future<String?> getDuplicateRequest({required String userId,required String hId, required String rsqDate, required String reqDate, required rqCat, required String token}) async {
     Map<String, String> headers = {
       "Content-Type": "application/json",
@@ -556,10 +603,11 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Invoice List api link: $url");
+    print("Invoice List api link: ${response.statusCode}");
     if (response.statusCode == 200) {
       return response.body;
     } else {
+      ApplicationBaseController().invoiceListApiError.value == 'Error ${response.statusCode}: Please try after sometime';
       return null;
     }
   }
@@ -1189,6 +1237,32 @@ class APICallings {
     return response;
   }
 
+
+  ///add paypal payment
+  static Future<Response?> payByStripe(
+      {required double amount, required int reqId, required String userId, required String token}) async {
+    Map<String, dynamic> registerObject = {
+      "requestId": reqId,
+      "userId": userId,
+      "amount":amount,
+    };
+    var url = Uri.parse(APIEndPoints.payByStripe);
+
+    print('URL : $url');
+    print("Body: ${json.encode(registerObject)}");
+
+    var response = await http.post(
+      url,
+      body: jsonEncode(registerObject),
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "token": token
+      },
+    );
+    var jsonResponse = json.decode(response.body);
+    return response;
+  }
 
 
 

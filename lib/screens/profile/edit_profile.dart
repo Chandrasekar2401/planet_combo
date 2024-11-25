@@ -79,45 +79,83 @@ class _ProfileEditState extends State<ProfileEdit> {
     }
   }
 
-  Future<bool> _showLocationDialog() async {
-    bool? result = await showDialog<bool>(
+// Create a global key for loading dialog
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
+  Future<void> _showPermissionRetryDialog() async {
+    if (!mounted) return;
+
+    await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(LocalizationController.getInstance().getTranslatedValue('Location Required')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(LocalizationController.getInstance().getTranslatedValue(
-                  'This app needs location access to set your country and currency.'
-              )),
-              if (kIsWeb) const SizedBox(height: 10),
-              if (kIsWeb) Text(
-                LocalizationController.getInstance().getTranslatedValue(
-                    'Please allow location access in your browser when prompted.'
+      builder: (BuildContext dialogContext) {
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+            title: Text(LocalizationController.getInstance().getTranslatedValue('Location Not Enabled')),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(LocalizationController.getInstance().getTranslatedValue(
+                    'Please make sure to allow location access in your browser when prompted.'
+                )),
+                const SizedBox(height: 15),
+                if (kIsWeb) ...[
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          LocalizationController.getInstance().getTranslatedValue('Browser Instructions:'),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text('• ' + LocalizationController.getInstance().getTranslatedValue(
+                            'Look for the location icon in the address bar'
+                        )),
+                        Text('• ' + LocalizationController.getInstance().getTranslatedValue(
+                            'Click it and select "Allow"'
+                        )),
+                        Text('• ' + LocalizationController.getInstance().getTranslatedValue(
+                            'Then try again'
+                        )),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: Text(LocalizationController.getInstance().getTranslatedValue('Cancel')),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                },
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
                 ),
-                style: const TextStyle(fontStyle: FontStyle.italic),
+                child: Text(LocalizationController.getInstance().getTranslatedValue('Try Again')),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  if (mounted) {
+                    setState(() {
+                      _locationFuture = _getCurrentLocationAndCountry();
+                    });
+                  }
+                },
               ),
             ],
           ),
-          actions: <Widget>[
-            TextButton(
-              child: Text(LocalizationController.getInstance().getTranslatedValue('Cancel')),
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-            TextButton(
-              child: Text(LocalizationController.getInstance().getTranslatedValue('Enable')),
-              onPressed: () async {
-                Navigator.of(context).pop(true);
-                await Geolocator.requestPermission();
-              },
-            ),
-          ],
         );
       },
     );
-    return result ?? false;
   }
 
   Future<bool> _showSettingsDialog() async {
@@ -154,12 +192,11 @@ class _ProfileEditState extends State<ProfileEdit> {
       LocationPermission permission = await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied) {
-        // Show dialog to request permission
         return await _showLocationDialog();
       } else if (permission == LocationPermission.deniedForever) {
         if (kIsWeb) {
-          // For web, show a dialog explaining how to enable location in browser
-          return await _showWebLocationInstructionsDialog();
+          // For web, show the improved location dialog
+          return await _showLocationDialog();
         } else {
           // For mobile, show settings dialog
           return await _showSettingsDialog();
@@ -168,100 +205,149 @@ class _ProfileEditState extends State<ProfileEdit> {
 
       return true;
     } catch (e) {
-      // Handle any errors during permission check
-      return await _showLocationDialog();
+      if (kIsWeb) {
+        return await _showLocationDialog();
+      }
+      return false;
     }
   }
 
-  Future<bool> _showWebLocationInstructionsDialog() async {
+  Future<bool> _showLocationDialog() async {
+    OverlayEntry? loadingOverlay;
+    bool permissionGranted = false;
+
     bool? result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
+          title: Text(LocalizationController.getInstance().getTranslatedValue('Enable Location')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Logo at the top center
-              Center(
-                child: Image.asset(
-                  'assets/images/headletters.png',
-                  height: 140,
-                  width: 140,
-                  fit: BoxFit.contain,
-                ),
-              ),
-              const SizedBox(height: 10),
-              // Title after logo
-              Text(
-                LocalizationController.getInstance().getTranslatedValue('Location Access Required'),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              // Rest of the content with left alignment
-              Align(
-                alignment: Alignment.centerLeft,
-                child: commonBoldText(
-                    text: LocalizationController.getInstance().getTranslatedValue(
-                        'Please enable location access in your browser to continue. Follow these steps:'
-                    )
-                ),
-              ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.only(left: 16), // Add left padding for steps
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, // Ensures left alignment
-                  children: [
-                    commonText(text: '1. Click the lock/info icon in your browser\'s address bar'),
-                    commonText(text: '2. Select "Allow" for location access'),
-                    commonText(text: '3. Refresh the page'),
-                    SizedBox(height: 10),
-                    commonText(text: LocalizationController.getInstance().getTranslatedValue(
-                        'Please Go back try to save profile after enable the location'
-                    ))
-                  ],
-                ),
-              ),
+              Text(LocalizationController.getInstance().getTranslatedValue(
+                  'To set your country and currency, please follow these steps:'
+              )),
+              const SizedBox(height: 15),
+              Text('1. ' + LocalizationController.getInstance().getTranslatedValue(
+                  'Click Enable below'
+              )),
+              Text('2. ' + LocalizationController.getInstance().getTranslatedValue(
+                  'When your browser shows the location popup, click Allow'
+              )),
             ],
           ),
           actions: <Widget>[
             TextButton(
-              child: Text(LocalizationController.getInstance().getTranslatedValue('Go Back')),
+              child: Text(LocalizationController.getInstance().getTranslatedValue('Cancel')),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+              ),
+              child: Text(LocalizationController.getInstance().getTranslatedValue('Enable')),
               onPressed: () async {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const WebLogin()),
-                      (Route<dynamic> route) => false,
+                final currentContext = context;
+
+                // Show loading overlay
+                loadingOverlay = OverlayEntry(
+                  builder: (context) => Material(
+                    color: Colors.black54,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 20),
+                            Text(
+                              LocalizationController.getInstance().getTranslatedValue(
+                                  'Waiting for browser permission...'
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 );
+
+                Navigator.of(currentContext).pop(true);
+
+                if (mounted) {
+                  Overlay.of(currentContext).insert(loadingOverlay!);
+                }
+
+                try {
+                  // Request permission and wait for the result
+                  final permission = await Geolocator.requestPermission();
+
+                  // Check if permission was actually granted
+                  if (permission == LocationPermission.always ||
+                      permission == LocationPermission.whileInUse) {
+                    // Try to get the position to verify permission
+                    try {
+                      await Geolocator.getCurrentPosition(
+                          timeLimit: const Duration(seconds: 5)
+                      );
+                      permissionGranted = true;
+                    } catch (e) {
+                      permissionGranted = false;
+                    }
+                  }
+
+                  // Remove loading overlay
+                  loadingOverlay?.remove();
+                  loadingOverlay = null;
+
+                  if (!permissionGranted && mounted) {
+                    _showPermissionRetryDialog();
+                  }
+                } catch (e) {
+                  loadingOverlay?.remove();
+                  loadingOverlay = null;
+                  if (mounted) {
+                    _showPermissionRetryDialog();
+                  }
+                }
               },
             ),
           ],
         );
       },
     );
-    return result ?? false;
+
+    // Clean up overlay if it still exists
+    loadingOverlay?.remove();
+
+    return permissionGranted;
   }
 
   Future<Map<String, dynamic>> _getCurrentLocationAndCountry() async {
     try {
-      // First check and request permission
-      bool hasPermission = await _checkLocationPermission();
-      if (!hasPermission) {
-        throw Exception(LocalizationController.getInstance().getTranslatedValue(
-            'Location permission is required to continue'
-        ));
+      bool permissionGranted = await _checkLocationPermission();
+      if (!permissionGranted) {
+        throw Exception('Location permission not granted');
       }
 
-      Position position = await Geolocator.getCurrentPosition();
+      Position position = await Geolocator.getCurrentPosition(
+          timeLimit: const Duration(seconds: 10)
+      );
       String country = 'Unknown';
 
       if (kIsWeb) {
-        final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}&zoom=3');
+        final url = Uri.parse(
+            'https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}&zoom=3'
+        );
+
         final response = await http.get(url);
 
         if (response.statusCode == 200) {
@@ -270,7 +356,10 @@ class _ProfileEditState extends State<ProfileEdit> {
           appLoadController.loggedUserData.value.ucountry = country;
         }
       } else {
-        List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+        List<Placemark> placemarks = await placemarkFromCoordinates(
+            position.latitude,
+            position.longitude
+        );
         country = placemarks.first.country ?? 'Unknown';
         appLoadController.loggedUserData.value.ucountry = country;
       }
@@ -280,53 +369,36 @@ class _ProfileEditState extends State<ProfileEdit> {
         'country': country,
       };
     } catch (e) {
-      if (mounted) {
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text(LocalizationController.getInstance().getTranslatedValue('Location Error')),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(LocalizationController.getInstance().getTranslatedValue(
-                      'Unable to get your location.'
-                  )),
-                  const SizedBox(height: 10),
-                  if (kIsWeb) ...[
-                    Text(LocalizationController.getInstance().getTranslatedValue(
-                        'Please ensure:'
-                    )),
-                    Text('• Your browser supports location services'),
-                    Text('• Location access is allowed in your browser'),
-                    Text('• You are using a secure (HTTPS) connection'),
-                  ],
-                  const SizedBox(height: 10),
-                  Text(LocalizationController.getInstance().getTranslatedValue(
-                      'Click Retry after enabling location access.'
-                  )),
-                ],
+      if (!mounted) return {'position': null, 'country': 'Unknown'};
+
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(LocalizationController.getInstance().getTranslatedValue('Location Error')),
+            content: Text(LocalizationController.getInstance().getTranslatedValue(
+                'Unable to get your location. Please ensure you have allowed location access in your browser.'
+            )),
+            actions: <Widget>[
+              TextButton(
+                child: Text(LocalizationController.getInstance().getTranslatedValue('Try Again')),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    _locationFuture = _getCurrentLocationAndCountry();
+                  });
+                },
               ),
-              actions: <Widget>[
-                TextButton(
-                  child: Text(LocalizationController.getInstance().getTranslatedValue('Retry')),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    setState(() {
-                      _locationFuture = _getCurrentLocationAndCountry();
-                    });
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      }
+            ],
+          );
+        },
+      );
+
       rethrow;
     }
   }
+
   @override
   void initState() {
     super.initState();
@@ -336,17 +408,14 @@ class _ProfileEditState extends State<ProfileEdit> {
     isSwitched = appLoadController.loggedUserData.value.touchid == 'T';
 
     if (appLoadController.addNewUser.value == "YES") {
-      // Initialize location future
-      _locationFuture = _getCurrentLocationAndCountry();
       userCountry.text = "";
       userCurrency.text = "";
 
-      // Check location permission immediately
-      _checkLocationPermission().then((hasPermission) {
-        if (!hasPermission) {
-          // If permission denied, update UI to show error state
+      // Initialize location fetching
+      Future.microtask(() {
+        if (mounted) {
           setState(() {
-            _locationFuture = Future.error('Location permission denied');
+            _locationFuture = _getCurrentLocationAndCountry();
           });
         }
       });
@@ -355,6 +424,7 @@ class _ProfileEditState extends State<ProfileEdit> {
       userCurrency.text = appLoadController.loggedUserData.value.ucurrency!;
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

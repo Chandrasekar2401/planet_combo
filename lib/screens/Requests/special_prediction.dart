@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:geocoding/geocoding.dart' hide kIsWeb;
+import 'package:planetcombo/common/app_widgets.dart';
 
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
@@ -91,8 +92,9 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
     return '$formattedDate$timezone';
   }
 
-  double taxCalc(double tax1, double tax2, double tax3) {
-    return tax1 + tax2 + tax3;
+  String taxCalc(double tax1, double tax2, double tax3){
+    double totalTax = tax1 + tax2 + tax3;
+    return applicationBaseController.formatDecimalString(totalTax);
   }
 
   @override
@@ -226,15 +228,19 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
                                   var chargeData = json.decode(result);
                                   if (chargeData['status'] == 'Success') {
                                     specialRequest.text = "";
-                                    multiTextYesOrNoDialog(
+                                    AppWidgets().multiTextAlignYesOrNoDialog(
+                                      iconUrl: 'assets/images/headletters.png',
                                         context: context,
                                         dialogMessage: 'Special Prediction is created please Pay Now Or Pay Later',
                                         subText1Key: 'Amount',
-                                        subText1Value: '${appLoadController.loggedUserData.value.ucurrency} ${applicationBaseController.formatDecimalString(chargeData['data']['amount'])}',
+                                        subText1Value: appLoadController.loggedUserData.value.ucurrency,
+                                        subText1Value1: applicationBaseController.formatDecimalString(chargeData['data']['amount']),
                                         subText2Key: 'Tax Amount',
-                                        subText2Value: '${appLoadController.loggedUserData.value.ucurrency} ${taxCalc(chargeData['data']['tax1_amount'], chargeData['data']['tax3_amount'], chargeData['data']['tax3_amount'])}',
+                                        subText2Value: appLoadController.loggedUserData.value.ucurrency,
+                                        subText2Value2: taxCalc(chargeData['data']['tax1_amount'], chargeData['data']['tax3_amount'], chargeData['data']['tax3_amount']),
                                         subText3Key: 'Total Amount',
-                                        subText3Value: '${appLoadController.loggedUserData.value.ucurrency} ${applicationBaseController.formatDecimalString(chargeData['data']['total_amount'])}',
+                                        subText3Value: appLoadController.loggedUserData.value.ucurrency,
+                                        subText3Value3: applicationBaseController.formatDecimalString(chargeData['data']['total_amount']),
                                         cancelText: 'Pay Later',
                                         okText: 'Pay Now',
                                         cancelAction: () {
@@ -255,8 +261,16 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
                                                 appLoadController.loggedUserData!.value.token!,
                                                 context
                                             );
+                                          }else if(appLoadController.loggedUserData!.value.ucurrency!.toLowerCase() == 'aed'){
+                                            paymentController.payByStripe(
+                                                appLoadController.loggedUserData.value!.userid!,
+                                                chargeData['data']['requestId'],
+                                                chargeData['data']['total_amount'],
+                                                appLoadController.loggedUserData!.value.token!,
+                                                context
+                                            );
                                           }else{
-                                            paymentController.payByPaypal(
+                                            paymentController.payByStripe(
                                                 appLoadController.loggedUserData.value!.userid!,
                                                 chargeData['data']['requestId'],
                                                 chargeData['data']['total_amount'],

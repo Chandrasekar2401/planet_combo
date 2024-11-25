@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:planetcombo/common/widgets.dart';
+import 'package:planetcombo/common/place_autocomplete.dart';
 import 'package:planetcombo/controllers/add_horoscope_controller.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
@@ -12,6 +13,8 @@ import 'package:get/get.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:planetcombo/screens/services/add_marriageInfo.dart';
 import 'package:planetcombo/screens/dashboard.dart';
+
+import '../../common/place_autocomple_mobile.dart';
 
 
 class AddPrimary extends StatefulWidget {
@@ -291,21 +294,46 @@ class _AddPrimaryState extends State<AddPrimary> {
                     ),
                         SizedBox(height: 10),
                         commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('City of Birth, Country of Birth'), fontSize: 12, color: addHoroscopeController.horoscopeBirthStateAlert.value == true ? Colors.red : Colors.black87, textAlign: TextAlign.start),
-                        PrimaryStraightInputText(hintText:
-                        LocalizationController.getInstance().getTranslatedValue('City of Birth, Country of Birth'),
+                        kIsWeb ?
+                        PlaceAutocompleteWebInput(
+                          hintText: LocalizationController.getInstance().getTranslatedValue('City of Birth, Country of Birth'),
                           controller: addHoroscopeController.placeStateCountryOfBirth,
-                          onChange: (v){
+                          borderColor: appLoadController.appMidColor,
+                          onChange: (v) {
+                            print('onChange callback with value: $v');
                             if (v == null || v.isEmpty) {
                               addHoroscopeController.horoscopeBirthStateAlert.value = true;
-                            }else{
+                            } else {
                               addHoroscopeController.horoscopeBirthStateAlert.value = false;
+                              addHoroscopeController.update(); // Force GetX update
                             }
-                            return null;
                           },
                           onValidate: (v) {
                             if (v == null || v.isEmpty) {
                               addHoroscopeController.horoscopeBirthStateAlert.value = true;
-                            }else{
+                            } else {
+                              addHoroscopeController.horoscopeBirthStateAlert.value = false;
+                            }
+                            return null;
+                          },
+                        ) :
+                        PlaceAutocompleteMobileInput(
+                          hintText: LocalizationController.getInstance().getTranslatedValue('City of Birth, Country of Birth'),
+                          controller: addHoroscopeController.placeStateCountryOfBirth,
+                          borderColor: appLoadController.appMidColor,
+                          onChange: (v) {
+                            print('onChange callback with value: $v');
+                            if (v == null || v.isEmpty) {
+                              addHoroscopeController.horoscopeBirthStateAlert.value = true;
+                            } else {
+                              addHoroscopeController.horoscopeBirthStateAlert.value = false;
+                              addHoroscopeController.update(); // Force GetX update
+                            }
+                          },
+                          onValidate: (v) {
+                            if (v == null || v.isEmpty) {
+                              addHoroscopeController.horoscopeBirthStateAlert.value = true;
+                            } else {
                               addHoroscopeController.horoscopeBirthStateAlert.value = false;
                             }
                             return null;
@@ -333,12 +361,12 @@ class _AddPrimaryState extends State<AddPrimary> {
                             return null;
                           },
                         ),
-                        // const SizedBox(height: 15),
-                        // commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Order Of birth (Are you the first or second or ...Child in the family)'), fontSize: 12, color: Colors.black87, textAlign: TextAlign.start),
-                        // ReusableDropdown(options: const ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], currentValue: addHoroscopeController.birthOrder.value, onChanged: (value){
-                        //   print('selected value is $value');
-                        //   addHoroscopeController.birthOrder.value = value!;
-                        // }),
+                        const SizedBox(height: 15),
+                        commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Order Of birth (Are you the first or second or ...Child in the family)'), fontSize: 12, color: Colors.black87, textAlign: TextAlign.start),
+                        ReusableDropdown(options: const ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], currentValue: addHoroscopeController.birthOrder.value, onChanged: (value){
+                          print('selected value is $value');
+                          addHoroscopeController.birthOrder.value = value!;
+                        }),
                       ],
                     ),
                   ),

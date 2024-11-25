@@ -2,9 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
-import '../controllers/appLoad_controller.dart';
+import 'package:planetcombo/controllers/appLoad_controller.dart';
 
 class LiveChat extends StatefulWidget {
   const LiveChat({Key? key}) : super(key: key);
@@ -16,124 +17,181 @@ class _LiveChatState extends State<LiveChat> {
   final AppLoadController appLoadController =
   Get.put(AppLoadController.getInstance(), permanent: true);
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late final DatabaseReference _database;
   final TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+
   bool _isLoading = false;
   String? _error;
-  late String currentUserId;
+  String? userKey;
+  String? userEmail;
+  String? userProfile;
+  int messageCount = 0;
+  List<Map<String, dynamic>> messagesList = [];
+  StreamSubscription? _messagesSubscription;
 
   @override
   void initState() {
     super.initState();
-    currentUserId = appLoadController.loggedUserData.value.userid!;
-    _createUserChatCollection();
+    _initializeFirebase();
   }
 
-  Future<void> _createUserChatCollection() async {
+  Future<void> _initializeFirebase() async {
     try {
-      // Create a document for the user if it doesn't exist
-      final userChatRef = _firestore.collection('userChats').doc(currentUserId);
-      final doc = await userChatRef.get();
+      // Initialize Firebase for web
+      await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: "AIzaSyCXAw8BQBx4OPMOWyNaI4bv7gh5GUXa0lQ",
+          authDomain: "flutterplanetcombo-ff367.firebaseapp.com",
+          databaseURL: "https://flutterplanetcombo-ff367-default-rtdb.firebaseio.com",
+          projectId: "flutterplanetcombo-ff367",
+          storageBucket: "flutterplanetcombo-ff367.appspot.com",
+          messagingSenderId: "488939796804",
+          appId: "1:488939796804:web:5c94e0a3b5f03ca2abbf11",
+        ),
+      );
 
-      if (!doc.exists) {
-        await userChatRef.set({
-          'userId': currentUserId,
-          'createdAt': FieldValue.serverTimestamp(),
-          'lastActive': FieldValue.serverTimestamp(),
-        });
-      }
+      _database = FirebaseDatabase.instance.ref();
+      await _initializeUser();
     } catch (e) {
-      print('Error creating user chat collection: $e');
+      print('Firebase initialization error: $e');
+      setState(() {
+        _error = 'Failed to initialize Firebase. Please try again.';
+      });
     }
   }
 
+  Future<void> _initializeUser() async {
+    try {
+      userEmail = appLoadController.loggedUserData.value.userid;
+      userProfile = appLoadController.loggedUserData.value.userphoto;
+      await _findOrCreateUser(userEmail!);
+    } catch (e) {
+      print('Error initializing user: $e');
+      setState(() {
+        _error = 'Failed to initialize chat. Please try again.';
+      });
+    }
+  }
+
+  Future<void> _findOrCreateUser(String email) async {
+    try {
+      DatabaseReference usersRef = _database.child('UsersList');
+
+      // Instead of using query, we'll listen to the value event once
+      DatabaseEvent event = await usersRef.once();
+
+      if (event.snapshot.value != null) {
+        final usersData = event.snapshot.value as Map;
+        bool userFound = false;
+
+        usersData.forEach((key, value) {
+          if (value['userEmail'] == email) {
+            userKey = key;
+            messageCount = value['message'] ?? 0;
+            userFound = true;
+          }
+        });
+
+        if (!userFound) {
+          await _createNewUser(email);
+        }
+      } else {
+        await _createNewUser(email);
+      }
+
+      // Start listening to messages
+      _listenToMessages();
+
+    } catch (e) {
+      print('Error in findOrCreateUser: $e');
+      setState(() {
+        _error = 'Failed to initialize user data';
+      });
+    }
+  }
+
+  Future<void> _createNewUser(String email) async {
+    final newUserRef = _database.child('UsersList').push();
+    userKey = newUserRef.key;
+    await newUserRef.set({
+      'adminMessage': 0,
+      'message': 0,
+      'userActive': 'y',
+      'userEmail': email,
+      'userProfileUrl': userProfile,
+    });
+  }
+
+  void _listenToMessages() {
+    if (userKey == null) return;
+
+    _messagesSubscription?.cancel();
+
+    _messagesSubscription = _database
+        .child('message/$userKey')
+        .onValue
+        .listen((DatabaseEvent event) {
+      if (!mounted) return;
+
+      if (event.snapshot.value != null) {
+        final messagesData = event.snapshot.value as Map;
+        final List<Map<String, dynamic>> newMessages = [];
+
+        messagesData.forEach((key, value) {
+          newMessages.add({
+            'key': key,
+            'time': value['TimeStamp'],
+            'message': value['message'],
+            'from': value['from'].toString(),
+          });
+        });
+
+        setState(() {
+          messagesList = newMessages;
+        });
+
+        _scrollToBottom();
+      }
+    }, onError: (error) {
+      print('Error listening to messages: $error');
+      setState(() {
+        _error = 'Failed to load messages. Please refresh the page.';
+      });
+    });
+  }
+
   Future<void> _sendMessage() async {
-    if (_messageController.text.trim().isEmpty) return;
+    if (_messageController.text.trim().isEmpty || userKey == null) return;
+
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      // Create message data
-      final messageData = {
-        'senderId': currentUserId,
-        'senderType': 'user', // To differentiate between user and admin messages
+      messageCount++;
+      await _database.child('UsersList').child(userKey!).update({
+        'message': messageCount,
+        'userActive': 'y',
+      });
+
+      final newMessageRef = _database.child('message').child(userKey!).push();
+      await newMessageRef.set({
         'message': _messageController.text.trim(),
-        'timestamp': FieldValue.serverTimestamp(),
-        'createdAt': DateTime.now().toIso8601String(),
-        'status': 'sent',
-        'isRead': false
-      };
-
-      // Add message to user-specific subcollection
-      await _firestore
-          .collection('userChats')
-          .doc(currentUserId)
-          .collection('messages')
-          .add(messageData)
-          .timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw TimeoutException('Connection timeout. Please check your internet.');
-        },
-      );
-
-      // Update last active timestamp
-      await _firestore
-          .collection('userChats')
-          .doc(currentUserId)
-          .update({
-        'lastActive': FieldValue.serverTimestamp(),
-        'lastMessage': _messageController.text.trim(),
+        'from': 2,
+        'TimeStamp': ServerValue.timestamp,
       });
 
       if (mounted) {
         _messageController.clear();
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   const SnackBar(
-        //     content: Text('Message sent successfully'),
-        //     backgroundColor: Colors.green,
-        //   ),
-        // );
+        _scrollToBottom();
       }
     } catch (e) {
       print('Error sending message: $e');
-      String errorMessage = 'Failed to send message';
-
-      if (e is FirebaseException) {
-        switch (e.code) {
-          case 'permission-denied':
-            errorMessage = 'Permission denied. Please check your authentication.';
-            break;
-          case 'unavailable':
-            errorMessage = 'Service is currently unavailable. Please try again later.';
-            break;
-          default:
-            errorMessage = 'Error: ${e.message}';
-        }
-      } else if (e is TimeoutException) {
-        errorMessage = 'Connection timed out. Please check your internet connection.';
-      }
-
-      if (mounted) {
-        setState(() {
-          _error = errorMessage;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Colors.white,
-              onPressed: _sendMessage,
-            ),
-          ),
-        );
-      }
+      setState(() {
+        _error = 'Failed to send message. Please try again.';
+      });
     } finally {
       if (mounted) {
         setState(() {
@@ -141,6 +199,18 @@ class _LiveChatState extends State<LiveChat> {
         });
       }
     }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   @override
@@ -158,7 +228,7 @@ class _LiveChatState extends State<LiveChat> {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/images/bg_profile.png'),
+            image: AssetImage('assets/images/chatbg.jpg'),
             fit: BoxFit.cover,
           ),
         ),
@@ -184,92 +254,53 @@ class _LiveChatState extends State<LiveChat> {
                 ),
               ),
             Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                // Updated stream to use user-specific messages
-                stream: _firestore
-                    .collection('userChats')
-                    .doc(currentUserId)
-                    .collection('messages')
-                    .orderBy('timestamp', descending: true)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                          const SizedBox(height: 16),
-                          Text('Error: ${snapshot.error}'),
-                          TextButton(
-                            onPressed: () => setState(() {}),
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(8),
+                itemCount: messagesList.length,
+                itemBuilder: (context, index) {
+                  final message = messagesList[index];
+                  final isUserMessage = message['from'] == '2';
 
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'No messages yet\nStart a conversation!',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Align(
+                      alignment: isUserMessage
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Container(
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width * 0.75,
                         ),
-                      ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    reverse: true,
-                    itemCount: snapshot.data!.docs.length,
-                    itemBuilder: (context, index) {
-                      final data = snapshot.data!.docs[index].data() as Map<String, dynamic>;
-                      final isUserMessage = data['senderType'] == 'user';
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isUserMessage
+                              ? Colors.blue[100]
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         child: Column(
-                          crossAxisAlignment: isUserMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                          crossAxisAlignment: isUserMessage
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
                           children: [
-                            IntrinsicWidth(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                      color: isUserMessage ? Colors.blue[100] : Colors.white,
-                                      borderRadius: BorderRadius.circular(7)
-                                  ),
-                                  child: ClipPath(
-                                    clipper: ChatMessageClipper(),
-                                    child: ListTile(
-                                      title: commonText(
-                                          text: isUserMessage ? 'You' : 'Admin',
-                                          fontSize: 14,
-                                          color: Colors.blue
-                                      ),
-                                      subtitle: commonText(
-                                          text: data['message']
-                                      ),
-                                    ),
-                                  ),
-                                )
-                            ),
-                            const SizedBox(height: 7)
+                            if (!isUserMessage)
+                              Text(
+                                'admin',
+                                style: TextStyle(
+                                  color: Colors.blue[700],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            Text(message['message']),
                           ],
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   );
                 },
               ),
             ),
-            // Message input section remains the same
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
@@ -278,13 +309,13 @@ class _LiveChatState extends State<LiveChat> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(7)
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
                       ),
                       child: TextField(
                         controller: _messageController,
                         decoration: const InputDecoration(
-                          hintText: 'Type your message...',
+                          hintText: 'Type here...',
                           border: InputBorder.none,
                         ),
                         onSubmitted: (_) => _sendMessage(),
@@ -292,29 +323,23 @@ class _LiveChatState extends State<LiveChat> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 5),
-                  SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: CircleAvatar(
-                      backgroundColor: Colors.white,
-                      child: _isLoading
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                    ),
+                    child: IconButton(
+                      icon: _isLoading
                           ? const SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
                         ),
                       )
-                          : IconButton(
-                        icon: const Icon(
-                          Icons.send,
-                          size: 27,
-                          color: Colors.green,
-                        ),
-                        onPressed: _sendMessage,
-                      ),
+                          : const Icon(Icons.send),
+                      onPressed: _sendMessage,
                     ),
                   ),
                 ],
@@ -328,29 +353,14 @@ class _LiveChatState extends State<LiveChat> {
 
   @override
   void dispose() {
+    if (userKey != null) {
+      _database.child('UsersList').child(userKey!).update({
+        'userActive': '',
+      });
+    }
+    _messagesSubscription?.cancel();
     _messageController.dispose();
+    _scrollController.dispose();
     super.dispose();
-  }
-}
-
-class ChatMessageClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.moveTo(16, 0);
-    path.lineTo(size.width - 16, 0);
-    path.lineTo(size.width - 16, size.height - 16);
-    path.quadraticBezierTo(size.width - 16, size.height, size.width, size.height);
-    path.lineTo(16, size.height);
-    path.quadraticBezierTo(0, size.height, 0, size.height - 16);
-    path.lineTo(0, 16);
-    path.quadraticBezierTo(0, 0, 16, 0);
-
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) {
-    return true;
   }
 }

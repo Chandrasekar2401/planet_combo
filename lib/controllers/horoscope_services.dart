@@ -27,37 +27,49 @@ class HoroscopeServiceController extends GetxController {
   final AppLoadController appLoadController =
   Get.put(AppLoadController.getInstance(), permanent: true);
 
-  Future<void> getUserPredictions(String hid) async {
+  Future<bool> getUserPredictions(String hid) async {
     try {
       var response = await APICallings.getUserPredictions(
           userId: appLoadController.loggedUserData.value.userid!,
           hid: hid,
           token: appLoadController.loggedUserData.value.token!
       );
-      print('the response is ');
+      print('API Response: $response'); // Debug log
+
       if (response != null) {
         var jsonBody = json.decode(response);
+        print('JSON Body: $jsonBody'); // Debug log
+
         if (jsonBody['status'] == 'Success') {
-          print('iam launching here $response');
           requestInfo.value = RequestList.fromJson(jsonBody);
 
           // Sort the data list based on createdate
           if (requestInfo.value.data != null) {
             requestInfo.value.data!.sort((a, b) {
-              // Parse the createdates
               DateTime dateA = DateTime.parse(a.reqcredate!);
               DateTime dateB = DateTime.parse(b.reqcredate!);
-              // Sort in descending order (latest first)
               return dateB.compareTo(dateA);
             });
+            requestHistory.value = requestInfo.value.data ?? [];
+            print('Data processed successfully, returning true'); // Debug log
+            return true;
           }
-
-          requestHistory.value = requestInfo.value.data ?? [];
+          // If we have success status but no data
+          print('No data found in response'); // Debug log
+          return false;
+        } else {
+          print('API returned non-success status'); // Debug log
+          throw jsonBody['message'] ?? 'Unknown error occurred';
         }
+      } else {
+        print('Response is null'); // Debug log
+        throw 'Server unreachable';
       }
+
     } catch (error) {
-      print(error);
+      print('API Error: $error');
       requestHistory.value = [];
+      throw error.toString();
     }
   }
 

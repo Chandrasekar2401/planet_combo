@@ -13,6 +13,8 @@ import 'package:get/get.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:planetcombo/screens/dashboard.dart';
 
+import '../../api/api_endpoints.dart';
+
 
 class AddRelativesInfo extends StatefulWidget {
   const AddRelativesInfo({Key? key}) : super(key: key);
@@ -109,7 +111,6 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
               backgroundColor: appLoadController.appMidColor,
             ),
             onPressed: () {
-              Navigator.pop(context);
               addHoroscopeController.addNewHoroscope(playContext);
             },
             child: const Text('Confirm', style: TextStyle(color: Colors.white)),
@@ -397,6 +398,7 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
                       {"Birth Date": DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addHoroscopeBirthSelectedDate!.value)},
                       {"Birth Time": DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addHoroscopeBirthSelectedTime!.value.hour, addHoroscopeController.addHoroscopeBirthSelectedTime!.value.minute))},
                       {"City of Birth": addHoroscopeController.placeStateCountryOfBirth.text},
+                      {"Order of Birth": addHoroscopeController.birthOrder.value},
                       {"Nearest landmark for place of birth": addHoroscopeController.landmarkOfBirth.text},
                       if(addHoroscopeController.addSelectedMarriageDate != null){"Date Of Marriage": DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addSelectedMarriageDate!.value)},
                       if(addHoroscopeController.addSelectedMarriageTime != null){"Time Of Marriage": DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addSelectedMarriageTime!.value.hour, addHoroscopeController.addSelectedMarriageTime!.value.minute))},

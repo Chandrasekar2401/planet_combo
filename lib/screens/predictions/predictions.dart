@@ -10,7 +10,6 @@ import 'package:planetcombo/screens/predictions/predictions_history.dart';
 import 'package:intl/intl.dart';
 //models
 import 'package:planetcombo/models/preictions_list.dart';
-import 'package:planetcombo/screens/predictions/special_prediction_response.dart';
 import 'package:planetcombo/screens/predictions/list_dates.dart';
 
 
@@ -182,191 +181,294 @@ class _PredictionsState extends State<Predictions> {
                     return SizedBox();
                   }
                   return Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 8.0, horizontal: 16.0),
+                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: GestureDetector(
                       onTap: () async {
-                        horoscopeServiceController
-                            .requestHistory[index].reqcat ==
-                            "3"
-                            ?
-                            predictionsController.getSpecialPredictions(
-                                horoscopeServiceController.requestHistory[index].rquserid!,
-                                horoscopeServiceController.requestHistory[index].rqhid,
-                                horoscopeServiceController.requestHistory[index].rqid!,
-                                horoscopeServiceController.requestHistory[index].rqspecialdetails!,
-                                context)
-                            :
-                        Navigator.push(
+                        horoscopeServiceController.requestHistory[index].reqcat == "3"
+                            ? predictionsController.getSpecialPredictions(
+                            horoscopeServiceController.requestHistory[index].rquserid!,
+                            horoscopeServiceController.requestHistory[index].rqhid,
+                            horoscopeServiceController.requestHistory[index].rqid!,
+                            horoscopeServiceController.requestHistory[index].rqspecialdetails!,
+                            context)
+                            : Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) =>
-                                    DateListPage(userId: horoscopeServiceController.requestHistory[index].rquserid!,
-                                      hid:  horoscopeServiceController.requestHistory[index].rqhid,
-                                      requestId:      horoscopeServiceController.requestHistory[index].rqid!)));
-                        // _getUserPredictionsList(
-                        //     horoscopeServiceController
-                        //         .requestHistory[index].rqhid
-                        //         .toString(),
-                        //     horoscopeServiceController
-                        //         .requestHistory[index].rqid!);
+                                builder: (context) => DateListPage(
+                                    userId: horoscopeServiceController.requestHistory[index].rquserid!,
+                                    hid: horoscopeServiceController.requestHistory[index].rqhid,
+                                    requestId: horoscopeServiceController.requestHistory[index].rqid!)));
                       },
                       child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (horoscopeServiceController
-                                  .requestHistory[index].reqcat ==
-                                  "2")
-                                Container(
-                                  decoration: BoxDecoration(
-                                      color: Color(0xff05704a),
-                                      borderRadius: BorderRadius.circular(7)),
-                                  child: Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                        12, 0, 12, 0),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Column(
-                                          children: [
-                                            commonText(
-                                                text: 'Prediction Start Date',
-                                                fontSize: 10,
-                                                color: Colors.white),
-                                            SizedBox(height: 2),
-                                            commonBoldText(
-                                                text: formatDate(
-                                                    horoscopeServiceController
-                                                        .requestHistory[index]
-                                                        .rqsdate!),
-                                                fontSize: 12,
-                                                color: Colors.white)
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(color: Color(0xff05704a).withOpacity(0.1)), // Subtle border
+                        ),
+                        child: Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topRight,
+                                  end: Alignment.bottomLeft,
+                                  colors: [
+                                    Colors.white,
+                                    Color(0xff05704a).withOpacity(0.05),
+                                  ],
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (horoscopeServiceController.requestHistory[index].reqcat == "2")
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [Color(0xff05704a), Color(0xff048c5c)],
+                                            begin: Alignment.centerLeft,
+                                            end: Alignment.centerRight,
+                                          ),
+                                          borderRadius: BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Color(0xff05704a).withOpacity(0.2),
+                                              blurRadius: 8,
+                                              offset: Offset(0, 4),
+                                            ),
                                           ],
                                         ),
-                                        Container(
-                                            height: 50,
-                                            child: Image.asset(
-                                                'assets/imgs/arrow_icon.png')),
-                                        Column(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Icon(Icons.calendar_today,
+                                                          size: 14,
+                                                          color: Colors.white.withOpacity(0.9)),
+                                                      SizedBox(width: 4),
+                                                      commonText(
+                                                        text: 'Start Date',
+                                                        fontSize: 12,
+                                                        color: Colors.white.withOpacity(0.9),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 6),
+                                                  commonBoldText(
+                                                    text: formatDate(horoscopeServiceController.requestHistory[index].rqsdate!),
+                                                    fontSize: 14,
+                                                    color: Colors.white,
+                                                  )
+                                                ],
+                                              ),
+                                              Container(
+                                                height: 30,
+                                                child: Image.asset('assets/imgs/arrow_icon.png'),
+                                              ),
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.end,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Icon(Icons.event,
+                                                          size: 14,
+                                                          color: Colors.white.withOpacity(0.9)),
+                                                      SizedBox(width: 4),
+                                                      commonText(
+                                                        text: 'End Date',
+                                                        fontSize: 12,
+                                                        color: Colors.white.withOpacity(0.9),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 6),
+                                                  commonBoldText(
+                                                    text: horoscopeServiceController.requestHistory[index].rqedate == null
+                                                        ? "Ongoing"
+                                                        : formatDate(horoscopeServiceController.requestHistory[index].rqedate!),
+                                                    fontSize: 14,
+                                                    color: Colors.white,
+                                                  )
+                                                ],
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    SizedBox(height: 16),
+                                    if (horoscopeServiceController.requestHistory[index].reqcat != "2")
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: Colors.deepOrange.withOpacity(0.2)),
+                                        ),
+                                        padding: EdgeInsets.all(12),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
+                                            Row(
+                                              children: [
+                                                Icon(Icons.question_answer,
+                                                    size: 16,
+                                                    color: Colors.deepOrange),
+                                                SizedBox(width: 8),
+                                                commonBoldText(
+                                                  text: 'Question',
+                                                  fontSize: 15,
+                                                  color: Colors.deepOrange,
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(height: 8),
                                             commonText(
-                                                text: 'Prediction End Date',
-                                                fontSize: 10,
-                                                color: Colors.white),
-                                            SizedBox(height: 2),
-                                            commonBoldText(
-                                                text: horoscopeServiceController
-                                                    .requestHistory[
-                                                index]
-                                                    .rqedate ==
-                                                    null
-                                                    ? ""
-                                                    : formatDate(
-                                                    horoscopeServiceController
-                                                        .requestHistory[
-                                                    index]
-                                                        .rqedate!),
-                                                fontSize: 12,
-                                                color: Colors.white)
+                                              text: '${horoscopeServiceController.requestHistory[index].rqspecialdetails}',
+                                              fontSize: 14,
+                                              color: Colors.black87,
+                                            ),
                                           ],
-                                        )
+                                        ),
+                                      ),
+                                    SizedBox(height: 16),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.withOpacity(0.05),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      padding: EdgeInsets.all(12),
+                                      child: Column(
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Icon(Icons.numbers,
+                                                      size: 16,
+                                                      color: Color(0xff05704a)),
+                                                  SizedBox(width: 8),
+                                                  commonBoldText(
+                                                    text: 'Request ID',
+                                                    fontSize: 14,
+                                                    color: Color(0xff05704a),
+                                                  ),
+                                                ],
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.only(right: 40),
+                                                child: commonText(
+                                                  text: horoscopeServiceController.requestHistory[index].rqid!.trim(),
+                                                  fontSize: 14,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 12),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Icon(Icons.access_time,
+                                                      size: 16,
+                                                      color: Color(0xff05704a)),
+                                                  SizedBox(width: 8),
+                                                  commonBoldText(
+                                                    text: 'Created On',
+                                                    fontSize: 14,
+                                                    color: Color(0xff05704a),
+                                                  ),
+                                                ],
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.only(right: 40),
+                                                child: commonText(
+                                                  text: formatDate(horoscopeServiceController.requestHistory[index].reqcredate!),
+                                                  fontSize: 14,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (horoscopeServiceController.requestHistory[index].reqcat == "3")
+                              Positioned(
+                                right: 12,
+                                top: 0,
+                                bottom: 0,
+                                child: Center(
+                                  child: Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: Color(0xff05704a),
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Color(0xff05704a).withOpacity(0.2),
+                                          blurRadius: 4,
+                                          offset: Offset(0, 2),
+                                        ),
                                       ],
+                                    ),
+                                    child: Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 18,
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ),
-                              SizedBox(height: 7),
-                              Row(
-                                mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                                children: [
-                                  commonBoldText(
-                                      text: horoscopeServiceController
-                                          .requestHistory[index]
-                                          .reqcat ==
-                                          "2"
-                                          ? ""
-                                          : 'Question',
-                                      fontSize: 14,
-                                      color: Colors.black54),
-                                  commonText(
-                                      text: horoscopeServiceController
-                                          .requestHistory[index]
-                                          .reqcat ==
-                                          "2"
-                                          ? ""
-                                          : '${horoscopeServiceController
-                                          .requestHistory[index]
-                                          .rqspecialdetails}',
-                                      fontSize: 14,
-                                      color: horoscopeServiceController
-                                          .requestHistory[index]
-                                          .reqcat ==
-                                          "2"
-                                          ? Colors.green
-                                          : Colors.deepOrange),
-                                ],
                               ),
-                              SizedBox(height: 7),
-                              // Row(
-                              //   mainAxisAlignment:
-                              //   MainAxisAlignment.spaceBetween,
-                              //   children: [
-                              //     commonBoldText(
-                              //         text: 'Chart Owner Name',
-                              //         fontSize: 14,
-                              //         color: Colors.black54),
-                              //     commonText(
-                              //         text: horoscopeServiceController
-                              //             .requestHistory[index]
-                              //             .horoname ??
-                              //             "",
-                              //         fontSize: 14,
-                              //         color: Colors.black54),
-                              //   ],
-                              // ),
-                              // SizedBox(height: 7),
-                              Row(
-                                mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                                children: [
-                                  commonBoldText(
-                                      text: 'Request ID ',
-                                      fontSize: 14,
-                                      color: Colors.black54),
-                                  commonText(
-                                      text: horoscopeServiceController
-                                          .requestHistory[index].rqid!
-                                          .trim(),
-                                      fontSize: 14,
-                                      color: Colors.black54),
-                                ],
+                            // Status indicator
+                            Positioned(
+                              top: 12,
+                              right: 12,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: horoscopeServiceController.requestHistory[index].reqcat == "2"
+                                      ? Color(0xff05704a)
+                                      : Colors.deepOrange,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  horoscopeServiceController.requestHistory[index].reqcat == "2"
+                                      ? "Prediction"
+                                      : "Question",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
-                              SizedBox(height: 7),
-                              Row(
-                                mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                                children: [
-                                  commonBoldText(
-                                      text: 'Request Created date',
-                                      fontSize: 14,
-                                      color: Colors.black54),
-                                  commonText(
-                                      text: formatDate(
-                                          horoscopeServiceController
-                                              .requestHistory[index]
-                                              .reqcredate!),
-                                      fontSize: 14,
-                                      color: Colors.black54),
-                                ],
-                              )
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ),
+                      )
                     ),
                   );
                 },

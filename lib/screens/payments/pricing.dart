@@ -3,9 +3,16 @@ import 'package:photo_view/photo_view.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:planetcombo/screens/dashboard.dart';
+import 'package:get/get.dart';
+import 'package:planetcombo/controllers/appLoad_controller.dart';
 
 class PricingPage extends StatelessWidget {
-  const PricingPage({Key? key}) : super(key: key);
+  PricingPage({Key? key}) : super(key: key);
+
+  final AppLoadController appLoadController =
+  Get.put(AppLoadController.getInstance(), permanent: true);
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,7 +32,7 @@ class PricingPage extends StatelessWidget {
       ),
       body: Center(
         child: PhotoView(
-          imageProvider: const AssetImage('assets/images/pricing.jpg'),
+          imageProvider: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr' ? const AssetImage('assets/images/pricing.jpg'): const AssetImage('assets/images/pricingUSD.jpg'),
           minScale: PhotoViewComputedScale.contained,
           maxScale: PhotoViewComputedScale.covered * 2,
           initialScale: PhotoViewComputedScale.contained,
