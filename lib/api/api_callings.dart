@@ -5,6 +5,7 @@ import 'package:http/http.dart';
 import 'package:planetcombo/api/api_endpoints.dart';
 import 'package:planetcombo/controllers/applicationbase_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:planetcombo/api/api_encryption.dart';
 
 class APIResponse {
   final bool success;
@@ -20,55 +21,74 @@ class APIResponse {
 
 class APICallings {
   ///Login Vendor
-  static Future<String> socialLogin(
-      {required String email,required String medium, required String password, required String tokenId}) async {
-    Map<String, dynamic> registerObject = {
-      "Email": email,
-      "Medium": medium,
-      "PASSWORD": password,
-      "TokenId" : tokenId
-    };
-    var url = Uri.parse(APIEndPoints.socialLogin);
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
-    try{
+  static Future<String> socialLogin({
+    required String email,
+    required String medium,
+    required String password,
+    required String tokenId
+  }) async {
+    try {
+      // Test encryption before using
+      if (!EncryptionService.testEncryption()) {
+        print('Warning: Encryption system is not working properly!');
+      }
+
+      Map<String, dynamic> registerObject = {
+        "Email": email,
+        "Medium": medium,
+        "PASSWORD": password,
+        "TokenId": tokenId
+      };
+
+      final isEncrypted = await EncryptionService.isEncryptionEnabled();
+      var url = Uri.parse(APIEndPoints.socialLogin);
+
+      // Prepare request body and headers
+      var requestBody;
+      Map<String, String> headers = {
+        "Content-Type": "application/json",
+        "X-Encrypted": isEncrypted.toString(),
+      };
+
+      if (isEncrypted) {
+        requestBody = {"data": EncryptionService.encryptRequest(registerObject)};
+        headers["Content-Type"] = "application/json; charset=utf-8";
+      } else {
+        requestBody = registerObject;
+      }
+
+      print('Sending encrypted request...');
       var response = await http.post(
         url,
-        body: jsonEncode(registerObject),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        body: json.encode(requestBody),
+        headers: headers,
       );
-      print('the response are crossed 2');
-      print(response.statusCode);
-      if(response.statusCode == 403){
-        return 'false';
-      }else if(response.statusCode == 200){
-        var jsonResponse = json.decode(response.body);
-        print('the json response from social login');
-        print(jsonResponse);
-        var string = 'true';
-        if(jsonResponse['status'] == 'Success'){
-          print('you string response reaced here $string');
-          if(jsonResponse['message'] == 'No Data found'){
-                string = 'No Data found';
-          }else{
+
+      // Handle response...
+      if (response.statusCode == 200) {
+        var responseBody = response.body;
+        if (isEncrypted) {
+          responseBody = EncryptionService.decryptResponse(responseBody);
+        }
+
+        var jsonResponse = json.decode(responseBody);
+        print('Response from social login: $jsonResponse');
+
+        if (jsonResponse['status'] == 'Success') {
+          if (jsonResponse['message'] == 'No Data found') {
+            return 'No Data found';
+          } else {
             SharedPreferences prefs = await SharedPreferences.getInstance();
             await prefs.setString('UserInfo', json.encode(jsonResponse['data']));
-              string = 'true';
+            return 'true';
           }
-        }else{
-            string = 'false';
         }
-        print(string);
-        return string;
-      }else{
         return 'false';
       }
-    }catch(error){
-      print('the error reached the catch part');
-        print(error);
-        return 'false';
+      return 'false';
+    } catch (error) {
+      print('Error in social login: $error');
+      return 'false';
     }
   }
 
