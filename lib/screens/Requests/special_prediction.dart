@@ -7,7 +7,6 @@ import 'package:planetcombo/common/app_widgets.dart';
 
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
-import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/controllers/request_controller.dart';
 import 'package:planetcombo/controllers/applicationbase_controller.dart';
 import 'package:get/get.dart';
@@ -86,17 +85,6 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
   TextEditingController specialRequest = TextEditingController();
   String _address = 'Loading...';
 
-  String formatDateWithTimezone(DateTime date, String timezone) {
-    DateFormat formatter = DateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-    String formattedDate = formatter.format(date);
-    return '$formattedDate$timezone';
-  }
-
-  String taxCalc(double tax1, double tax2, double tax3){
-    double totalTax = tax1 + tax2 + tax3;
-    return applicationBaseController.formatDecimalString(totalTax);
-  }
-
   @override
   void initState() {
     super.initState();
@@ -107,197 +95,284 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
   Future<void> _getAddressFromLatLng() async {
     final latitude = applicationBaseController.deviceLatitude.value;
     final longitude = applicationBaseController.deviceLongitude.value;
-
     final address = await LocationService.getAddressFromLatLng(latitude, longitude);
-
     setState(() {
       _address = address;
     });
   }
 
+  String formatDateWithTimezone(DateTime date, String timezone) {
+    DateFormat formatter = DateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    String formattedDate = formatter.format(date);
+    return '$formattedDate$timezone';
+  }
+
+  String taxCalc(double tax1, double tax2, double tax3) {
+    double totalTax = tax1 + tax2 + tax3;
+    return applicationBaseController.formatDecimalString(totalTax);
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.black12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            const Text(
+              ':',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 3,
+              child: Text(
+                value,
+                style: const TextStyle(fontSize: 15),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: GradientAppBar(
-          leading: IconButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            icon: const Icon(Icons.chevron_left_rounded),
-          ),
-          title: LocalizationController.getInstance().getTranslatedValue("Ask Life Guidance Question"),
-          colors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
-          centerTitle: true,
-          actions: [
-            Row(
+      appBar: GradientAppBar(
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.chevron_left_rounded),
+        ),
+        title: LocalizationController.getInstance()
+            .getTranslatedValue("Ask Life Guidance Question"),
+        colors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
+        centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Row(
               children: [
                 const Icon(Icons.payment_outlined, color: Colors.white, size: 16),
-                // commonBoldText(text: 'Currency(', color: Colors.white, fontSize: 12),
-                commonBoldText(text: ' - ${appLoadController.loggedUserData.value.ucurrency!}', color: Colors.white, fontSize: 12),
-                const SizedBox(width: 10)
+                commonBoldText(
+                  text: ' - ${appLoadController.loggedUserData.value.ucurrency!}',
+                  color: Colors.white,
+                  fontSize: 12,
+                ),
               ],
-            )
-          ],
-        ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-            child: Obx(() => Column(
-              children: [
-                Row(
-                  children: [
-                    SizedBox(width: MediaQuery.of(context).size.width * 0.4, child: commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Latitude'))),
-                    commonBoldText(text: ':  ${applicationBaseController.deviceLatitude.toString()}')
-                  ],
+            ),
+          )
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 15),
-                Row(
-                  children: [
-                    SizedBox(width: MediaQuery.of(context).size.width * 0.4, child: commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Longitude'))),
-                    commonBoldText(text: ':  ${applicationBaseController.deviceLongitude.toString()}')
-                  ],
-                ),
-                const SizedBox(height: 15),
-                Row(
-                  children: [
-                    SizedBox(width: MediaQuery.of(context).size.width * 0.4, child: commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Country'))),
-                    Expanded(child: commonBoldText(text: ':  $_address'))
-                  ],
-                ),
-                const SizedBox(height: 15),
-                Row(
-                  children: [
-                    SizedBox(width: MediaQuery.of(context).size.width * 0.4, child: commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Local Time'))),
-                    commonBoldText(text: ':  ${DateFormat('hh:mm:ss a').format(currentTime)}')
-                  ],
-                ),
-                const SizedBox(height: 15),
-                commonText(fontSize: 14, color: Colors.black54, text: LocalizationController.getInstance().getTranslatedValue("What would you like to know about your future? (2 questions max)")),
-                const SizedBox(height: 15),
-                PrimaryInputText(
-                    hintText: 'Please ask your question here...',
-                    controller: specialRequest,
-                    onValidate: (v) {
-                      return null;
-                    },
-                    maxLines: 6
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
                     children: [
-                      SizedBox(
-                        width: 150,
-                        child: GradientButton(
-                            title: LocalizationController.getInstance().getTranslatedValue("Cancel"),
-                            buttonHeight: 45,
-                            textColor: Colors.white,
-                            buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
-                            onPressed: (Offset buttonOffset) {
-                              Navigator.pop(context);
-                            }
-                        ),
+                      _buildInfoRow(
+                        LocalizationController.getInstance()
+                            .getTranslatedValue('Place'),
+                        _address,
                       ),
-                      SizedBox(width: 20),
-                      SizedBox(
-                        width: 150,
-                        child: GradientButton(
-                            title: LocalizationController.getInstance().getTranslatedValue("Save"),
-                            buttonHeight: 45,
-                            textColor: Colors.white,
-                            buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
-                            onPressed: (Offset buttonOffset) async {
-                              if (specialRequest.text.isEmpty) {
-                                showFailedToast('Please enter the request');
-                              } else {
-                                CustomDialog.showLoading(context, 'Please wait');
-                                var result = await APICallings.addSpecialRequest(
-                                    token: appLoadController.loggedUserData!.value.token!,
-                                    hid: widget.horoscope.hid!.trim(),
-                                    userId: widget.horoscope.huserid!,
-                                    latitude: applicationBaseController.deviceLatitude.value.toString(),
-                                    longitude: applicationBaseController.deviceLongitude.value.toString(),
-                                    reqDate: formatDateWithTimezone(currentTime, applicationBaseController.getTimeZone.value),
-                                    timestamp: DateTime.now().toString(),
-                                    specialReq: specialRequest.text
-                                );
-                                print('the result after adding the special req ${result.toString()}');
-                                if (result != null) {
-                                  CustomDialog.cancelLoading(context);
-                                  var chargeData = json.decode(result);
-                                  if (chargeData['status'] == 'Success') {
-                                    specialRequest.text = "";
-                                    AppWidgets().multiTextAlignYesOrNoDialog(
-                                      iconUrl: 'assets/images/headletters.png',
-                                        context: context,
-                                        dialogMessage: 'Special Prediction is created please Pay Now Or Pay Later',
-                                        subText1Key: 'Amount',
-                                        subText1Value: appLoadController.loggedUserData.value.ucurrency,
-                                        subText1Value1: applicationBaseController.formatDecimalString(chargeData['data']['amount']),
-                                        subText2Key: 'Tax Amount',
-                                        subText2Value: appLoadController.loggedUserData.value.ucurrency,
-                                        subText2Value2: taxCalc(chargeData['data']['tax1_amount'], chargeData['data']['tax3_amount'], chargeData['data']['tax3_amount']),
-                                        subText3Key: 'Total Amount',
-                                        subText3Value: appLoadController.loggedUserData.value.ucurrency,
-                                        subText3Value3: applicationBaseController.formatDecimalString(chargeData['data']['total_amount']),
-                                        cancelText: 'Pay Later',
-                                        okText: 'Pay Now',
-                                        cancelAction: () {
-                                          Navigator.pop(context);
-                                          applicationBaseController.updateHoroscopeUiList();
-                                          Navigator.pushAndRemoveUntil(
-                                            context,
-                                            MaterialPageRoute(builder: (context) => const HoroscopeServices()),
-                                                (Route<dynamic> route) => false,
-                                          );
-                                        },
-                                        okAction: () {
-                                          if(appLoadController.loggedUserData!.value.ucurrency!.toLowerCase() == 'inr'){
-                                            paymentController.payByUpi(
-                                                appLoadController.loggedUserData.value!.userid!,
-                                                chargeData['data']['requestId'],
-                                                chargeData['data']['total_amount'],
-                                                appLoadController.loggedUserData!.value.token!,
-                                                context
-                                            );
-                                          }else if(appLoadController.loggedUserData!.value.ucurrency!.toLowerCase() == 'aed'){
-                                            paymentController.payByStripe(
-                                                appLoadController.loggedUserData.value!.userid!,
-                                                chargeData['data']['requestId'],
-                                                chargeData['data']['total_amount'],
-                                                appLoadController.loggedUserData!.value.token!,
-                                                context
-                                            );
-                                          }else{
-                                            paymentController.payByStripe(
-                                                appLoadController.loggedUserData.value!.userid!,
-                                                chargeData['data']['requestId'],
-                                                chargeData['data']['total_amount'],
-                                                appLoadController.loggedUserData!.value.token!,
-                                                context
-                                            );
-                                          }
-                                        }
-                                    );
-                                  } else if (chargeData['status'] == 'Failure') {
-                                    CustomDialog.showAlert(context, chargeData['errorMessage'], null, 14);
-                                  }
-                                } else {
-                                  CustomDialog.cancelLoading(context);
-                                  CustomDialog.showAlert(context, 'Something went wrong', false, 14);
-                                }
-                              }
-                            }
-                        ),
+                      _buildInfoRow(
+                        LocalizationController.getInstance()
+                            .getTranslatedValue('Local Time'),
+                        DateFormat('hh:mm:ss a').format(currentTime),
                       ),
                     ],
                   ),
                 ),
-              ],
-            )),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      LocalizationController.getInstance().getTranslatedValue(
+                          "What would you like to know about your future? (2 questions max)"),
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    PrimaryInputText(
+                      hintText: 'Please ask your question here...',
+                      controller: specialRequest,
+                      onValidate: (v) => null,
+                      maxLines: 6,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.grey.shade300,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        LocalizationController.getInstance()
+                            .getTranslatedValue("Cancel"),
+                        style: const TextStyle(color: Colors.black87),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  SizedBox(
+                    width: 150,
+                    child: GradientButton(
+                      title: LocalizationController.getInstance()
+                          .getTranslatedValue("Save"),
+                      buttonHeight: 45,
+                      textColor: Colors.white,
+                      buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
+                      onPressed: (Offset buttonOffset) async {
+                        if (specialRequest.text.isEmpty) {
+                          showFailedToast('Please enter the request');
+                        } else {
+                          CustomDialog.showLoading(context, 'Please wait');
+                          var result = await APICallings.addSpecialRequest(
+                            token: appLoadController.loggedUserData!.value.token!,
+                            hid: widget.horoscope.hid!.trim(),
+                            userId: widget.horoscope.huserid!,
+                            latitude: applicationBaseController.deviceLatitude.value
+                                .toString(),
+                            longitude: applicationBaseController.deviceLongitude
+                                .value
+                                .toString(),
+                            reqDate: formatDateWithTimezone(currentTime,
+                                applicationBaseController.getTimeZone.value),
+                            timestamp: DateTime.now().toString(),
+                            specialReq: specialRequest.text,
+                          );
+
+                          if (result != null) {
+                            CustomDialog.cancelLoading(context);
+                            var chargeData = json.decode(result);
+                            if (chargeData['status'] == 'Success') {
+                              specialRequest.text = "";
+                              AppWidgets().multiTextAlignYesOrNoDialog(
+                                iconUrl: 'assets/images/headletters.png',
+                                context: context,
+                                dialogMessage:
+                                'Special Prediction is created please Pay Now Or Pay Later',
+                                subText1Key: 'Amount',
+                                subText1Value:
+                                appLoadController.loggedUserData.value.ucurrency,
+                                subText1Value1: applicationBaseController
+                                    .formatDecimalString(
+                                    chargeData['data']['amount']),
+                                subText2Key: 'Tax Amount',
+                                subText2Value:
+                                appLoadController.loggedUserData.value.ucurrency,
+                                subText2Value2: taxCalc(
+                                    chargeData['data']['tax1_amount'],
+                                    chargeData['data']['tax3_amount'],
+                                    chargeData['data']['tax3_amount']),
+                                subText3Key: 'Total Amount',
+                                subText3Value:
+                                appLoadController.loggedUserData.value.ucurrency,
+                                subText3Value3: applicationBaseController
+                                    .formatDecimalString(
+                                    chargeData['data']['total_amount']),
+                                cancelText: 'Pay Later',
+                                okText: 'Pay Now',
+                                cancelAction: () {
+                                  Navigator.pop(context);
+                                  applicationBaseController.updateHoroscopeUiList();
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                        const HoroscopeServices()),
+                                        (Route<dynamic> route) => false,
+                                  );
+                                },
+                                okAction: () {
+                                  if (appLoadController.loggedUserData!.value
+                                      .ucurrency!.toLowerCase() ==
+                                      'inr') {
+                                    paymentController.payByUpi(
+                                      appLoadController
+                                          .loggedUserData.value!.userid!,
+                                      chargeData['data']['requestId'],
+                                      chargeData['data']['total_amount'],
+                                      appLoadController.loggedUserData!.value.token!,
+                                      context,
+                                    );
+                                  } else {
+                                    paymentController.payByStripe(
+                                      appLoadController
+                                          .loggedUserData.value!.userid!,
+                                      chargeData['data']['requestId'],
+                                      chargeData['data']['total_amount'],
+                                      appLoadController.loggedUserData!.value.token!,
+                                      context,
+                                    );
+                                  }
+                                },
+                              );
+                            } else if (chargeData['status'] == 'Failure') {
+                              CustomDialog.showAlert(
+                                  context, chargeData['errorMessage'], null, 14);
+                            }
+                          } else {
+                            CustomDialog.cancelLoading(context);
+                            CustomDialog.showAlert(
+                                context, 'Something went wrong', false, 14);
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        )
+        ),
+      ),
     );
   }
 }

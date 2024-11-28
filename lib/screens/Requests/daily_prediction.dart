@@ -11,6 +11,7 @@ import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/controllers/request_controller.dart';
 import 'package:planetcombo/controllers/applicationbase_controller.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import '../../controllers/payment_controller.dart';
@@ -49,6 +50,8 @@ class _DailyPredictionsState extends State<DailyPredictions> {
 
   Constants constants = Constants();
 
+  final Map<String, String> _placeNames = {};
+
   DateTime getAfterSevenDays(DateTime inputDate) {
     DateTime afterSevenDays = inputDate.add(const Duration(days: 7));
     return afterSevenDays;
@@ -69,6 +72,35 @@ class _DailyPredictionsState extends State<DailyPredictions> {
       });
     }
   }
+
+  Future<String> getPlaceName(double lat, double lng) async {
+    if (lat == 0 && lng == 0) return 'Location not available';
+
+    final String key = '$lat,$lng';
+    if (_placeNames.containsKey(key)) return _placeNames[key]!;
+
+    try {
+      const String apiKey = 'AIzaSyDRX8p3QXbJtS6vVpNgelztCe2RAQBgN44'; // Replace with your actual API key
+      final String url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$apiKey';
+
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('the location result from the data ${data['results']}');
+        if (data['results'] != null && data['results'].isNotEmpty) {
+          final String placeName = data['results'][0]['formatted_address'];
+          _placeNames[key] = placeName;
+          return placeName;
+        }
+        return 'Location not found';
+      }
+      return 'Error: ${response.statusCode}';
+    } catch (e) {
+      print('Error fetching location: $e');
+      return 'Error fetching location';
+    }
+  }
+
 
   String formatDateWithTimezone(DateTime date, String timezone) {
     // Create a DateFormat object for the desired output format
@@ -93,7 +125,7 @@ class _DailyPredictionsState extends State<DailyPredictions> {
     super.initState();
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, dynamic value) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -124,11 +156,24 @@ class _DailyPredictionsState extends State<DailyPredictions> {
             const SizedBox(width: 12),
             Expanded(
               flex: 3,
-              child: Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 15,
-                ),
+              child: value is Future<String>
+                  ? FutureBuilder<String>(
+                future: value,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Text('Loading...');
+                  }
+                  return Text(
+                    snapshot.data ?? 'Not available',
+                    style: const TextStyle(fontSize: 15),
+                  );
+                },
+              )
+                  : commonBoldText(text:
+                value.toString(),
+                fontSize: 15,
+                maxLines: 1,
+                textOverflow: TextOverflow.ellipsis
               ),
             ),
           ],
@@ -240,6 +285,13 @@ class _DailyPredictionsState extends State<DailyPredictions> {
                           _buildInfoRow(
                             LocalizationController.getInstance().getTranslatedValue('Longitude'),
                             applicationBaseController.deviceLongitude.toString(),
+                          ),
+                          _buildInfoRow(
+                            LocalizationController.getInstance().getTranslatedValue('Place'),
+                            getPlaceName(
+                              applicationBaseController.deviceLatitude.value,
+                              applicationBaseController.deviceLongitude.value,
+                            ),
                           ),
                           _buildDateRow(
                             LocalizationController.getInstance().getTranslatedValue('Start Date'),

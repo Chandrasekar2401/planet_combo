@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
 import 'package:planetcombo/common/widgets.dart';
@@ -382,30 +383,39 @@ class _MysticalPricingPageState extends State<PricingPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _buildPricingCard(
-                  'Introductory offer',
-                  kundliAmount(),
-                  ['Personalized Chart Generation', '30 Days Free Daily Prediction from the date of chart generation', 'Two life guidance questions answered(within 30 days of registration)'],
-                  Colors.purple,
+                child: SizedBox(
+                  height: 400, // Fixed height for all pricing cards
+                  child: _buildPricingCard(
+                    'Introductory offer',
+                    kundliAmount(),
+                    ['Personalized Chart Generation', '30 Days Free Daily Prediction from the date of chart generation', 'Two life guidance questions answered(within 30 days of registration)'],
+                    Colors.purple,
+                  ),
                 ),
               ),
               const SizedBox(width: 20),
               Expanded(
-                child: _buildPricingCard(
-                  'Daily Predictions',
-                  dailyRequestAmount(),
-                  ['90 days Daily predictions from date of request'],
-                  Colors.amber,
-                  isPopular: true,
+                child: SizedBox(
+                  height: 400, // Fixed height for all pricing cards
+                  child: _buildPricingCard(
+                    'Daily Predictions',
+                    dailyRequestAmount(),
+                    ['90 days Daily predictions from date of request'],
+                    Colors.amber,
+                    isPopular: true,
+                  ),
                 ),
               ),
               const SizedBox(width: 20),
               Expanded(
-                child: _buildPricingCard(
-                  'Life Guidance Question',
-                  lifeGuidanceAmount(),
-                  ['Two Life Guidance Questions'],
-                  Colors.purple,
+                child: SizedBox(
+                  height: 400, // Fixed height for all pricing cards
+                  child: _buildPricingCard(
+                    'Life Guidance',
+                    lifeGuidanceAmount(),
+                    ['Two Life Guidance Questions'],
+                    Colors.purple,
+                  ),
                 ),
               ),
             ],
@@ -427,15 +437,24 @@ class _MysticalPricingPageState extends State<PricingPage>
               Expanded(
                 child: Column(
                   children: [
-                    _buildInfoCard(
-                      'Unique',
-                      'PlanetCombo is the only astrology service offering personalised and accurate predictions.',
-                      Icons.auto_awesome,
+                    SizedBox(
+                      height: 200, // Fixed height for info cards
+                      child: _buildInfoCard(
+                          'Unique',
+                          'PlanetCombo is the only astrology service offering personalised and accurate predictions.',
+                          Icons.auto_awesome,
+                          ""
+                      ),
                     ),
-                    _buildInfoCard(
-                      'Horoscope/Kundli',
-                      'Provides North Indian and South Indian Formats with adjusted birth time.',
-                      Icons.psychology,
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      height: 200, // Fixed height for info cards
+                      child: _buildInfoCard(
+                          'Horoscope/Kundli',
+                          'Provides North Indian and South Indian Formats with adjusted birth time.',
+                          Icons.psychology,
+                          ""
+                      ),
                     ),
                   ],
                 ),
@@ -444,20 +463,147 @@ class _MysticalPricingPageState extends State<PricingPage>
               Expanded(
                 child: Column(
                   children: [
-                    _buildInfoCard(
-                      'Personalized Daily Forecasts',
-                      "Get accurate daily predictions to give you the day's insight.",
-                      Icons.precision_manufacturing,
+                    SizedBox(
+                      height: 200, // Fixed height for info cards
+                      child: _buildInfoCard(
+                          'Personalized Daily Forecasts',
+                          "Get accurate daily predictions to give you the day's insight.",
+                          Icons.precision_manufacturing,
+                          ""
+                      ),
                     ),
-                    _buildInfoCard(
-                      'Life Guidance',
-                      'Get answers to specific life questions through our tools.',
-                      Icons.light,
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      height: 200, // Fixed height for info cards
+                      child: _buildInfoCard(
+                          'Life Guidance',
+                          'Get answers to specific life questions through our tools.',
+                          Icons.light,
+                          ""
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPricingCard(
+      String title,
+      String price,
+      List<String> features,
+      Color color, {
+        bool isPopular = false,
+      }) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.2),
+            blurRadius: 20,
+            spreadRadius: 5,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          commonBoldText(
+            text: title,
+            fontSize: 24,
+            color: color,
+          ),
+          const SizedBox(height: 16),
+          commonBoldText(
+            text: currencyType()+price,
+            fontSize: 40,
+            color: color,
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: SingleChildScrollView( // Add scrolling for overflow content
+              child: Column(
+                children: features.map((feature) => Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.check_circle, color: color),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: commonText(
+                          text: feature,
+                          textAlign: TextAlign.left,
+                        ),
+                      ),
+                    ],
+                  ),
+                )).toList(),
+              ),
+            ),
+          ),
+          const Divider(
+            height: 0.01, // Reduced height
+            color: Colors.black12, // Lighter opacity
+          ),
+          const SizedBox(height: 16), // Increased spacing
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SvgPicture.asset(
+                appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'?
+                'assets/svg/upi-icon.svg' :  'assets/svg/stripe.svg',
+                height: 24,
+              ),
+              const SizedBox(width: 8),
+              commonBoldText(text: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'?
+                'Pay securely with UPI' :  'Pay securely with Stripe',
+                color: color,
+                fontSize: 14,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8), // Added bottom padding
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(String title, String subtitle, IconData? icon, String? imagePath) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: Colors.amber.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          imagePath == "" ?
+          Icon(icon, color: Colors.amber, size: 32):
+          SizedBox(height:40, child: SvgPicture.asset(imagePath!)),
+          const SizedBox(height: 16),
+          commonBoldText(
+            text: title,
+            fontSize: 18,
+            color: Colors.white,
+          ),
+          const SizedBox(height: 8),
+          commonBoldText(
+            text: subtitle,
+            fontSize: 14,
+            color: Colors.white.withOpacity(0.7),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -505,90 +651,4 @@ class _MysticalPricingPageState extends State<PricingPage>
     );
   }
 
-  Widget _buildPricingCard(
-      String title,
-      String price,
-      List<String> features,
-      Color color, {
-        bool isPopular = false,
-      }) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.2),
-            blurRadius: 20,
-            spreadRadius: 5,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          commonBoldText(
-            text: title,
-            fontSize: 24,
-            color: color,
-          ),
-          const SizedBox(height: 16),
-          commonBoldText(
-            text: currencyType()+price,
-            fontSize: 40,
-            color: color,
-          ),
-          const SizedBox(height: 24),
-          ...features.map((feature) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.check_circle, color: color),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: commonText(
-                    text: feature,
-                    textAlign: TextAlign.left,
-                  ),
-                ),
-              ],
-            ),
-          )),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(String title, String subtitle, IconData icon) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: Colors.amber.withOpacity(0.3),
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.amber, size: 32),
-          const SizedBox(height: 8),
-          commonBoldText(
-            text: title,
-            fontSize: 18,
-            color: Colors.white,
-          ),
-          commonBoldText(
-            text: subtitle,
-            fontSize: 14,
-            color: Colors.white.withOpacity(0.7),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
 }
