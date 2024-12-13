@@ -297,7 +297,7 @@ class _DashboardState extends State<Dashboard> {
                                   ),
                                   buildMenuItem(
                                     iconPath: 'assets/svg/support.svg',
-                                    text: "Live Chat",
+                                    text: "Chat Support",
                                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LiveChat())),
                                     showBorder: false,
                                   ),

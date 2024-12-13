@@ -16,19 +16,19 @@ class _YouTubeVideosPageState extends State<YouTubeVideosPage> {
   final List<Map<String, String>> videos = [
     {
       'id': 'eJd5DM0irk8',
-      'title': 'Usability Video - Guide to login | Planetcombo.com',
+      'title': 'How to login | Planetcombo.com',
       'description': 'Learn how to easily log in to Planetcombo.com. A step-by-step tutorial showing user registration, login process, and account features.',
       'thumbnail': 'https://static.vecteezy.com/system/resources/thumbnails/005/048/106/small/black-and-yellow-grunge-modern-thumbnail-background-free-vector.jpg',
     },
     {
-      'id': 'jNuQsGWgJ7Q',
-      'title': 'Usability Video - How to create a chart | Planetcombo.com',
+      'id': 'pupzTEBZWeI',
+      'title': 'How to create a chart | Planetcombo.com',
       'description': 'Learn how to easily crate a chart in to Planetcombo.com. A step-by-step tutorial',
       'thumbnail': 'https://static.vecteezy.com/system/resources/thumbnails/005/048/106/small/black-and-yellow-grunge-modern-thumbnail-background-free-vector.jpg',
     },
     {
-      'id': 'X48QAXvEflQ',
-      'title': 'Usability Video - Guide to INR payment | Planetcombo.com',
+      'id': 'PeUf6HRt5pA',
+      'title': 'How to make payments | Planetcombo.com',
       'description': 'Learn how to easily pay in INR in to Planetcombo.com. A step-by-step tutorial',
       'thumbnail': 'https://static.vecteezy.com/system/resources/thumbnails/005/048/106/small/black-and-yellow-grunge-modern-thumbnail-background-free-vector.jpg',
     },
@@ -40,6 +40,7 @@ class _YouTubeVideosPageState extends State<YouTubeVideosPage> {
       videoId: videoId,
       autoPlay: true,
       params: const YoutubePlayerParams(
+        enableCaption: false,
         showControls: true,
         showFullscreenButton: true,
         mute: false,

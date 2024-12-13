@@ -221,7 +221,7 @@ class _ProfileState extends State<Profile> {
               ),
             ),
             SizedBox(height: 15),
-            SizedBox(width: 180, child: GradientButton(buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], title: 'GO Back', textColor: Colors.white, onPressed: (Offset buttonOffset){
+            SizedBox(width: 180, child: GradientButton(buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], title: 'Done', textColor: Colors.white, onPressed: (Offset buttonOffset){
              Navigator.pop(context);
               // yesOrNoDialog(context: context,
               //     cancelAction: (){},

@@ -315,7 +315,7 @@ class _LiveChatState extends State<LiveChat> {
                       child: TextField(
                         controller: _messageController,
                         decoration: const InputDecoration(
-                          hintText: 'Type here...',
+                          hintText: 'Please here...',
                           border: InputBorder.none,
                         ),
                         onSubmitted: (_) => _sendMessage(),

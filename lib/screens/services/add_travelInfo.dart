@@ -286,10 +286,10 @@ class _AddTravelInfoState extends State<AddTravelInfo> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Where did you travel from (recent abroad travel)'), fontSize: 12, color: Colors.black87, textAlign: TextAlign.start),
                   PrimaryStraightInputText(hintText:
-                  LocalizationController.getInstance().getTranslatedValue('Where did you travel from (recent abroad travel)'),
+                  LocalizationController.getInstance().getTranslatedValue('Type here...'),
                     controller: addHoroscopeController.whereDidYouTraveled,
                     onChange: (v){
                       if (v == null || v.isEmpty) {

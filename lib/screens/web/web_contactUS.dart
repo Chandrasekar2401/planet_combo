@@ -80,7 +80,7 @@ class ContactInfoSection extends StatelessWidget {
         ContactInfoItem(
           icon: Icons.email,
           title: 'Email Address',
-          content: 'headletterscapi@gmail.com',
+          content: 'headlettersapi@gmail.com',
         ),
       ],
     );

@@ -560,12 +560,12 @@ class _MysticalPricingPageState extends State<PricingPage>
               SvgPicture.asset(
                 appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'?
                 'assets/svg/upi-icon.svg' :  'assets/svg/stripe.svg',
-                height: 24,
+                height: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'? 24 : 39,
               ),
               const SizedBox(width: 8),
               commonBoldText(text: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'?
-                'Pay securely with UPI' :  'Pay securely with Stripe',
-                color: color,
+                ' - Pay securely with UPI' :  ' - Pay securely with Stripe',
+                color: Colors.purple,
                 fontSize: 14,
               ),
             ],

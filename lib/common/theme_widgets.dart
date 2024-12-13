@@ -41,7 +41,7 @@ class CustomDrawer extends StatelessWidget {
             ),
             _createDrawerItem(
               svgIcon: 'assets/svg/planet.svg',
-              text: 'Services',
+              text: 'Login',
               onTap: () => onItemTap(1),
               isSelected: selectedIndex == 1,
             ),

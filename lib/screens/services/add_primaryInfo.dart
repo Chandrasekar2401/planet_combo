@@ -340,7 +340,7 @@ class _AddPrimaryState extends State<AddPrimary> {
                           },
                         ),
                         const SizedBox(height: 15),
-                        commonBoldText(text:  LocalizationController.getInstance().getTranslatedValue('Nearest landmark for place of birth (example:hospital etc)'), fontSize: 12, color: addHoroscopeController.horoscopeBirthLandmarkAlert.value == true ? Colors.red :  Colors.black87, textAlign: TextAlign.start),
+                        commonBoldText(text:  LocalizationController.getInstance().getTranslatedValue('Nearest landmark for place of birth (example:hospital Name etc..)'), fontSize: 12, color: addHoroscopeController.horoscopeBirthLandmarkAlert.value == true ? Colors.red :  Colors.black87, textAlign: TextAlign.start),
                         PrimaryStraightInputText(hintText:
                         LocalizationController.getInstance().getTranslatedValue('Landmark'),
                           controller: addHoroscopeController.landmarkOfBirth,

@@ -732,7 +732,7 @@ class _ProfileEditState extends State<ProfileEdit> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if(userCurrency.text == 'INR')const Text(
-                    'Payments accepted via GooglePay through UPI in India',
+                    'Payments accepted only via UPI in India',
                     textAlign: TextAlign.left,
                   ),
                   if(userCurrency.text != 'INR')const Text(

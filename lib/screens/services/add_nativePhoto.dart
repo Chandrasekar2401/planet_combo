@@ -34,6 +34,28 @@ class _AddNativePhotoState extends State<AddNativePhoto> {
   final AddHoroscopeController addHoroscopeController =
   Get.put(AddHoroscopeController.getInstance(), permanent: true);
 
+  @override
+  void initState() {
+    super.initState();
+    // Clear previous image data when page loads
+    _clearImageData();
+  }
+
+  @override
+  void dispose() {
+    // Clear image data when leaving the page
+    _clearImageData();
+    super.dispose();
+  }
+
+  void _clearImageData() {
+    addHoroscopeController.imageFileList?.clear();
+    addHoroscopeController.webDisplayImageFileList?.value = [];
+    addHoroscopeController.setHoroscopeWebProfileImageBase64?.value = '';
+    addHoroscopeController.selectedImageFile?.value = null;
+  }
+
+
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _openImagePicker() async {
@@ -70,6 +92,7 @@ class _AddNativePhotoState extends State<AddNativePhoto> {
 
   Future<void> _getImage(ImageSource source) async {
     try {
+      _clearImageData();
       final XFile? pickedImage = await _picker.pickImage(
         source: source,
         imageQuality: 85, // Compress image
@@ -146,7 +169,7 @@ class _AddNativePhotoState extends State<AddNativePhoto> {
           ),
           child: Center(
             child: commonBoldText(
-              text: 'Press here to take your photo',
+              text: 'Upload Horoscope Profile Picture',
               textAlign: TextAlign.center,
               color: Colors.white,
               fontSize: 10,

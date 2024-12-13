@@ -237,7 +237,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
 
   void viewTwoPageKundli(String link) async {
     if(link == null || link.isEmpty) {
-      showFailedToast("Please wait for the view link to generated");
+      CustomDialog.showAlert(context, 'kundli is not ready yet, Our Team reviewing your details', null,14);
     } else {
       // Remove _Chart.html and add .pdf
       String modifiedLink = link.replaceAll('_Chart.html', '.pdf');
@@ -1132,15 +1132,6 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                 if (selectedValue != null) {
                                                   switch (selectedValue) {
                                                     case 1:
-                                                      print(
-                                                          'selected value is 1 ${applicationBaseController
-                                                              .horoscopeList[index]
-                                                              .hid}');
-                                                      print(
-                                                          'selected value of paid ${applicationBaseController
-                                                              .horoscopeList[index]
-                                                              .isPaid}');
-                                                      // Handle Menu 1 option
                                                       viewHoroscope(
                                                           applicationBaseController
                                                               .horoscopeList[index]

@@ -28,17 +28,56 @@ class LocationService {
   }
 
   static Future<String> _getAddressFromLatLngWeb(double latitude, double longitude) async {
-    const apiKey = 'AIzaSyCXAw8BQBx4OPMOWyNaI4bv7gh5GUXa0lQ'; // Replace with your actual API key
-    // final url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=$apiKey';
-    final url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude&zoom=3';
-  print('the api url bady for maps $url');
+    const apiKey = 'AIzaSyDRX8p3QXbJtS6vVpNgelztCe2RAQBgN44'; // Replace with your Google API key
+    final url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=$apiKey&language=en';
+
     try {
       final response = await http.get(Uri.parse(url));
-      print('the location response ${response.body}');
       if (response.statusCode == 200) {
         final decodedResponse = json.decode(response.body);
-        final address =  decodedResponse['address']['country'] ?? 'Unknown';
-        return address;
+
+        if (decodedResponse['results'] != null &&
+            decodedResponse['results'].isNotEmpty) {
+
+          final components = decodedResponse['results'][0]['address_components'];
+          Map<String, String> addressParts = {
+            'sublocality_level_1': '', // Area/Neighborhood
+            'locality': '',           // City
+            'administrative_area_level_1': '', // State
+            'country': ''            // Country
+          };
+
+          // Extract address components
+          for (var component in components) {
+            final types = component['types'] as List;
+            if (types.contains('sublocality_level_1')) {
+              addressParts['sublocality_level_1'] = component['long_name'];
+            } else if (types.contains('locality')) {
+              addressParts['locality'] = component['long_name'];
+            } else if (types.contains('administrative_area_level_1')) {
+              addressParts['administrative_area_level_1'] = component['long_name'];
+            } else if (types.contains('country')) {
+              addressParts['country'] = component['long_name'];
+            }
+          }
+
+          // Build address string
+          List<String> formattedAddress = [];
+          if (addressParts['sublocality_level_1']!.isNotEmpty) {
+            formattedAddress.add(addressParts['sublocality_level_1']!);
+          }
+          if (addressParts['locality']!.isNotEmpty) {
+            formattedAddress.add(addressParts['locality']!);
+          }
+          if (addressParts['administrative_area_level_1']!.isNotEmpty) {
+            formattedAddress.add(addressParts['administrative_area_level_1']!);
+          }
+          if (addressParts['country']!.isNotEmpty) {
+            formattedAddress.add(addressParts['country']!);
+          }
+
+          return formattedAddress.join(', ');
+        }
       }
       return 'Unable to fetch location';
     } catch (e) {
@@ -51,7 +90,19 @@ class LocationService {
       List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-        return '${place.locality}, ${place.administrativeArea}, ${place.country}';
+        List<String> addressParts = [];
+
+        // Add components in order: Area, City, State, Country
+        if (place.subLocality?.isNotEmpty ?? false) addressParts.add(place.subLocality!);
+        if (place.locality?.isNotEmpty ?? false) addressParts.add(place.locality!);
+        if (place.administrativeArea?.isNotEmpty ?? false) addressParts.add(place.administrativeArea!);
+        if (place.country?.isNotEmpty ?? false) addressParts.add(place.country!);
+
+        // Remove duplicates while maintaining order
+        final seen = <String>{};
+        addressParts = addressParts.where((element) => seen.add(element)).toList();
+
+        return addressParts.join(', ');
       }
       return 'Unable to fetch location';
     } catch (e) {
@@ -82,6 +133,7 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
   Get.put(PaymentController.getInstance(), permanent: true);
 
   DateTime currentTime = DateTime.now();
+  DateTime? todayDate = DateTime.now();
   TextEditingController specialRequest = TextEditingController();
   String _address = 'Loading...';
 
@@ -204,6 +256,11 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
                       ),
                       _buildInfoRow(
                         LocalizationController.getInstance()
+                            .getTranslatedValue('Date'),
+                        DateFormat('MMMM dd, yyyy').format(todayDate!),
+                      ),
+                      _buildInfoRow(
+                        LocalizationController.getInstance()
                             .getTranslatedValue('Local Time'),
                         DateFormat('hh:mm:ss a').format(currentTime),
                       ),
@@ -285,7 +342,7 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
                             reqDate: formatDateWithTimezone(currentTime,
                                 applicationBaseController.getTimeZone.value),
                             timestamp: DateTime.now().toString(),
-                            specialReq: specialRequest.text,
+                            specialReq: '${specialRequest.text}| ${DateFormat('MMMM dd, yyyy').format(todayDate!)} | ${DateFormat('hh:mm:ss a').format(currentTime)}',
                           );
 
                           if (result != null) {

@@ -7,7 +7,6 @@ import 'package:planetcombo/common/constant.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:planetcombo/models/horoscope_list.dart';
-import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/controllers/request_controller.dart';
 import 'package:planetcombo/controllers/applicationbase_controller.dart';
 import 'package:get/get.dart';
