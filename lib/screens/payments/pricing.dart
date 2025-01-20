@@ -5,9 +5,7 @@ import 'dart:math' as math;
 import 'package:planetcombo/common/widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-
 import 'package:planetcombo/controllers/appLoad_controller.dart';
-
 
 class PricingPage extends StatefulWidget {
   const PricingPage({super.key});
@@ -33,13 +31,11 @@ class _MysticalPricingPageState extends State<PricingPage>
   @override
   void initState() {
     super.initState();
-    // Rotation controller
     _controller = AnimationController(
       duration: const Duration(seconds: 20),
       vsync: this,
     )..repeat();
 
-    // Fade and slide animations
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -91,7 +87,6 @@ class _MysticalPricingPageState extends State<PricingPage>
     if (_scrollController.hasClients) {
       double newOffset = _scrollController.offset + amount;
       newOffset = newOffset.clamp(0.0, _scrollController.position.maxScrollExtent);
-
       _scrollController.animateTo(
         newOffset,
         duration: const Duration(milliseconds: 100),
@@ -100,73 +95,89 @@ class _MysticalPricingPageState extends State<PricingPage>
     }
   }
 
-  Widget _buildAnimatedContent(Widget child) {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: child,
-      ),
-    );
-  }
-
-  String currencyType(){
-    if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'){
+  // Currency and pricing helper methods
+  String currencyType() {
+    if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr') {
       return '₹ ';
-    }else if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'aed'){
+    } else if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'aed') {
       return 'AED ';
-    }else{
+    } else {
       return '\$ ';
     }
   }
 
-  String kundliAmount(){
-    if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'){
+  String kundliAmount() {
+    if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr') {
       return '499';
-    }else if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'aed'){
+    } else if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'aed') {
       return '50';
-    }else{
+    } else {
       return '30';
     }
   }
 
-  String lifeGuidanceAmount(){
-    if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'){
+  String lifeGuidanceAmount() {
+    if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr') {
       return '399';
-    }else if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'aed'){
+    } else if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'aed') {
       return '50';
-    }else{
+    } else {
       return '20';
     }
   }
 
-  String dailyRequestAmount(){
-    if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'){
+  String dailyRequestAmount() {
+    if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr') {
       return '699';
-    }else if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'aed'){
+    } else if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'aed') {
       return '45';
-    }else{
+    } else {
       return '20';
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 600;
+    final double horizontalPadding = isMobile ? 16.0 : 80.0;
+    final double titleFontSize = isMobile ? 28.0 : 40.0;
+
     return KeyboardListener(
       focusNode: _focusNode,
       onKeyEvent: _handleKeyEvent,
       autofocus: true,
       child: Scaffold(
+        appBar: isMobile ? AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: Padding(
+            padding: const EdgeInsets.fromLTRB(0,17, 0, 0),
+            child: IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ),
+          // Remove default back button label
+          automaticallyImplyLeading: false,
+        ) : null,
+        // Make the body fill the screen minus the status bar
+        extendBodyBehindAppBar: true,
         body: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Color(0xFF2D1B69), // Dark purple
-                Color(0xFF6A1B9A), // Mid purple
-                Color(0xFF4A148C), // Transition purple
-                Color(0xFF1A1035), // Deep indigo
+                Color(0xFF2D1B69),
+                Color(0xFF6A1B9A),
+                Color(0xFF4A148C),
+                Color(0xFF1A1035),
               ],
               stops: [0.0, 0.4, 0.7, 1.0],
             ),
@@ -182,9 +193,9 @@ class _MysticalPricingPageState extends State<PricingPage>
               child: _buildAnimatedContent(
                 Column(
                   children: [
-                    _buildTopSection(),
-                    _buildPricingSection(),
-                    _buildBottomSection(),
+                    _buildTopSection(isMobile, horizontalPadding, titleFontSize),
+                    _buildPricingSection(isMobile, horizontalPadding),
+                    _buildBottomSection(isMobile, horizontalPadding),
                   ],
                 ),
               ),
@@ -195,116 +206,12 @@ class _MysticalPricingPageState extends State<PricingPage>
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            height: 2,
-            width: 100,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.amber.withOpacity(0),
-                  Colors.amber,
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 20),
-          ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [
-                Color(0xFFFFD700),
-                Color(0xFFFFC107),
-                Color(0xFFFFD700),
-              ],
-            ).createShader(bounds),
-            child: commonBoldText(
-              text: title,
-              fontSize: 32,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 20),
-          Container(
-            height: 2,
-            width: 100,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.amber,
-                  Colors.amber.withOpacity(0),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopSection() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [
-                Color(0xFFFFD700),
-                Color(0xFFFFC107),
-                Color(0xFFFFD700),
-              ],
-            ).createShader(bounds),
-            child: commonBoldText(
-              text: 'KNOW YOUR FUTURE',
-              fontSize: 40,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 40),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 80),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildStyledText(
-                        'The PlanetCombo tool, harnesses the power of ',
-                        highlightText: 'CP Astrology (Chandrasekar Pathathi)',
-                        remainingText: ', a prediction system built after years of scientific research based on proven Indian astrology.',
-                      ),
-                      const SizedBox(height: 20),
-                      _buildStyledText(
-                        'Our tools are based on scientific calculations designed to improve prediction accuracy.',
-                      ),
-                      const SizedBox(height: 20),
-                      _buildStyledText(
-                        'The tool predicts significant life events like ',
-                        highlightText: 'Marriage, Career, Finance, Health, Love Life, Education, Travel',
-                        remainingText: ' and more.',
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 40),
-                SizedBox(
-                  width: 200,
-                  height: 200,
-                  child: _buildRotatingLogo(small: true),
-                ),
-              ],
-            ),
-          ),
-        ],
+  Widget _buildAnimatedContent(Widget child) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: child,
       ),
     );
   }
@@ -372,241 +279,101 @@ class _MysticalPricingPageState extends State<PricingPage>
     );
   }
 
-  Widget _buildPricingSection() {
+  Widget _buildTopSection(bool isMobile, double horizontalPadding, double titleFontSize) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 80),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Column(
         children: [
-          _buildSectionTitle('Our Pricing Plans'),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 400, // Fixed height for all pricing cards
-                  child: _buildPricingCard(
-                    'Introductory offer',
-                    kundliAmount(),
-                    ['Personalized Chart Generation', '30 Days Free Daily Prediction from the date of chart generation', 'Two life guidance questions answered(within 30 days of registration)'],
-                    Colors.purple,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: SizedBox(
-                  height: 400, // Fixed height for all pricing cards
-                  child: _buildPricingCard(
-                    'Daily Predictions',
-                    dailyRequestAmount(),
-                    ['90 days Daily predictions from date of request'],
-                    Colors.amber,
-                    isPopular: true,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: SizedBox(
-                  height: 400, // Fixed height for all pricing cards
-                  child: _buildPricingCard(
-                    'Life Guidance',
-                    lifeGuidanceAmount(),
-                    ['Two Life Guidance Questions'],
-                    Colors.purple,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomSection() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(80, 40, 80, 80),
-      child: Column(
-        children: [
-          _buildSectionTitle('Our Services'),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: 200, // Fixed height for info cards
-                      child: _buildInfoCard(
-                          'Unique',
-                          'PlanetCombo is the only astrology service offering personalised and accurate predictions.',
-                          Icons.auto_awesome,
-                          ""
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      height: 200, // Fixed height for info cards
-                      child: _buildInfoCard(
-                          'Horoscope/Kundli',
-                          'Provides North Indian and South Indian Formats with adjusted birth time.',
-                          Icons.psychology,
-                          ""
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 30),
-              Expanded(
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: 200, // Fixed height for info cards
-                      child: _buildInfoCard(
-                          'Personalized Daily Forecasts',
-                          "Get accurate daily predictions to give you the day's insight.",
-                          Icons.precision_manufacturing,
-                          ""
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      height: 200, // Fixed height for info cards
-                      child: _buildInfoCard(
-                          'Life Guidance',
-                          'Get answers to specific life questions through our tools.',
-                          Icons.light,
-                          ""
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPricingCard(
-      String title,
-      String price,
-      List<String> features,
-      Color color, {
-        bool isPopular = false,
-      }) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.2),
-            blurRadius: 20,
-            spreadRadius: 5,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          commonBoldText(
-            text: title,
-            fontSize: 24,
-            color: color,
-          ),
-          const SizedBox(height: 16),
-          commonBoldText(
-            text: currencyType()+price,
-            fontSize: 40,
-            color: color,
-          ),
-          const SizedBox(height: 24),
-          Expanded(
-            child: SingleChildScrollView( // Add scrolling for overflow content
-              child: Column(
-                children: features.map((feature) => Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.check_circle, color: color),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: commonText(
-                          text: feature,
-                          textAlign: TextAlign.left,
-                        ),
-                      ),
-                    ],
-                  ),
-                )).toList(),
-              ),
+          const SizedBox(height: 20),
+          ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: [
+                Color(0xFFFFD700),
+                Color(0xFFFFC107),
+                Color(0xFFFFD700),
+              ],
+            ).createShader(bounds),
+            child: commonBoldText(
+              text: 'KNOW YOUR FUTURE',
+              fontSize: isMobile ? 24 : titleFontSize,
+              color: Colors.white,
             ),
           ),
-          const Divider(
-            height: 0.01, // Reduced height
-            color: Colors.black12, // Lighter opacity
+          const SizedBox(height: 40),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 80),
+            child: isMobile
+                ? Column(
+              children: [
+                _buildRotatingLogo(small: true),
+                const SizedBox(height: 24),
+                _buildMobileDescriptionText(),
+              ],
+            )
+                : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: _buildDescriptionText(),
+                ),
+                const SizedBox(width: 40),
+                SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: _buildRotatingLogo(small: true),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16), // Increased spacing
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SvgPicture.asset(
-                appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'?
-                'assets/svg/upi-icon.svg' :  'assets/svg/stripe.svg',
-                height: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'? 24 : 39,
-              ),
-              const SizedBox(width: 8),
-              commonBoldText(text: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'?
-                ' - Pay securely with UPI' :  ' - Pay securely with Stripe',
-                color: Colors.purple,
-                fontSize: 14,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8), // Added bottom padding
         ],
       ),
     );
   }
 
-  Widget _buildInfoCard(String title, String subtitle, IconData? icon, String? imagePath) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: Colors.amber.withOpacity(0.3),
+  Widget _buildMobileDescriptionText() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildStyledText(
+          'The PlanetCombo tool, harnesses the power of ',
+          highlightText: 'CP Astrology',
+          remainingText: ', a prediction system built after years of research.',
         ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          imagePath == "" ?
-          Icon(icon, color: Colors.amber, size: 32):
-          SizedBox(height:40, child: SvgPicture.asset(imagePath!)),
-          const SizedBox(height: 16),
-          commonBoldText(
-            text: title,
-            fontSize: 18,
-            color: Colors.white,
-          ),
-          const SizedBox(height: 8),
-          commonBoldText(
-            text: subtitle,
-            fontSize: 14,
-            color: Colors.white.withOpacity(0.7),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+        const SizedBox(height: 16),
+        _buildStyledText(
+          'Our tools are based on scientific calculations for accuracy.',
+        ),
+        const SizedBox(height: 16),
+        _buildStyledText(
+          'Predicts events like ',
+          highlightText: 'Marriage, Career, Finance, Health',
+          remainingText: ' and more.',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDescriptionText() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildStyledText(
+          'The PlanetCombo tool, harnesses the power of ',
+          highlightText: 'CP Astrology (Chandrasekar Pathathi)',
+          remainingText: ', a prediction system built after years of scientific research based on proven Indian astrology.',
+        ),
+        const SizedBox(height: 20),
+        _buildStyledText(
+          'Our tools are based on scientific calculations designed to improve prediction accuracy.',
+        ),
+        const SizedBox(height: 20),
+        _buildStyledText(
+          'The tool predicts significant life events like ',
+          highlightText: 'Marriage, Career, Finance, Health, Love Life, Education, Travel',
+          remainingText: ' and more.',
+        ),
+      ],
     );
   }
 
@@ -651,4 +418,345 @@ class _MysticalPricingPageState extends State<PricingPage>
     );
   }
 
+  Widget _buildPricingSection(bool isMobile, double horizontalPadding) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+      child: Column(
+        children: [
+          _buildSectionTitle('Our Pricing Plans', isMobile),
+          if (isMobile)
+            Column(
+              children: [
+                _buildPricingCard(
+                  'Introductory offer',
+                  kundliAmount(),
+                  ['Personalized Chart Generation', '30 Days Free Daily Prediction', 'Two life guidance questions'],
+                  Colors.purple,
+                  isMobile: true,
+                ),
+                const SizedBox(height: 20),
+                _buildPricingCard(
+                  'Daily Predictions',
+                  dailyRequestAmount(),
+                  ['90 days Daily predictions'],
+                  Colors.amber,
+                  isPopular: true,
+                  isMobile: true,
+                ),
+                const SizedBox(height: 20),
+                _buildPricingCard(
+                  'Life Guidance',
+                  lifeGuidanceAmount(),
+                  ['Two Life Guidance Questions'],
+                  Colors.purple,
+                  isMobile: true,
+                ),
+              ],
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _buildPricingCard(
+                    'Introductory offer',
+                    kundliAmount(),
+                    ['Personalized Chart Generation', '30 Days Free Daily Prediction', 'Two life guidance questions'],
+                    Colors.purple,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: _buildPricingCard(
+                    'Daily Predictions',
+                    dailyRequestAmount(),
+                    ['90 days Daily predictions'],
+                    Colors.amber,
+                    isPopular: true,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: _buildPricingCard(
+                    'Life Guidance',
+                    lifeGuidanceAmount(),
+                    ['Two Life Guidance Questions'],
+                    Colors.purple,
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPricingCard(
+      String title,
+      String price,
+      List<String> features,
+      Color color, {
+        bool isPopular = false,
+        bool isMobile = false,
+      }) {
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.2),
+            blurRadius: 20,
+            spreadRadius: 5,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          commonBoldText(
+            text: title,
+            fontSize: isMobile ? 20 : 24,
+            color: color,
+          ),
+          const SizedBox(height: 16),
+          commonBoldText(
+            text: currencyType() + price,
+            fontSize: isMobile ? 32 : 40,
+            color: color,
+          ),
+          const SizedBox(height: 24),
+          ...features.map((feature) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.check_circle, color: color, size: isMobile ? 20 : 24),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: commonText(
+                    text: feature,
+                    textAlign: TextAlign.left,
+                    fontSize: isMobile ? 14 : 16,
+                  ),
+                ),
+              ],
+            ),
+          )).toList(),
+          const SizedBox(height: 16),
+          const Divider(height: 0.01, color: Colors.black12),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SvgPicture.asset(
+                appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'
+                    ? 'assets/svg/upi-icon.svg'
+                    : 'assets/svg/stripe.svg',
+                height: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr' ? 24 : 39,
+              ),
+              const SizedBox(width: 8),
+              commonBoldText(
+                text: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'
+                    ? ' - Pay securely with UPI'
+                    : ' - Pay securely with Stripe',
+                color: Colors.purple,
+                fontSize: isMobile ? 12 : 14,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, bool isMobile) {
+    final double lineWidth = isMobile ? 50 : 100;
+    final double fontSize = isMobile ? 24 : 32;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            height: 2,
+            width: lineWidth,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.amber.withOpacity(0),
+                  Colors.amber,
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 20),
+          ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: [
+                Color(0xFFFFD700),
+                Color(0xFFFFC107),
+                Color(0xFFFFD700),
+              ],
+            ).createShader(bounds),
+            child: commonBoldText(
+              text: title,
+              fontSize: fontSize,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 20),
+          Container(
+            height: 2,
+            width: lineWidth,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.amber,
+                  Colors.amber.withOpacity(0),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomSection(bool isMobile, double horizontalPadding) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(horizontalPadding, 40, horizontalPadding, 80),
+      child: Column(
+        children: [
+          _buildSectionTitle('Our Services', isMobile),
+          if (isMobile)
+            Column(
+              children: [
+                _buildInfoCard(
+                  'Unique',
+                  'PlanetCombo offers personalised and accurate predictions.',
+                  Icons.auto_awesome,
+                  "",
+                  isMobile: true,
+                ),
+                const SizedBox(height: 20),
+                _buildInfoCard(
+                  'Horoscope/Kundli',
+                  'North Indian and South Indian Formats available.',
+                  Icons.psychology,
+                  "",
+                  isMobile: true,
+                ),
+                const SizedBox(height: 20),
+                _buildInfoCard(
+                  'Daily Forecasts',
+                  "Get accurate daily predictions.",
+                  Icons.precision_manufacturing,
+                  "",
+                  isMobile: true,
+                ),
+                const SizedBox(height: 20),
+                _buildInfoCard(
+                  'Life Guidance',
+                  'Get answers to specific life questions.',
+                  Icons.light,
+                  "",
+                  isMobile: true,
+                ),
+              ],
+            )
+          else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      _buildInfoCard(
+                        'Unique',
+                        'PlanetCombo offers personalised and accurate predictions.',
+                        Icons.auto_awesome,
+                        "",
+                      ),
+                      const SizedBox(height: 20),
+                      _buildInfoCard(
+                        'Horoscope/Kundli',
+                        'North Indian and South Indian Formats available.',
+                        Icons.psychology,
+                        "",
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 30),
+                Expanded(
+                  child: Column(
+                    children: [
+                      _buildInfoCard(
+                        'Daily Forecasts',
+                        "Get accurate daily predictions.",
+                        Icons.precision_manufacturing,
+                        "",
+                      ),
+                      const SizedBox(height: 20),
+                      _buildInfoCard(
+                        'Life Guidance',
+                        'Get answers to specific life questions.',
+                        Icons.light,
+                        "",
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(
+      String title,
+      String subtitle,
+      IconData? icon,
+      String? imagePath, {
+        bool isMobile = false,
+      }) {
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: Colors.amber.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          imagePath == ""
+              ? Icon(icon, color: Colors.amber, size: isMobile ? 28 : 32)
+              : SizedBox(height: 40, child: SvgPicture.asset(imagePath!)),
+          SizedBox(height: isMobile ? 12 : 16),
+          commonBoldText(
+            text: title,
+            fontSize: isMobile ? 16 : 18,
+            color: Colors.white,
+          ),
+          SizedBox(height: isMobile ? 6 : 8),
+          commonBoldText(
+            text: subtitle,
+            fontSize: isMobile ? 12 : 14,
+            color: Colors.white.withOpacity(0.7),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
 }

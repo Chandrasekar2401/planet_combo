@@ -339,7 +339,7 @@ class _DashboardState extends State<Dashboard> {
                                           launchUrl(Uri.parse(ApplicationBaseController.getInstance().termsAndConditionsLink.value));
                                         }
                                       } else {
-                                        Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsConditions()));
+                                        launchUrl(Uri.parse(ApplicationBaseController.getInstance().termsAndConditionsLink.value));
                                       }
                                     },
                                     showBorder: false,

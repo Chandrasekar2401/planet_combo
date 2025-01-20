@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:planetcombo/common/widgets.dart';
@@ -74,7 +75,13 @@ class PaymentController extends GetxController {
       if (jsonBody['data'] != null) {
         var data = jsonBody['data'];
         var data1 = data['data'];
-        String approvalUrl = data1['payment_url'];
+        String approvalUrl = "";
+        if(kIsWeb){
+          approvalUrl = data1['payment_url'];
+        }else{
+          var findUrl = data1['upi_intent'];
+          approvalUrl = findUrl['gpay_link'];
+        }
         var paymentId = jsonBody['paymentId'];
         String paymentReferenceId = paymentId.toString();
         // Store the paymentReferenceId if needed for later verification
