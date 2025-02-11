@@ -641,7 +641,7 @@ class AddHoroscopeController extends GetxController {
          AppWidgets().multiTextAlignYesOrNoDialog(
              iconUrl: 'assets/images/headletters.png',
              context: context,
-             dialogMessage: 'Your Kundli has been Saved, please pay',
+             dialogMessage: 'Your Kundli has been Saved and sent a message, please pay',
              subText1Key: 'Amount',
              subText1Value: appLoadController.loggedUserData.value.ucurrency,
              subText1Value1: applicationBaseController.formatDecimalString(jsonResponse['data']['amount']),
@@ -983,7 +983,7 @@ class AddHoroscopeController extends GetxController {
           AppWidgets().multiTextAlignYesOrNoDialog(
               iconUrl: 'assets/images/headletters.png',
               context: context,
-              dialogMessage: 'Your Kundli has been Saved, please pay',
+              dialogMessage: 'Your Kundli has been Saved and sent a message, please pay',
               subText1Key: 'Amount',
               subText1Value: appLoadController.loggedUserData.value.ucurrency,
               subText1Value1: applicationBaseController.formatDecimalString(jsonResponse['data']['amount']),

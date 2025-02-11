@@ -69,54 +69,124 @@ class PaymentController extends GetxController {
   void payByUpi(String userId, int reqId, double amount, String token, context) async {
     try {
       CustomDialog.showLoading(context, 'Please wait');
-      var response = await APICallings.payByUpi(token: token, amount: amount, reqId: reqId, userId: userId);
+      var response = await APICallings.payByUpi(
+          token: token,
+          amount: amount,
+          reqId: reqId,
+          userId: userId
+      );
       print(response!.body);
       var jsonBody = json.decode(response.body);
+      print('pay now url response is $jsonBody');
+
       if (jsonBody['data'] != null) {
         var data = jsonBody['data'];
+        // Check status first
+        if(data['status'] == "false") {
+          CustomDialog.cancelLoading(context);
+          CustomDialog.showAlert(
+              context,
+              'Payment initialization failed: Server returned null values. Please contact support if the issue persists.',
+              false,
+              14
+          );
+          return;
+        }
+
         var data1 = data['data'];
         String approvalUrl = "";
-        if(kIsWeb){
+
+        if(kIsWeb) {
+          if(data1['payment_url'] == null) {
+            CustomDialog.cancelLoading(context);
+            CustomDialog.showAlert(
+                context,
+                'Payment initialization failed: Payment URL not available. Please try again later.',
+                false,
+                14
+            );
+            return;
+          }
           approvalUrl = data1['payment_url'];
-        }else{
+        } else {
+          if(data1['upi_intent'] == null) {
+            CustomDialog.cancelLoading(context);
+            CustomDialog.showAlert(
+                context,
+                'Payment initialization failed: UPI payment options not available. Please try again later.',
+                false,
+                14
+            );
+            return;
+          }
           var findUrl = data1['upi_intent'];
+          if(findUrl['gpay_link'] == null) {
+            CustomDialog.cancelLoading(context);
+            CustomDialog.showAlert(
+                context,
+                'Payment initialization failed: GPay payment link not available. Please try again later.',
+                false,
+                14
+            );
+            return;
+          }
           approvalUrl = findUrl['gpay_link'];
         }
+
         var paymentId = jsonBody['paymentId'];
         String paymentReferenceId = paymentId.toString();
-        // Store the paymentReferenceId if needed for later verification
-        // You might want to save this in a state management solution or pass it to the next screen
         CustomDialog.cancelLoading(context);
-        // Open the PayPal approval URL
         await launchUrl(Uri.parse(approvalUrl));
-        // After opening the URL, you might want to navigate to a confirmation page
-        // or set up a listener for the PayPal callback
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => PaymentProgressPage(paymentReferenceNumber: paymentReferenceId, onPaymentComplete: (String ) {  },)));
+        Navigator.of(context).push(
+            MaterialPageRoute(
+                builder: (_) => PaymentProgressPage(
+                  paymentReferenceNumber: paymentReferenceId,
+                  onPaymentComplete: (String ) {  },
+                )
+            )
+        );
       } else {
         CustomDialog.cancelLoading(context);
-        if(applicationBaseController.paymentForHoroscope.value == true){
-          CustomDialog.okActionAlert(context, 'Payment initialization failed. Please try later', 'Ok', false, 14, (){
-            Navigator.pushAndRemoveUntil(
+        if(applicationBaseController.paymentForHoroscope.value == true) {
+          CustomDialog.okActionAlert(
               context,
-              MaterialPageRoute(builder: (context) => const Dashboard()),
-                  (Route<dynamic> route) => false,
-            );
-          });
-        }else{
-          CustomDialog.showAlert(context, 'Payment initialization failed. Please try again or use an alternative payment method.', false, 14);
+              'Payment initialization failed: Invalid response from server (null values received). Please try again later.',
+              'Ok',
+              false,
+              14,
+                  () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Dashboard()),
+                      (Route<dynamic> route) => false,
+                );
+              }
+          );
+        } else {
+          CustomDialog.showAlert(
+              context,
+              'Payment initialization failed: Invalid response from server (null values received). Please try again later.',
+              false,
+              14
+          );
         }
       }
     } catch (e) {
       CustomDialog.cancelLoading(context);
       print('Error in Upi Payment: $e');
-      if(applicationBaseController.paymentForHoroscope.value == true){
+      if(applicationBaseController.paymentForHoroscope.value == true) {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const Dashboard()),
               (Route<dynamic> route) => false,
         );
-      }else{
-        CustomDialog.showAlert(context, 'An error occurred. Please try again later.', false, 14);
+      } else {
+        CustomDialog.showAlert(
+            context,
+            'An unexpected error occurred during payment initialization. Please try again later.',
+            false,
+            14
+        );
       }
     }
   }
