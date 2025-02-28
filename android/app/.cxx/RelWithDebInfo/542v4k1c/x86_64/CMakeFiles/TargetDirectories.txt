@@ -1,0 +1,2 @@
+D:/flutter/chandra/android/app/.cxx/RelWithDebInfo/542v4k1c/x86_64/CMakeFiles/edit_cache.dir
+D:/flutter/chandra/android/app/.cxx/RelWithDebInfo/542v4k1c/x86_64/CMakeFiles/rebuild_cache.dir
