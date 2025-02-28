@@ -112,7 +112,7 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
       applicationBaseController.updateHoroscopeUiList();
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const Dashboard()),
+        MaterialPageRoute(builder: (context) => Dashboard()),
             (Route<dynamic> route) => false,
       );
     });
@@ -124,7 +124,7 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
       applicationBaseController.updateHoroscopeUiList();
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const Dashboard()),
+        MaterialPageRoute(builder: (context) => Dashboard()),
             (Route<dynamic> route) => false,
       );
     });
@@ -134,7 +134,7 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
     applicationBaseController.updateHoroscopeUiList();
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => const Dashboard()),
+      MaterialPageRoute(builder: (context) => Dashboard()),
           (Route<dynamic> route) => false,
     );
   }

@@ -1,207 +1,197 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:planetcombo/common/widgets.dart';
-import 'package:planetcombo/controllers/localization_controller.dart';
+import 'package:get/get.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:get/get.dart';
+import 'package:planetcombo/common/widgets.dart';
+import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 
 class LiveChat extends StatefulWidget {
   const LiveChat({Key? key}) : super(key: key);
+
   @override
   _LiveChatState createState() => _LiveChatState();
 }
 
 class _LiveChatState extends State<LiveChat> {
-  final AppLoadController appLoadController =
-  Get.put(AppLoadController.getInstance(), permanent: true);
+  // Firebase Configuration
+  static const _firebaseConfig = FirebaseOptions(
+    apiKey: "AIzaSyCXAw8BQBx4OPMOWyNaI4bv7gh5GUXa0lQ",
+    authDomain: "flutterplanetcombo-ff367.firebaseapp.com",
+    databaseURL: "https://flutterplanetcombo-ff367-default-rtdb.firebaseio.com",
+    projectId: "flutterplanetcombo-ff367",
+    storageBucket: "flutterplanetcombo-ff367.appspot.com",
+    messagingSenderId: "488939796804",
+    appId: "1:488939796804:web:5c94e0a3b5f03ca2abbf11",
+  );
 
-  late final DatabaseReference _database;
-  final TextEditingController _messageController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
+  // Controllers
+  final _appLoadController = Get.find<AppLoadController>();
+  final _messageController = TextEditingController();
+  final _scrollController = ScrollController();
 
-  bool _isLoading = false;
-  String? _error;
-  String? userKey;
-  String? userEmail;
-  String? userProfile;
-  int messageCount = 0;
-  List<Map<String, dynamic>> messagesList = [];
+  // State variables
+  late DatabaseReference _database;
   StreamSubscription? _messagesSubscription;
+  final List<Map<String, dynamic>> _messagesList = [];
+
+  String? _userKey;
+  String? _error;
+  int _messageCount = 0;
+  bool _isLoading = false;
+  bool _isInitialized = false;
+
+  // Cached user data
+  late final String _userEmail;
+  late final String _userProfile;
 
   @override
   void initState() {
     super.initState();
+    _userEmail = _appLoadController.loggedUserData.value.userid ?? '';
+    _userProfile = _appLoadController.loggedUserData.value.userphoto ?? '';
     _initializeFirebase();
   }
 
   Future<void> _initializeFirebase() async {
     try {
-      // Initialize Firebase for web
-      await Firebase.initializeApp(
-        options: const FirebaseOptions(
-          apiKey: "AIzaSyCXAw8BQBx4OPMOWyNaI4bv7gh5GUXa0lQ",
-          authDomain: "flutterplanetcombo-ff367.firebaseapp.com",
-          databaseURL: "https://flutterplanetcombo-ff367-default-rtdb.firebaseio.com",
-          projectId: "flutterplanetcombo-ff367",
-          storageBucket: "flutterplanetcombo-ff367.appspot.com",
-          messagingSenderId: "488939796804",
-          appId: "1:488939796804:web:5c94e0a3b5f03ca2abbf11",
-        ),
-      );
-
+      await Firebase.initializeApp(options: _firebaseConfig);
       _database = FirebaseDatabase.instance.ref();
       await _initializeUser();
+      setState(() => _isInitialized = true);
     } catch (e) {
-      print('Firebase initialization error: $e');
-      setState(() {
-        _error = 'Failed to initialize Firebase. Please try again.';
-      });
+      _handleError('Firebase initialization error', e);
     }
   }
 
   Future<void> _initializeUser() async {
     try {
-      userEmail = appLoadController.loggedUserData.value.userid;
-      userProfile = appLoadController.loggedUserData.value.userphoto;
-      await _findOrCreateUser(userEmail!);
+      if (_userEmail.isEmpty) throw Exception('User email not found');
+      await _findOrCreateUser(_userEmail);
     } catch (e) {
-      print('Error initializing user: $e');
-      setState(() {
-        _error = 'Failed to initialize chat. Please try again.';
-      });
+      _handleError('User initialization error', e);
     }
   }
 
   Future<void> _findOrCreateUser(String email) async {
     try {
-      DatabaseReference usersRef = _database.child('UsersList');
-
-      // Instead of using query, we'll listen to the value event once
-      DatabaseEvent event = await usersRef.once();
+      final usersRef = _database.child('UsersList');
+      final event = await usersRef.once();
 
       if (event.snapshot.value != null) {
         final usersData = event.snapshot.value as Map;
-        bool userFound = false;
+        final existingUser = usersData.entries.firstWhere(
+              (entry) => (entry.value as Map)['userEmail'] == email,
+          orElse: () => MapEntry('', {}),
+        );
 
-        usersData.forEach((key, value) {
-          if (value['userEmail'] == email) {
-            userKey = key;
-            messageCount = value['message'] ?? 0;
-            userFound = true;
-          }
-        });
-
-        if (!userFound) {
+        if (existingUser.key.isNotEmpty) {
+          _userKey = existingUser.key;
+          _messageCount = (existingUser.value as Map)['message'] ?? 0;
+        } else {
           await _createNewUser(email);
         }
       } else {
         await _createNewUser(email);
       }
 
-      // Start listening to messages
-      _listenToMessages();
-
+      _startMessageListener();
     } catch (e) {
-      print('Error in findOrCreateUser: $e');
-      setState(() {
-        _error = 'Failed to initialize user data';
-      });
+      _handleError('Error finding/creating user', e);
     }
   }
 
   Future<void> _createNewUser(String email) async {
-    final newUserRef = _database.child('UsersList').push();
-    userKey = newUserRef.key;
-    await newUserRef.set({
-      'adminMessage': 0,
-      'message': 0,
-      'userActive': 'y',
-      'userEmail': email,
-      'userProfileUrl': userProfile,
-    });
+    try {
+      final newUserRef = _database.child('UsersList').push();
+      _userKey = newUserRef.key;
+      await newUserRef.set({
+        'adminMessage': 0,
+        'message': 0,
+        'userActive': 'y',
+        'userEmail': email,
+        'userProfileUrl': _userProfile,
+      });
+    } catch (e) {
+      _handleError('Error creating new user', e);
+    }
   }
 
-  void _listenToMessages() {
-    if (userKey == null) return;
+  void _startMessageListener() {
+    if (_userKey == null) return;
 
     _messagesSubscription?.cancel();
-
     _messagesSubscription = _database
-        .child('message/$userKey')
+        .child('message/$_userKey')
         .onValue
-        .listen((DatabaseEvent event) {
-      if (!mounted) return;
-
-      if (event.snapshot.value != null) {
-        final messagesData = event.snapshot.value as Map;
-        final List<Map<String, dynamic>> newMessages = [];
-
-        messagesData.forEach((key, value) {
-          newMessages.add({
-            'key': key,
-            'time': value['TimeStamp'],
-            'message': value['message'],
-            'from': value['from'].toString(),
-          });
-        });
-
-        setState(() {
-          messagesList = newMessages;
-        });
-
-        _scrollToBottom();
-      }
-    }, onError: (error) {
-      print('Error listening to messages: $error');
-      setState(() {
-        _error = 'Failed to load messages. Please refresh the page.';
-      });
+        .listen(_handleMessageUpdate, onError: (error) {
+      _handleError('Message listening error', error);
     });
   }
 
-  Future<void> _sendMessage() async {
-    if (_messageController.text.trim().isEmpty || userKey == null) return;
-
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+  void _handleMessageUpdate(DatabaseEvent event) {
+    if (!mounted) return;
 
     try {
-      messageCount++;
-      await _database.child('UsersList').child(userKey!).update({
-        'message': messageCount,
-        'userActive': 'y',
-      });
+      if (event.snapshot.value != null) {
+        final messagesData = event.snapshot.value as Map;
+        final newMessages = messagesData.entries.map((entry) => {
+          'key': entry.key,
+          'time': entry.value['TimeStamp'],
+          'message': entry.value['message'],
+          'from': entry.value['from'].toString(),
+        }).toList();
 
-      final newMessageRef = _database.child('message').child(userKey!).push();
-      await newMessageRef.set({
-        'message': _messageController.text.trim(),
-        'from': 2,
-        'TimeStamp': ServerValue.timestamp,
-      });
-
-      if (mounted) {
-        _messageController.clear();
+        setState(() {
+          _messagesList
+            ..clear()
+            ..addAll(newMessages);
+        });
         _scrollToBottom();
       }
     } catch (e) {
-      print('Error sending message: $e');
-      setState(() {
-        _error = 'Failed to send message. Please try again.';
-      });
+      _handleError('Message update error', e);
+    }
+  }
+
+  Future<void> _sendMessage() async {
+    final message = _messageController.text.trim();
+    if (message.isEmpty || _userKey == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      _messageCount++;
+      await Future.wait([
+        _database.child('UsersList').child(_userKey!).update({
+          'message': _messageCount,
+          'userActive': 'y',
+        }),
+        _database.child('message').child(_userKey!).push().set({
+          'message': message,
+          'from': 2,
+          'TimeStamp': ServerValue.timestamp,
+        }),
+      ]);
+
+      if (mounted) _messageController.clear();
+    } catch (e) {
+      _handleError('Error sending message', e);
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _handleError(String context, dynamic error) {
+    debugPrint('$context: $error');
+    if (mounted) {
+      setState(() => _error = 'An error occurred. Please try again.');
     }
   }
 
   void _scrollToBottom() {
+    if (!mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -213,15 +203,105 @@ class _LiveChatState extends State<LiveChat> {
     });
   }
 
+  Widget _buildMessageBubble(Map<String, dynamic> message) {
+    final isUserMessage = message['from'] == '2';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Align(
+        alignment: isUserMessage ? Alignment.centerRight : Alignment.centerLeft,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.75,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isUserMessage ? Colors.blue[100] : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: isUserMessage
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                if (!isUserMessage)
+                  Text(
+                    'admin',
+                    style: TextStyle(
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                Text(message['message']),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMessageInput() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: TextField(
+                controller: _messageController,
+                decoration: const InputDecoration(
+                  hintText: 'Please here...',
+                  border: InputBorder.none,
+                ),
+                onSubmitted: (_) => _sendMessage(),
+                enabled: !_isLoading,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+            ),
+            child: IconButton(
+              icon: _isLoading
+                  ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+                  : const Icon(Icons.send),
+              onPressed: _isLoading ? null : _sendMessage,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: GradientAppBar(
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.chevron_left_rounded),
         ),
-        title: LocalizationController.getInstance().getTranslatedValue("Chat"),
+        title: LocalizationController.getInstance()
+            .getTranslatedValue("Chat"),
         colors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
         centerTitle: true,
       ),
@@ -257,94 +337,11 @@ class _LiveChatState extends State<LiveChat> {
               child: ListView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.all(8),
-                itemCount: messagesList.length,
-                itemBuilder: (context, index) {
-                  final message = messagesList[index];
-                  final isUserMessage = message['from'] == '2';
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Align(
-                      alignment: isUserMessage
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: Container(
-                        constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.75,
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: isUserMessage
-                              ? Colors.blue[100]
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: isUserMessage
-                              ? CrossAxisAlignment.end
-                              : CrossAxisAlignment.start,
-                          children: [
-                            if (!isUserMessage)
-                              Text(
-                                'admin',
-                                style: TextStyle(
-                                  color: Colors.blue[700],
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            Text(message['message']),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                itemCount: _messagesList.length,
+                itemBuilder: (_, index) => _buildMessageBubble(_messagesList[index]),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: TextField(
-                        controller: _messageController,
-                        decoration: const InputDecoration(
-                          hintText: 'Please here...',
-                          border: InputBorder.none,
-                        ),
-                        onSubmitted: (_) => _sendMessage(),
-                        enabled: !_isLoading,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                    ),
-                    child: IconButton(
-                      icon: _isLoading
-                          ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      )
-                          : const Icon(Icons.send),
-                      onPressed: _sendMessage,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildMessageInput(),
           ],
         ),
       ),
@@ -353,8 +350,8 @@ class _LiveChatState extends State<LiveChat> {
 
   @override
   void dispose() {
-    if (userKey != null) {
-      _database.child('UsersList').child(userKey!).update({
+    if (_userKey != null) {
+      _database.child('UsersList').child(_userKey!).update({
         'userActive': '',
       });
     }

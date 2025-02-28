@@ -62,7 +62,7 @@ class _HomePageState extends State<WebHomePage> with SingleTickerProviderStateMi
       case 0:
         return _buildHomeContent();
       case 1:
-       return appLoadController.userValue.value == true ? const Dashboard() : const WebLogin();
+       return appLoadController.userValue.value == true ? Dashboard() : const WebLogin();
       case 2:
         return buildWebArticle();
       case 3:
@@ -138,7 +138,7 @@ class _HomePageState extends State<WebHomePage> with SingleTickerProviderStateMi
                   commonColorButton(
                       textPadding: 18,
                       fontSize: 22,
-                      title: '     Login     ',
+                      title: '     Book Services     ',
                       textColor: Colors.white,
                       buttonColor: Colors.deepOrange,
                       onPressed: (){

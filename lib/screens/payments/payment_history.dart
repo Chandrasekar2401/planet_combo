@@ -382,7 +382,7 @@ class _PaymentHistoryState extends State<PaymentHistory> {
             onPressed: () {
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const Dashboard()),
+                MaterialPageRoute(builder: (context) => Dashboard()),
                     (Route<dynamic> route) => false,
               );
             },

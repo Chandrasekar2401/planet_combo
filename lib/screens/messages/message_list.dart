@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:planetcombo/common/widgets.dart';
-import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:get/get.dart';
 import 'package:planetcombo/screens/messages/add_message.dart';
@@ -73,20 +72,22 @@ class _MessagesListState extends State<MessagesList> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                commonBoldText(text: 'Horoscope Name : ${applicationBaseController.messagesHistory[index].horoname}'),
-                SizedBox(height: 5),
-                commonText(text: 'Waiting for agent to reply', color: Colors.black54, fontSize: 13),
-                SizedBox(height: 10),
+                commonBoldText(text: applicationBaseController.messagesHistory[index].msghcomments!.split('^')[0]),
+                const SizedBox(height: 5),
+                commonBoldText(text: 'Horoscope Name : ${applicationBaseController.messagesHistory[index].horoname}', color: Colors.black38, fontSize: 14),
+                const SizedBox(height: 5),
+                commonText(text: applicationBaseController.messagesHistory[index].msgstatus == "1" ?'Waiting for agent to reply' : "Waiting for your reply", color: applicationBaseController.messagesHistory[index].msgstatus == "1" ? Colors.lightBlue : Colors.red, fontSize: 11),
+                const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    Expanded(
-                      child: GradientButton(title: LocalizationController.getInstance().getTranslatedValue("Reply"), buttonHeight: 30, textColor: Colors.white, buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset){
-                        Navigator.push(
-                            context, MaterialPageRoute(builder: (context) => ReplyMessages(messageInfo : applicationBaseController.messagesHistory[index])));
-                      }),
-                    ),
-                    Expanded(child:                     GradientButton(title: LocalizationController.getInstance().getTranslatedValue("Delete"), buttonHeight: 30, textColor: Colors.white, buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset){
+                    // Expanded(
+                    //   child: GradientButton(title: LocalizationController.getInstance().getTranslatedValue("Reply"), buttonHeight: 30, textColor: Colors.white, buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset){
+                    //     Navigator.push(
+                    //         context, MaterialPageRoute(builder: (context) => ReplyMessages(messageInfo : applicationBaseController.messagesHistory[index])));
+                    //   }),
+                    // ),
+                    Expanded(child:GradientButton(title: LocalizationController.getInstance().getTranslatedValue("Delete"), buttonHeight: 30, textColor: Colors.white, buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset){
                       yesOrNoDialog(
                         context: context,
                         dialogMessage: 'Do you want to delete this Message ?',
@@ -105,7 +106,7 @@ class _MessagesListState extends State<MessagesList> {
                     Expanded(
                       child: GradientButton(title: LocalizationController.getInstance().getTranslatedValue("View History"), buttonHeight: 30, textColor: Colors.white, buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset){
                         Navigator.push(
-                            context, MaterialPageRoute(builder: (context) =>  ViewHistory(messageHistory : applicationBaseController.messagesHistory[index])));
+                            context, MaterialPageRoute(builder: (context) =>  ViewHistory(messageHid : applicationBaseController.messagesHistory[index].msghid, messageMsgId : applicationBaseController.messagesHistory[index].msgmessageid!)));
                       }),
                     ),
                   ],

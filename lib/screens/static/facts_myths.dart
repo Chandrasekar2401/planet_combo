@@ -183,7 +183,7 @@ class _FactsMythsState extends State<FactsMyths> with TickerProviderStateMixin {
                 onPressed: () {
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (context) => const Dashboard()),
+                    MaterialPageRoute(builder: (context) => Dashboard()),
                         (Route<dynamic> route) => false,
                   );
                 },

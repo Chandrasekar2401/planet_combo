@@ -22,7 +22,6 @@ class _TermsConditionsState extends State<TermsConditions> {
   @override
   void initState() {
     super.initState();
-    // Initialize WebView
     print('the terms and conditions link url ${ApplicationBaseController.getInstance().termsAndConditionsLink.value}');
     if(ApplicationBaseController.getInstance().termsAndConditionsLink.value == ''){
       setState(() {

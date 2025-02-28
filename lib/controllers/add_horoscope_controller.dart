@@ -772,7 +772,7 @@ class AddHoroscopeController extends GetxController {
             if(appLoadController.addNewUser.value == 'YES'){
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const Dashboard()),
+                MaterialPageRoute(builder: (context) => Dashboard()),
                     (Route<dynamic> route) => false,
               );
             }else{

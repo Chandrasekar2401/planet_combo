@@ -437,7 +437,9 @@ class _PredictionsState extends State<Predictions> {
                               ),
                             // Status indicator
                             Positioned(
-                              top: 12,
+                              top: horoscopeServiceController.requestHistory[index].reqcat == "2"
+                                  ? 4
+                                  : 14,
                               right: 12,
                               child: Container(
                                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),

@@ -829,6 +829,8 @@ class _ProfileEditState extends State<ProfileEdit> {
             CustomDialog.showAlert(context, 'You are trying to save profile without location enable, please allow the location and try again', false, 14);
           }else if (isChecked && isPaymentInfoChecked) {
             var response = await addHoroscopeController.addNewProfileWithoutImage(context);
+            print('the response from the api new profile is');
+            print(response.toString());
             var string2json = json.decode(response);
             if ((string2json['status'] == 'Success' && string2json['data'] == null)) {
               CustomDialog.showAlert(context, string2json['message'] + ' Please contact admin for more info', false, 14);

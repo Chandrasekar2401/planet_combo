@@ -22,7 +22,7 @@ class AppRouter {
         );
       case '/dashboard':
         return MaterialPageRoute(
-          builder: (_) => const Dashboard(),
+          builder: (_) => Dashboard(),
         );
       default:
         return null;

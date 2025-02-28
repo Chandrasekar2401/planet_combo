@@ -329,7 +329,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
             leading: IconButton(onPressed: () {
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const Dashboard()),
+                MaterialPageRoute(builder: (context) => Dashboard()),
                     (Route<dynamic> route) => false,
               );
             }, icon: const Icon(Icons.chevron_left_rounded),),
@@ -442,20 +442,23 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                       Color(0xFFf34509)
                                     ],
                                     onPressed: (Offset buttonOffset) {
-                                      if (APIEndPoints.baseUrl ==
-                                          'https://planetcombo.com/') {
-                                        CustomDialog.showAlert(context,
-                                            'Website under maintenance please try after some time',
-                                            true, 14);
-                                      } else {
-                                        addHoroscopeController.refreshAlerts();
-                                        Navigator.push(
-                                            context, MaterialPageRoute(
-                                            builder: (
-                                                context) => const AddNativePhoto()));
-                                      }
-                                      // Navigator.push(
-                                      //     context, MaterialPageRoute(builder: (context) => const AddPrimary()));
+                                      addHoroscopeController.refreshAlerts();
+                                      Navigator.push(
+                                          context, MaterialPageRoute(
+                                          builder: (
+                                              context) => const AddNativePhoto()));
+                                      // if (APIEndPoints.baseUrl ==
+                                      //     'https://planetcombo.com/') {
+                                      //   CustomDialog.showAlert(context,
+                                      //       'Website under maintenance please try after some time',
+                                      //       true, 14);
+                                      // } else {
+                                      //   addHoroscopeController.refreshAlerts();
+                                      //   Navigator.push(
+                                      //       context, MaterialPageRoute(
+                                      //       builder: (
+                                      //           context) => const AddNativePhoto()));
+                                      // }
                                     },
                                     materialIcon: Icons.add,
                                     materialIconSize: 21)),

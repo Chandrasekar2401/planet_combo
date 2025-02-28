@@ -90,7 +90,7 @@ class _AddTravelInfoState extends State<AddTravelInfo> {
           IconButton(onPressed: (){
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => const Dashboard()),
+              MaterialPageRoute(builder: (context) => Dashboard()),
                   (Route<dynamic> route) => false,
             );
           }, icon: const Icon(Icons.home_outlined))

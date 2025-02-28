@@ -58,9 +58,10 @@ class _WebLoginState extends State<WebLogin> {
 
   Future<void> _handleSignIn() async {
     try {
-      showWebLoadingDialog(context, "Signing in with Google...");
+      showWebLoadingDialog(context, "Signing in...");
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser != null) {
+      // if (1 == 1) {
         final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
         final AuthCredential credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
@@ -72,11 +73,15 @@ class _WebLoginState extends State<WebLogin> {
           constants.mediumGmail,
           constants.password,
           _auth.currentUser!.providerData[0].uid,
+          // "planetcombouser@gmail.com",
+          // "Gmail",
+          // "HeadLetters@#!123456",
+          // "117709228246679528951",
           context,
         );
         dismissWebLoadingDialog(context);
-        print('the response Profile from the User of google login ${_auth.currentUser!.photoURL!}');
-        print('the response from the User of google login ${_auth.currentUser}');
+        // print('the response Profile from the User of google login ${_auth.currentUser!.photoURL!}');
+        // print('the response from the User of google login ${_auth.currentUser}');
         if (response == 'true') {
           await _handleSuccessfulLogin();
         } else if (response == 'false') {
@@ -100,7 +105,7 @@ class _WebLoginState extends State<WebLogin> {
     var jsonBody = json.decode(jsonString!);
     appLoadController.loggedUserData.value = SocialLoginData.fromJson(jsonBody);
     applicationBaseController.initializeApplication();
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Dashboard()));
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Dashboard()));
   }
 
   Future<void> _handleNewUser() async {
@@ -179,7 +184,7 @@ class _WebLoginState extends State<WebLogin> {
                     return SizedBox(
                       width: width,
                       child: fullLeftIconColorButton(
-                        title: 'Continue with Google',
+                        title: 'Login Using Google Account',
                         iconLeftSize: 25,
                         textColor: Colors.black,
                         buttonColor: Colors.white,

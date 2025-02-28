@@ -147,10 +147,10 @@ class MyApp extends StatelessWidget {
       return userValue
           ? (appLoadController.loggedUserData.value.touchid == 'T'
           ? const Authentication()
-          : const Dashboard())
+          : Dashboard())
           : const SocialLogin();
     } else {
-      return userValue ? const Dashboard() : WebHomePage();
+      return userValue ? Dashboard() : WebHomePage();
     }
   }
 

@@ -54,7 +54,7 @@ class _AddMessagesState extends State<AddMessages> {
             onPressed: () {
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const Dashboard()),
+                MaterialPageRoute(builder: (context) => Dashboard()),
                     (Route<dynamic> route) => false,
               );
             },
@@ -96,6 +96,7 @@ class _AddMessagesState extends State<AddMessages> {
                   hintText: 'Type Your message',
                   maxLines: 6,
                   controller: userMessage,
+                  autoFocus: true,
                   onValidate: (v) {
                     return null;
                   }
@@ -114,7 +115,7 @@ class _AddMessagesState extends State<AddMessages> {
                         onPressed: (Offset buttonOffset) {
                           Navigator.pushAndRemoveUntil(
                             context,
-                            MaterialPageRoute(builder: (context) => const Dashboard()),
+                            MaterialPageRoute(builder: (context) => Dashboard()),
                                 (Route<dynamic> route) => false,
                           );
                         }

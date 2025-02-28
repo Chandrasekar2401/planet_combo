@@ -34,9 +34,11 @@ class APIEndPoints {
   ///endpoint changed to stripe
   static String payByStripe = '${baseUrl}api/Payments/create-stripPay-payment';
 
-  ///Pay Payment by Upi
-  static String payByUpi = '${baseUrl}api/Payments/create-UpiPay-payment';
+  // ///Pay Payment by Upi
+  // static String payByUpi = '${baseUrl}api/Payments/create-UpiPay-payment';
 
+  ///Pay Payment by Upi
+  static String payByUpi = '${baseUrl}api/Payments/create-payu-payment';
 
   ///update Message
   static String updateMessage = '${baseUrl}api/messages/updateMessages';

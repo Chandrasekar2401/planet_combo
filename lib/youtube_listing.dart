@@ -38,6 +38,7 @@ class _YouTubeVideosPageState extends State<YouTubeVideosPage> {
       videoId: videoId,
       autoPlay: true,
       params: const YoutubePlayerParams(
+        enableJavaScript: true,
         enableCaption: false,
         showControls: true,
         showFullscreenButton: true,

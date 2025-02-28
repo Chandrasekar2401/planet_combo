@@ -9,10 +9,11 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/screens/payments/payment_dashboard.dart';
-import 'package:planetcombo/screens/policy.dart';
+import 'package:planetcombo/screens/profile/business_details.dart';
 import 'package:planetcombo/screens/profile/profile.dart';
 import 'package:planetcombo/screens/services/horoscope_services.dart';
 import 'package:planetcombo/screens/social_login.dart';
+import 'package:planetcombo/screens/static/facts_myths.dart';
 import 'package:planetcombo/screens/web/web_home.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:planetcombo/screens/live_chat.dart';
@@ -212,7 +213,7 @@ class _DashboardState extends State<Dashboard> {
             children: [
               SizedBox(
                 width: MediaQuery.of(context).size.width,
-                height: 500,
+                height: 620,
                 child: Stack(
                   children: [
                     // Header Section
@@ -243,7 +244,10 @@ class _DashboardState extends State<Dashboard> {
                             commonBoldText(
                               fontSize: 19,
                               color: Colors.white,
-                              text: LocalizationController.getInstance().getTranslatedValue("Welcome to Planet Combo"),
+                              text:
+                              appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr' ?
+                              LocalizationController.getInstance().getTranslatedValue("LEGAL NAME : VENKATARAMAN CHANDRASEKAR"):
+                              LocalizationController.getInstance().getTranslatedValue("Welcome to Planet Combo")
                             ),
                             const SizedBox(height: 5),
                             Padding(
@@ -252,9 +256,59 @@ class _DashboardState extends State<Dashboard> {
                                 fontSize: 14,
                                 color: Colors.white,
                                 textAlign: TextAlign.center,
-                                text: LocalizationController.getInstance().getTranslatedValue(
-                                  "Planetary calculation on charts, Dasas and transits powered by True Astrology software",
+                                text:
+                                appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr' ?
+                                LocalizationController.getInstance().getTranslatedValue(
+                                  "ADDRESS:		7, KANNADASAN SALAI, T NAGAR THIYAGARAYA NAGAR CHENNAI",
+                                ):LocalizationController.getInstance().getTranslatedValue(
+                                  "Planetary calculation on charts, Dasas and transists powered by True Astrology software",
                                 ),
+                              ),
+                            ),
+                            SizedBox(height: 3),
+                            if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr')Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: commonText(
+                                fontSize: 14,
+                                color: Colors.white,
+                                textAlign: TextAlign.center,
+                                text: LocalizationController.getInstance().getTranslatedValue(
+                                  "STATE : TAMIL NADU , POSTAL CODE :		600017",
+                                ),
+                              ),
+                            ),
+                            if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr')SizedBox(height: 3),
+                            if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr')Center(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/svg/email.svg',
+                                    height: 16,
+                                    width: 16,
+                                  ),
+                                  const SizedBox(width: 5),  // Small spacing between icon and text
+                                  commonText(
+                                    textAlign: TextAlign.center,
+                                    color: Colors.white,
+                                    text: LocalizationController.getInstance().getTranslatedValue("info@planetcombo.com"),
+                                    fontSize: 12,
+                                  ),
+                                  const SizedBox(width: 15),
+                                  SvgPicture.asset(
+                                    'assets/svg/whatsapp.svg',
+                                    height: 16,
+                                    width: 16,
+                                  ),
+                                  const SizedBox(width: 5),  // Small spacing between icon and text
+                                  commonText(
+                                    textAlign: TextAlign.center,
+                                    color: Colors.white,
+                                    text: LocalizationController.getInstance().getTranslatedValue("+91 9600031647"),
+                                    fontSize: 12,
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -299,6 +353,13 @@ class _DashboardState extends State<Dashboard> {
                                     iconPath: 'assets/svg/support.svg',
                                     text: "Chat Support",
                                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LiveChat())),
+                                    showBorder: true,
+                                  ),
+                                  buildMenuItem(
+                                    iconPath: 'assets/svg/app.svg',
+                                    text: "About App",
+                                    onTap: () =>     Navigator.push(
+                                        context, MaterialPageRoute(builder: (context) => const FactsMyths())),
                                     showBorder: false,
                                   ),
                                 ],
@@ -306,7 +367,7 @@ class _DashboardState extends State<Dashboard> {
                               // Divider
                               Container(
                                 width: 0.5,
-                                height: 360,
+                                height: 390,
                                 color: appLoadController.appPrimaryColor,
                               ),
                               // Right Column
@@ -342,6 +403,16 @@ class _DashboardState extends State<Dashboard> {
                                         launchUrl(Uri.parse(ApplicationBaseController.getInstance().termsAndConditionsLink.value));
                                       }
                                     },
+                                  ),
+                                  buildMenuItem(
+                                      iconPath: 'assets/svg/business.svg',
+                                      text: "Business Details",
+                                      onTap: (){
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => BusinessDetails()),
+                                        );
+                                      },
                                     showBorder: false,
                                   ),
                                 ],
@@ -419,22 +490,30 @@ class _DashboardState extends State<Dashboard> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    commonText(
+                    commonBoldText(
                       textAlign: TextAlign.center,
-                      text: '© ${LocalizationController.getInstance().getTranslatedValue("Planet Combo... All rights reserved")}',
+                      text:
+                      appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr' ?
+                      LocalizationController.getInstance().getTranslatedValue("Domain Name : PlanetCombo.com"):
+                      LocalizationController.getInstance().getTranslatedValue("© Planet Combo... All rights reserved"),
                       fontSize: 12,
                     ),
                     const SizedBox(height: 5),
                     commonText(
                       textAlign: TextAlign.center,
-                      text: LocalizationController.getInstance().getTranslatedValue("Developed by Planetcombo Team"),
-                      fontSize: 12,
+                      text: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr' ?
+                      LocalizationController.getInstance().getTranslatedValue("Planetary calculations on charts, Dasas and transits powered by True Astrology software"):
+                      LocalizationController.getInstance().getTranslatedValue("Developed by Planetcombo Team"),
+                      fontSize: 11,
                     ),
                     const SizedBox(height: 5),
                     commonText(
+                      fontSize: 14,
+                      color: Colors.black,
                       textAlign: TextAlign.center,
-                      text: LocalizationController.getInstance().getTranslatedValue("Version : 1.0.0"),
-                      fontSize: 12,
+                      text:  appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr' ?
+                      '© ${LocalizationController.getInstance().getTranslatedValue("VENKATARAMAN CHANDRASEKAR... All rights reserved")}':
+                      LocalizationController.getInstance().getTranslatedValue("Version : 1.0.0"),
                     ),
                   ],
                 ),

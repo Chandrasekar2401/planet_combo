@@ -514,7 +514,8 @@ class PrimaryInputText extends StatelessWidget {
   final bool? readOnly;
   final bool? obscureText;
   final String? value;
-  const PrimaryInputText({Key? key,this.obscureText,this.value, required this.hintText,this.readOnly, this.controller, required this.onValidate,this.isEnabled = true, this.textInputType = TextInputType.text, this.maxLines=1,this.maxLength, this.onChange, this.suffixImage, this.focusNode}) : super(key: key);
+  final bool? autoFocus;
+  const PrimaryInputText({super.key,this.obscureText,this.value, required this.hintText,this.readOnly, this.controller, required this.onValidate,this.isEnabled = true, this.textInputType = TextInputType.text, this.maxLines=1,this.maxLength, this.onChange, this.suffixImage, this.focusNode, this.autoFocus});
 
 
   @override
@@ -524,6 +525,7 @@ class PrimaryInputText extends StatelessWidget {
       readOnly: readOnly ?? false,
       style: GoogleFonts.lexend(color: Colors.black),
       controller: controller,
+      autofocus: autoFocus ?? false,
       focusNode: focusNode,
       obscureText: obscureText ?? false,
       validator: onValidate,

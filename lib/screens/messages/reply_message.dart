@@ -42,7 +42,9 @@ class _ReplyMessagesState extends State<ReplyMessages> {
               const SizedBox(height: 20),
               commonBoldText(text: 'Message'),
               const SizedBox(height: 20),
-              PrimaryInputText(hintText: 'Type Your message',maxLines: 6,controller: userMessage, onValidate: (v){
+              PrimaryInputText(hintText: 'Type Your message',maxLines: 6,
+                  autoFocus: true,
+                  controller: userMessage, onValidate: (v){
                 return null;
               }),
               const SizedBox(height: 20),
@@ -54,7 +56,7 @@ class _ReplyMessagesState extends State<ReplyMessages> {
                         title: LocalizationController.getInstance().getTranslatedValue("Cancel"),buttonHeight: 45, textColor: Colors.white, buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset){
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (context) => const Dashboard()),
+                        MaterialPageRoute(builder: (context) => Dashboard()),
                             (Route<dynamic> route) => false,
                       );
                     }),
