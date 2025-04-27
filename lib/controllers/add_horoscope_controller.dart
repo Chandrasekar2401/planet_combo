@@ -20,6 +20,8 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:planetcombo/models/horoscope_list.dart';
 
+import '../screens/payments/payment_progress.dart';
+
 
 class AddHoroscopeController extends GetxController {
   static AddHoroscopeController? _instance;
@@ -561,7 +563,11 @@ class AddHoroscopeController extends GetxController {
   }
 
   String taxCalc(double tax1, double tax2, double tax3){
+    print('the passing total tax1 amount is ${tax1}');
+    print('the passing total tax2 amount is ${tax2}');
+    print('the passing total tax3 amount is ${tax3}');
     double totalTax = tax1 + tax2 + tax3;
+    print('the total tax amount is ${totalTax}');
     return applicationBaseController.formatDecimalString(totalTax);
   }
 
@@ -641,13 +647,13 @@ class AddHoroscopeController extends GetxController {
          AppWidgets().multiTextAlignYesOrNoDialog(
              iconUrl: 'assets/images/headletters.png',
              context: context,
-             dialogMessage: 'Your Kundli has been Saved and sent a message, please pay',
+             dialogMessage: 'Your data has been saved. please complete the payment to create your horocope',
              subText1Key: 'Amount',
              subText1Value: appLoadController.loggedUserData.value.ucurrency,
              subText1Value1: applicationBaseController.formatDecimalString(jsonResponse['data']['amount']),
              subText2Key: 'Tax Amount',
              subText2Value: appLoadController.loggedUserData.value.ucurrency,
-             subText2Value2: '${taxCalc(jsonResponse['data']['tax1_amount'], jsonResponse['data']['tax3_amount'], jsonResponse['data']['tax3_amount'])}',
+             subText2Value2: '${taxCalc(jsonResponse['data']['tax1_amount'], jsonResponse['data']['tax2_amount'], jsonResponse['data']['tax3_amount'])}',
              subText3Key: 'Total Amount',
              subText3Value: appLoadController.loggedUserData.value.ucurrency,
              subText3Value3: applicationBaseController.formatDecimalString(jsonResponse['data']['total_amount']),
@@ -662,12 +668,12 @@ class AddHoroscopeController extends GetxController {
                );
              },
              okAction: () async{
-               if(appLoadController.loggedUserData!.value.ucurrency!.toLowerCase() == 'inr'){
-                 paymentController.payByUpi(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
-               }else if(appLoadController.loggedUserData!.value.ucurrency!.toLowerCase() == 'aed'){
-                 paymentController.payByStripe(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
+               if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'){
+                 paymentController.payByUpi(appLoadController.loggedUserData.value.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!,'horoscope', context);
+               }else if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'aed'){
+                 paymentController.payByStripe(appLoadController.loggedUserData.value.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'],'horoscope', appLoadController.loggedUserData!.value.token!, context);
                }else{
-                 paymentController.payByStripe(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
+                 paymentController.payByStripe(appLoadController.loggedUserData.value.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'],'horoscope', appLoadController.loggedUserData!.value.token!, context);
                }
          });
        }else{
@@ -983,13 +989,13 @@ class AddHoroscopeController extends GetxController {
           AppWidgets().multiTextAlignYesOrNoDialog(
               iconUrl: 'assets/images/headletters.png',
               context: context,
-              dialogMessage: 'Your Kundli has been Saved and sent a message, please pay',
+              dialogMessage: 'Your data has been saved. please complete the payment to create your horoscope',
               subText1Key: 'Amount',
               subText1Value: appLoadController.loggedUserData.value.ucurrency,
               subText1Value1: applicationBaseController.formatDecimalString(jsonResponse['data']['amount']),
               subText2Key: 'Tax Amount',
               subText2Value: appLoadController.loggedUserData.value.ucurrency,
-              subText2Value2: '${taxCalc(jsonResponse['data']['tax1_amount'], jsonResponse['data']['tax3_amount'], jsonResponse['data']['tax3_amount'])}',
+              subText2Value2: '${taxCalc(jsonResponse['data']['tax1_amount'], jsonResponse['data']['tax2_amount'], jsonResponse['data']['tax3_amount'])}',
               subText3Key: 'Total Amount',
               subText3Value: appLoadController.loggedUserData.value.ucurrency,
               subText3Value3: applicationBaseController.formatDecimalString(jsonResponse['data']['total_amount']),
@@ -1005,11 +1011,11 @@ class AddHoroscopeController extends GetxController {
               },
               okAction: () async{
                 if(appLoadController.loggedUserData!.value.ucurrency!.toLowerCase() == 'inr'){
-                  paymentController.payByUpi(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
+                  paymentController.payByUpi(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData.value.token!,'horoscope', context);
                 }else if(appLoadController.loggedUserData!.value.ucurrency!.toLowerCase() == 'aed'){
-                  paymentController.payByStripe(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
+                  paymentController.payByStripe(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'],'horoscope', appLoadController.loggedUserData.value.token!, context);
                 }else{
-                  paymentController.payByStripe(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!, context);
+                  paymentController.payByStripe(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'],'horoscope', appLoadController.loggedUserData.value.token!, context);
                 }
               });
         }else{
@@ -1031,7 +1037,7 @@ class AddHoroscopeController extends GetxController {
   Future<void> _handleSuccess(BuildContext context) async {
     CustomDialog.okActionAlert(
       context,
-      hid.value == '0' ? 'Kundli added successfully' : 'Kundli has been updated Successfully',
+      hid.value == '0' ? 'Horoscope added successfully' : 'Horoscope has been updated Successfully',
       'OK',
       true,
       14,

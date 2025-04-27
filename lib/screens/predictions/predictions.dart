@@ -16,6 +16,8 @@ import 'package:planetcombo/screens/predictions/list_dates.dart';
 //controllers
 import 'package:planetcombo/controllers/predictions_controller.dart';
 
+import '../services/horoscope_services.dart';
+
 class Predictions extends StatefulWidget {
   const Predictions({Key? key}) : super(key: key);
 
@@ -64,11 +66,12 @@ class _PredictionsState extends State<Predictions> {
         CustomDialog.cancelLoading(context);
         horoscopeServiceController.isLoading.value = false;
         Navigator.push(context,
-            MaterialPageRoute(builder: (context) => PredictionsHistory()));
+            MaterialPageRoute(builder: (context) => const PredictionsHistory()));
       }
     }
   }
 
+  // Function to format date
   String formatDate(String dateTimeString) {
     String date = dateTimeString.split('T')[0];
     DateTime parseDate = DateTime.parse(date);
@@ -76,26 +79,81 @@ class _PredictionsState extends State<Predictions> {
     return formattedDate;
   }
 
+  // Function to format time
+  String formatTime(String dateTimeString) {
+    try {
+      String time = dateTimeString.split('T')[1].split('.')[0];
+      // Convert 24-hour format to 12-hour format
+      DateFormat inputFormat = DateFormat('HH:mm:ss');
+      DateFormat outputFormat = DateFormat('hh:mm a');
+      DateTime dateTime = inputFormat.parse(time);
+      return outputFormat.format(dateTime);
+    } catch (e) {
+      return "";
+    }
+  }
+
+  // Function to parse question and date-time from special request
+  Map<String, dynamic> parseQuestionAndDateTime(String specialDetails) {
+    Map<String, dynamic> result = {
+      'question': '',
+      'date': '',
+      'time': ''
+    };
+
+    try {
+      if (specialDetails.contains('|')) {
+        List<String> parts = specialDetails.split('|');
+
+        if (parts.length >= 1) {
+          result['question'] = parts[0].trim();
+        }
+
+        if (parts.length >= 2) {
+          result['date'] = parts[1].trim();
+        }
+
+        if (parts.length >= 3) {
+          result['time'] = parts[2].trim();
+        }
+      } else {
+        result['question'] = specialDetails;
+      }
+
+      return result;
+    } catch (e) {
+      return result;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: GradientAppBar(
         leading: IconButton(
+          icon: Icon(Icons.chevron_left_rounded, size: 21),
           onPressed: () {
-            Navigator.pop(context);
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const HoroscopeServices()),
+                    (Route<dynamic> route) => false,
+              );
+            }
           },
-          icon: const Icon(Icons.chevron_left_rounded),
         ),
         title: LocalizationController.getInstance().getTranslatedValue(
             "Predictions for ${horoscopeServiceController.requestHistory[0].horoname}"),
         colors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
         centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: () async {},
-            icon: const Icon(Icons.refresh),
-          )
-        ],
+        // actions: [
+        //   IconButton(
+        //     onPressed: () async {},
+        //     icon: const Icon(Icons.refresh),
+        //   )
+        // ],
       ),
       body: SingleChildScrollView(
         child: Obx(
@@ -171,245 +229,243 @@ class _PredictionsState extends State<Predictions> {
                   ],
                 ),
               ),
+
+              // List of predictions based on selected filter
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: horoscopeServiceController.requestHistory.length,
                 itemBuilder: (context, index) {
-                  if (horoscopeServiceController.requestHistory[index].reqcat !=
-                      selectedFilter.value) {
+                  if (horoscopeServiceController.requestHistory[index].reqcat != selectedFilter.value) {
                     return SizedBox();
                   }
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                    child: GestureDetector(
-                      onTap: () async {
-                        horoscopeServiceController.requestHistory[index].reqcat == "3"
-                            ? predictionsController.getSpecialPredictions(
-                            horoscopeServiceController.requestHistory[index].rquserid!,
-                            horoscopeServiceController.requestHistory[index].rqhid,
-                            horoscopeServiceController.requestHistory[index].rqid!,
-                            horoscopeServiceController.requestHistory[index].rqspecialdetails!,
-                            context)
-                            : Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => DateListPage(
-                                    userId: horoscopeServiceController.requestHistory[index].rquserid!,
-                                    hid: horoscopeServiceController.requestHistory[index].rqhid,
-                                    requestId: horoscopeServiceController.requestHistory[index].rqid!)));
-                      },
-                      child: Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: Color(0xff05704a).withOpacity(0.1)), // Subtle border
-                        ),
-                        child: Stack(
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topRight,
-                                  end: Alignment.bottomLeft,
-                                  colors: [
-                                    Colors.white,
-                                    Color(0xff05704a).withOpacity(0.05),
-                                  ],
-                                ),
-                              ),
-                              child: Padding(
+
+                  // Life Guidance Questions Card
+                  if (horoscopeServiceController.requestHistory[index].reqcat == "3") {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      child: GestureDetector(
+                        onTap: () {
+                          predictionsController.getSpecialPredictions(
+                              horoscopeServiceController.requestHistory[index].rquserid!,
+                              horoscopeServiceController.requestHistory[index].rqhid,
+                              horoscopeServiceController.requestHistory[index].rqid!,
+                              horoscopeServiceController.requestHistory[index].rqspecialdetails!,
+                              context
+                          );
+                        },
+                        child: Card(
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Stack(
+                            children: [
+                              Padding(
                                 padding: const EdgeInsets.all(16.0),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    if (horoscopeServiceController.requestHistory[index].reqcat == "2")
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [Color(0xff05704a), Color(0xff048c5c)],
-                                            begin: Alignment.centerLeft,
-                                            end: Alignment.centerRight,
+                                    // Title and badge
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Color(0xFF6A1B9A),
+                                            borderRadius: BorderRadius.circular(12),
                                           ),
-                                          borderRadius: BorderRadius.circular(12),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Color(0xff05704a).withOpacity(0.2),
-                                              blurRadius: 8,
-                                              offset: Offset(0, 4),
-                                            ),
-                                          ],
+                                          child: commonBoldText(text:
+                                            "Life Guidance",
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                          ),
                                         ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      ],
+                                    ),
+
+                                    SizedBox(height: 12),
+
+                                    // Question section
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Color(0xFF6A1B9A).withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Icon(Icons.question_answer,
+                                              color: Color(0xFF6A1B9A),
+                                              size: 20
+                                          ),
+                                        ),
+                                        SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    children: [
-                                                      Icon(Icons.calendar_today,
-                                                          size: 14,
-                                                          color: Colors.white.withOpacity(0.9)),
-                                                      SizedBox(width: 4),
-                                                      commonText(
-                                                        text: 'Start Date',
-                                                        fontSize: 12,
-                                                        color: Colors.white.withOpacity(0.9),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  SizedBox(height: 6),
-                                                  commonBoldText(
-                                                    text: formatDate(horoscopeServiceController.requestHistory[index].rqsdate!),
-                                                    fontSize: 14,
-                                                    color: Colors.white,
-                                                  )
-                                                ],
+                                              commonBoldText(text:
+                                                "Question",
+                                                fontSize: 14,
+                                                color: Color(0xFF6A1B9A),
                                               ),
-                                              Container(
-                                                height: 30,
-                                                child: Image.asset('assets/imgs/arrow_icon.png'),
-                                              ),
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.end,
-                                                children: [
-                                                  Row(
-                                                    children: [
-                                                      Icon(Icons.event,
-                                                          size: 14,
-                                                          color: Colors.white.withOpacity(0.9)),
-                                                      SizedBox(width: 4),
-                                                      commonText(
-                                                        text: 'End Date',
-                                                        fontSize: 12,
-                                                        color: Colors.white.withOpacity(0.9),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  SizedBox(height: 6),
-                                                  commonBoldText(
-                                                    text: horoscopeServiceController.requestHistory[index].rqedate == null
-                                                        ? "Ongoing"
-                                                        : formatDate(horoscopeServiceController.requestHistory[index].rqedate!),
-                                                    fontSize: 14,
-                                                    color: Colors.white,
-                                                  )
-                                                ],
+                                              SizedBox(height: 4),
+                                              horoscopeServiceController.requestHistory[index].rqspecialdetails != null
+                                                  ? Builder(
+                                                  builder: (context) {
+                                                    Map<String, dynamic> parsedData = parseQuestionAndDateTime(
+                                                        horoscopeServiceController.requestHistory[index].rqspecialdetails!
+                                                    );
+
+                                                    // Format questions for display
+                                                    List<Widget> questionWidgets = [];
+                                                    String questionText = parsedData['question'];
+
+                                                    if (questionText.contains("1.") && questionText.contains("2.")) {
+                                                      List<String> questions = [];
+
+                                                      // Split by "2." to get the first question
+                                                      List<String> parts = questionText.split("2.");
+                                                      if (parts.length > 0) {
+                                                        String q1Part = parts[0].trim();
+                                                        // Remove the "1." prefix
+                                                        if (q1Part.startsWith("1.")) {
+                                                          questions.add(q1Part.substring(2).trim());
+                                                        } else {
+                                                          questions.add(q1Part);
+                                                        }
+
+                                                        // Add the second question if it exists
+                                                        if (parts.length > 1) {
+                                                          questions.add(parts[1].trim());
+                                                        }
+                                                      }
+
+                                                      // Create widgets for each question
+                                                      for (int i = 0; i < questions.length; i++) {
+                                                        questionWidgets.add(
+                                                            Padding(
+                                                              padding: EdgeInsets.only(bottom: i < questions.length - 1 ? 8 : 0),
+                                                              child: Row(
+                                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                                children: [
+                                                                  commonBoldText(text:
+                                                                    "${i + 1}.",
+                                                                    fontSize: 14,
+                                                                    color: Color(0xFF6A1B9A),
+                                                                  ),
+                                                                  SizedBox(width: 4),
+                                                                  Expanded(
+                                                                    child: commonText(text:
+                                                                      questions[i],
+                                                                      fontSize: 14,
+                                                                      color: Colors.black87,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            )
+                                                        );
+                                                      }
+                                                    } else {
+                                                      // Just display the single question
+                                                      questionWidgets.add(
+                                                          commonText(text:
+                                                            questionText,
+                                                            fontSize: 14,
+                                                            color: Colors.black87,
+                                                            maxLines: 3,
+                                                            textOverflow: TextOverflow.ellipsis,
+                                                          )
+                                                      );
+                                                    }
+
+                                                    return Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: questionWidgets,
+                                                    );
+                                                  }
                                               )
+                                                  : commonText(text:
+                                                "Question details not available",
+                                                fontSize: 14,
+                                                color: Colors.black54,
+                                              ),
                                             ],
                                           ),
                                         ),
-                                      ),
+                                        SizedBox(width: 24), // Space for arrow
+                                      ],
+                                    ),
+
                                     SizedBox(height: 16),
-                                    if (horoscopeServiceController.requestHistory[index].reqcat != "2")
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.orange.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: Colors.deepOrange.withOpacity(0.2)),
-                                        ),
-                                        padding: EdgeInsets.all(12),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(Icons.question_answer,
-                                                    size: 16,
-                                                    color: Colors.deepOrange),
-                                                SizedBox(width: 8),
-                                                commonBoldText(
-                                                  text: 'Question',
-                                                  fontSize: 15,
-                                                  color: Colors.deepOrange,
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(height: 8),
-                                            commonText(
-                                              text: '${horoscopeServiceController.requestHistory[index].rqspecialdetails}',
-                                              fontSize: 14,
-                                              color: Colors.black87,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    SizedBox(height: 16),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.withOpacity(0.05),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      padding: EdgeInsets.all(12),
-                                      child: Column(
-                                        children: [
-                                          Row(
+
+                                    // ID and Date/Time from parsed data
+                                    Builder(
+                                        builder: (context) {
+                                          Map<String, dynamic> parsedData = parseQuestionAndDateTime(
+                                              horoscopeServiceController.requestHistory[index].rqspecialdetails ?? ""
+                                          );
+
+                                          return Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
                                               Row(
                                                 children: [
                                                   Icon(Icons.numbers,
-                                                      size: 16,
-                                                      color: Color(0xff05704a)),
-                                                  SizedBox(width: 8),
-                                                  commonBoldText(
-                                                    text: 'Request ID',
-                                                    fontSize: 14,
-                                                    color: Color(0xff05704a),
+                                                      size: 14,
+                                                      color: Colors.grey[700]
+                                                  ),
+                                                  SizedBox(width: 4),
+                                                  commonText(text:
+                                                    "ID: ${horoscopeServiceController.requestHistory[index].rqid!.trim()}",
+                                                    fontSize: 12,
+                                                    color: Colors.grey[700],
                                                   ),
                                                 ],
                                               ),
-                                              Padding(
-                                                padding: const EdgeInsets.only(right: 40),
-                                                child: commonText(
-                                                  text: horoscopeServiceController.requestHistory[index].rqid!.trim(),
-                                                  fontSize: 14,
-                                                  color: Colors.black87,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          SizedBox(height: 12),
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
                                               Row(
                                                 children: [
-                                                  Icon(Icons.access_time,
-                                                      size: 16,
-                                                      color: Color(0xff05704a)),
+                                                  Icon(Icons.calendar_today,
+                                                      size: 14,
+                                                      color: Colors.grey[700]
+                                                  ),
+                                                  SizedBox(width: 4),
+                                                  commonText(text:
+                                                    parsedData['date'].isNotEmpty
+                                                        ? parsedData['date']
+                                                        : formatDate(horoscopeServiceController.requestHistory[index].reqcredate!),
+                                                    fontSize: 12,
+                                                    color: Colors.grey[700],
+                                                  ),
                                                   SizedBox(width: 8),
-                                                  commonBoldText(
-                                                    text: 'Created On',
-                                                    fontSize: 14,
-                                                    color: Color(0xff05704a),
+                                                  Icon(Icons.access_time,
+                                                      size: 14,
+                                                      color: Colors.grey[700]
+                                                  ),
+                                                  SizedBox(width: 4),
+                                                  commonText(text:
+                                                    parsedData['time'].isNotEmpty
+                                                        ? parsedData['time']
+                                                        : formatTime(horoscopeServiceController.requestHistory[index].reqcredate!),
+                                                    fontSize: 12,
+                                                    color: Colors.grey[700],
                                                   ),
                                                 ],
                                               ),
-                                              Padding(
-                                                padding: const EdgeInsets.only(right: 40),
-                                                child: commonText(
-                                                  text: formatDate(horoscopeServiceController.requestHistory[index].reqcredate!),
-                                                  fontSize: 14,
-                                                  color: Colors.black87,
-                                                ),
-                                              ),
                                             ],
-                                          ),
-                                        ],
-                                      ),
+                                          );
+                                        }
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
-                            if (horoscopeServiceController.requestHistory[index].reqcat == "3")
+
+                              // Right arrow
                               Positioned(
-                                right: 12,
+                                right: 16,
                                 top: 0,
                                 bottom: 0,
                                 child: Center(
@@ -417,11 +473,11 @@ class _PredictionsState extends State<Predictions> {
                                     width: 32,
                                     height: 32,
                                     decoration: BoxDecoration(
-                                      color: Color(0xff05704a),
+                                      color: Color(0xFF6A1B9A),
                                       borderRadius: BorderRadius.circular(16),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Color(0xff05704a).withOpacity(0.2),
+                                          color: Colors.black.withOpacity(0.1),
                                           blurRadius: 4,
                                           offset: Offset(0, 2),
                                         ),
@@ -429,50 +485,183 @@ class _PredictionsState extends State<Predictions> {
                                     ),
                                     child: Icon(
                                       Icons.arrow_forward_ios,
-                                      size: 18,
+                                      size: 16,
                                       color: Colors.white,
                                     ),
                                   ),
                                 ),
                               ),
-                            // Status indicator
-                            Positioned(
-                              top: horoscopeServiceController.requestHistory[index].reqcat == "2"
-                                  ? 4
-                                  : 14,
-                              right: 12,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: horoscopeServiceController.requestHistory[index].reqcat == "2"
-                                      ? Color(0xff05704a)
-                                      : Colors.deepOrange,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 4,
-                                      offset: Offset(0, 2),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  // Daily Predictions Card
+                  else {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => DateListPage(
+                                      userId: horoscopeServiceController.requestHistory[index].rquserid!,
+                                      hid: horoscopeServiceController.requestHistory[index].rqhid,
+                                      requestId: horoscopeServiceController.requestHistory[index].rqid!
+                                  )
+                              )
+                          );
+                        },
+                        child: Card(
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Stack(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Title and badge
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Color(0xFFf34509),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: commonBoldText(text:
+                                            "Daily Prediction",
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    SizedBox(height: 12),
+
+                                    // Date range section - highlighted
+                                    Container(
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Color(0xFFf2b20a).withOpacity(0.1),
+                                            Color(0xFFf34509).withOpacity(0.05),
+                                          ],
+                                          begin: Alignment.centerLeft,
+                                          end: Alignment.centerRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Color(0xFFf2b20a).withOpacity(0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                commonBoldText(text:
+                                                  "Start Date",
+                                                  fontSize: 12,
+                                                  color: Color(0xFFf34509),
+                                                ),
+                                                SizedBox(height: 4),
+                                                commonBoldText(text:
+                                                  formatDate(horoscopeServiceController.requestHistory[index].rqsdate!),
+                                                  fontSize: 14,
+                                                  color: Colors.black87,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            width: 24,
+                                            height: 24,
+                                            child: Icon(
+                                              Icons.arrow_forward,
+                                              color: Color(0xFFf34509),
+                                              size: 20,
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              children: [
+                                                commonBoldText(text:
+                                                  "End Date",
+                                                  fontSize: 12,
+                                                  color: Color(0xFFf34509),
+                                                ),
+                                                SizedBox(height: 4),
+                                                commonBoldText(text:
+                                                  horoscopeServiceController.requestHistory[index].rqedate == null
+                                                      ? "Ongoing"
+                                                      : formatDate(horoscopeServiceController.requestHistory[index].rqedate!),
+                                                  fontSize: 14,
+                                                  color: Colors.black87,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    SizedBox(height: 16),
+
+                                    // Request ID and Creation Date
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(Icons.numbers,
+                                                size: 14,
+                                                color: Colors.grey[700]
+                                            ),
+                                            SizedBox(width: 4),
+                                            commonText(text:
+                                              "ID: ${horoscopeServiceController.requestHistory[index].rqid!.trim()}",
+                                              fontSize: 12,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ],
+                                        ),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.calendar_today,
+                                                size: 14,
+                                                color: Colors.grey[700]
+                                            ),
+                                            SizedBox(width: 4),
+                                            commonText(text:
+                                              formatDate(horoscopeServiceController.requestHistory[index].reqcredate!),
+                                              fontSize: 12,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                                child: Text(
-                                  horoscopeServiceController.requestHistory[index].reqcat == "2"
-                                      ? "Prediction"
-                                      : "Question",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                              )
+                            ],
+                          ),
                         ),
-                      )
-                    ),
-                  );
+                      ),
+                    );
+                  }
                 },
               ),
             ],

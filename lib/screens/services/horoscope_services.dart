@@ -6,12 +6,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:planetcombo/api/api_callings.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:get/get.dart';
-import 'package:flutter/rendering.dart';
 import 'package:planetcombo/screens/payments/pending_payments.dart';
 import 'package:planetcombo/screens/predictions/predictions.dart';
+import 'package:planetcombo/controllers/payment_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
-//controllers
 import 'package:planetcombo/controllers/request_controller.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/controllers/applicationbase_controller.dart';
@@ -27,13 +27,10 @@ import 'package:planetcombo/screens/services/add_nativePhoto.dart';
 import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/screens/messages/message_list.dart';
 
-import '../../api/api_endpoints.dart';
-
-
-
+import '../payments/pricing.dart';
 
 class HoroscopeServices extends StatefulWidget {
-  const HoroscopeServices({Key? key}) : super(key: key);
+  const HoroscopeServices({super.key});
 
   @override
   _HoroscopeServicesState createState() => _HoroscopeServicesState();
@@ -61,6 +58,9 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
   final HoroscopeServiceController horoscopeServiceController =
   Get.put(HoroscopeServiceController.getInstance(), permanent: true);
 
+  final PaymentController paymentController =
+  Get.put(PaymentController.getInstance(), permanent: true);
+
   Timer? _refreshTimer;
 
   @override
@@ -72,11 +72,25 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
     _startAutoRefresh();
   }
 
+  String formatIndianRupees(double amount) {
+    double roundedAmount = (amount * 100).round() / 100;
+    NumberFormat indianRupeesFormat = NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: '₹',
+      decimalDigits: 2,
+    );
+    String formattedAmount = indianRupeesFormat
+        .format(roundedAmount)
+        .replaceAll('₹', '')
+        .trim();
+    return formattedAmount;
+  }
+
   void _startAutoRefresh() {
     // Cancel any existing timer
     _refreshTimer?.cancel();
     // Create new timer that fires every 10 seconds
-    _refreshTimer = Timer.periodic(const Duration(seconds: 60), (timer) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 90), (timer) {
       if (mounted) {
         applicationBaseController.getUserHoroscopeList();
       }
@@ -87,6 +101,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
   void dispose() {
     // Ensure _isLoading is false when the widget is disposed
     horoscopeServiceController.isLoading.value = false;
+    _refreshTimer?.cancel();
     super.dispose();
   }
 
@@ -153,7 +168,14 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
     applicationBaseController.updateHoroscopeUiList();
   }
 
-  void viewHoroscope(String userId, String hid,bool paid) async{
+  void navigateToPaymentScreen() {
+    Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const PendingPaymentsPage())
+    );
+  }
+
+  void viewHoroscope(String userId, String hid, bool paid) async{
     CustomDialog.showLoading(context, 'Please wait');
     var result = await APICallings.viewHoroscopeChart(userId: userId, hId: hid.trim(), token: appLoadController.loggedUserData!.value.token!);
     print('the value of result is $result');
@@ -161,17 +183,17 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
     if(result == null){
       CustomDialog.showAlert(context, 'Error 404 : Please try later', false, 14);
     }else{
-      var jsondata = jsonDecode(result!);
+      var jsondata = jsonDecode(result);
       if(jsondata['status'] == 'Success'){
         if(jsondata['data'] == 'undefined' || jsondata['data'] == null || jsondata['data'] == ""){
           if(paid == false){
-            yesOrNoDialog(context: context, dialogMessage: 'Chart is not ready yet, due to pending payment', cancelText: 'Close', okText: 'Pay Screen', okAction: (){
+            yesOrNoDialog(context: context, dialogMessage: 'Horoscope is not ready yet, due to pending payment', cancelText: 'Close', okText: 'Pay Screen', okAction: (){
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) =>  const PendingPaymentsPage()));
             }, cancelAction: (){
               Navigator.pop(context);
             });
           }else{
-            CustomDialog.showAlert(context, 'Chart is not ready yet, Our Team reviewing your details', null,14);
+            CustomDialog.showAlert(context, 'The horoscope is being prepared and its not ready yet', null,14);
           }
         }else{
           String htmlLink = jsondata['data'];
@@ -211,7 +233,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
             CustomDialog.showAlert(context, 'Access denied. Please check your credentials.', false, 14);
             break;
           case '404 Not Found: The requested resource could not be found':
-            CustomDialog.showAlert(context, 'The requested chart could not be found.', false, 14);
+            CustomDialog.showAlert(context, 'The requested horoscope could not be found.', false, 14);
             break;
           case '500 Internal Server Error: Something went wrong on the server':
             CustomDialog.showAlert(context, 'Server error. Please try again later.', false, 14);
@@ -237,7 +259,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
 
   void viewTwoPageKundli(String link) async {
     if(link == null || link.isEmpty) {
-      CustomDialog.showAlert(context, 'kundli is not ready yet, Our Team reviewing your details', null,14);
+      CustomDialog.showAlert(context, 'Horoscope is not ready yet, Our Team reviewing your details', null,14);
     } else {
       // Remove _Chart.html and add .pdf
       String modifiedLink = link.replaceAll('_Chart.html', '.pdf');
@@ -312,10 +334,34 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
     DateTime parsedDate = DateTime.parse(inputDate);
 
     // Format the date into dd/MM/yyyy format
-
     String formattedDate = DateFormat('MMMM dd, yyyy').format(parsedDate);
 
     return formattedDate;
+  }
+
+
+// helper function for _HoroscopeServicesState class
+  Widget _buildOfferItem(String text, bool included) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Icon(
+            included ? Icons.check_circle : Icons.cancel,
+            color: included ? Colors.green : Colors.red,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: commonText(
+              text: text,
+              color: Colors.white,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
 
@@ -325,311 +371,784 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
       return PopScope(
         canPop: true,
         child: Scaffold(
-          appBar: GradientAppBar(
-            leading: IconButton(onPressed: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => Dashboard()),
-                    (Route<dynamic> route) => false,
-              );
-            }, icon: const Icon(Icons.chevron_left_rounded),),
-            title: LocalizationController.getInstance().getTranslatedValue("Horoscope Services (${appLoadController.loggedUserData.value.username})"),
-            colors: const [Color(0xFFf2b20a), Color(0xFFf34509)], centerTitle: true,
-            actions: [
-              Row(
-                children: [
-                  const Icon(Icons.payment_outlined, color: Colors.white, size: 16),
-                  // commonBoldText(text: 'Currency(', color: Colors.white, fontSize: 12),
-                  commonBoldText(text: ' - ${appLoadController.loggedUserData.value.ucurrency!}', color: Colors.white, fontSize: 12),
-                  const SizedBox(width: 10)
-                ],
-              )
-            ],
-          ),
-              body:
-              Obx(() {
-                if (applicationBaseController.horoscopeListPageLoad.value) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (applicationBaseController.horoscopeListError.value
-                    .isNotEmpty) {
-                  return
-                    Center(
+            appBar: GradientAppBar(
+              leading: IconButton(onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Dashboard()),
+                      (Route<dynamic> route) => false,
+                );
+              }, icon: const Icon(Icons.chevron_left_rounded),),
+              title: LocalizationController.getInstance().getTranslatedValue("Horoscope Services (${appLoadController.loggedUserData.value.username})"),
+              colors: const [Color(0xFFf2b20a), Color(0xFFf34509)], centerTitle: true,
+              actions: [
+                Row(
+                  children: [
+                    const Icon(Icons.payment_outlined, color: Colors.white, size: 16),
+                    // commonBoldText(text: 'Currency(', color: Colors.white, fontSize: 12),
+                    commonBoldText(text: ' - ${appLoadController.loggedUserData.value.ucurrency!}', color: Colors.white, fontSize: 12),
+                    const SizedBox(width: 10)
+                  ],
+                )
+              ],
+            ),
+            body:
+            Obx(() {
+              if (applicationBaseController.horoscopeListPageLoad.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (applicationBaseController.horoscopeListError.value
+                  .isNotEmpty) {
+                return
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 70,
+                          color: Colors.red[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 24),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.red[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.red[200]!),
+                          ),
+                          child: Text(
+                            applicationBaseController.horoscopeListError
+                                .value,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.red[700],
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () => applicationBaseController
+                              .getUserHoroscopeList(),
+                          icon: const Icon(
+                              Icons.refresh, color: Colors.white),
+                          label: const Text(
+                            'Retry',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFf34509),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+              }
+              return
+                Column(
+                  children: [
+                    Container(
+                      height: 65,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 2,
+                            blurRadius: 3,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          SizedBox(
+                              width: localizationController.currentLanguage
+                                  .value == 'ta' ? 215 : 165,
+                              child: GradientButton(
+                                  title: LocalizationController.getInstance()
+                                      .getTranslatedValue("Add Horoscope"),
+                                  textColor: Colors.white,
+                                  buttonColors: const [
+                                    Color(0xFFf2b20a),
+                                    Color(0xFFf34509)
+                                  ],
+                                  onPressed: (Offset buttonOffset) {
+                                    addHoroscopeController.refreshAlerts();
+                                    Navigator.push(
+                                        context, MaterialPageRoute(
+                                        builder: (
+                                            context) => const AddNativePhoto()));
+                                  },
+                                  materialIcon: Icons.add,
+                                  materialIconSize: 21)),
+                          const SizedBox(width: 15)
+                        ],
+                      ),
+                    ),
+                    applicationBaseController.horoscopeList.isEmpty
+                        ? Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 70,
-                            color: Colors.red[400],
-                          ),
-                          const SizedBox(height: 16),
+                          // Introductory offer card
                           Container(
                             margin: const EdgeInsets.symmetric(horizontal: 24),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
-                              color: Colors.red[50],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.red[200]!),
-                            ),
-                            child: Text(
-                              applicationBaseController.horoscopeListError
-                                  .value,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.red[700],
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.5,
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF8A3FFC), Color(0xFFAA6BFF)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                              textAlign: TextAlign.center,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF8A3FFC).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  commonBoldText(
+                                    text: "Introductory Offer",
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: commonBoldText(
+                                      text: "Limited Time Only!",
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      commonBoldText(
+                                        text: "${appLoadController.loggedUserData.value.ucurrency} ",
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                      ),
+                                      commonBoldText(
+                                        text: "999",
+                                        color: Colors.white,
+                                        fontSize: 32,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  commonText(
+                                    text: "Complete Horoscope Package",
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 16,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        _buildOfferItem("Personalized Birth Chart", true),
+                                        _buildOfferItem("90-Day Predictions", true),
+                                        _buildOfferItem("Life Guidance Questions", true),
+                                        _buildOfferItem("Planetary Transit Readings", true),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            onPressed: () => applicationBaseController
-                                .getUserHoroscopeList(),
-                            icon: const Icon(
-                                Icons.refresh, color: Colors.white),
-                            label: const Text(
-                              'Retry',
-                              style: TextStyle(color: Colors.white),
+                          const SizedBox(height: 30),
+                          // Add New Horoscope button
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 40),
+                            child: GradientButton(
+                              title: "Add New Horoscope",
+                              buttonHeight: 50,
+                              textColor: Colors.white,
+                              buttonColors: const [Color(0xFF8A3FFC), Color(0xFFAA6BFF)],
+                              onPressed: (Offset buttonOffset) {
+                                addHoroscopeController.refreshAlerts();
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const AddNativePhoto())
+                                );
+                              },
+                              materialIcon: Icons.add,
+                              materialIconSize: 24,
                             ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFf34509),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                          ),
+                          const Spacer(),
+                          // View Pricing button at bottom
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 20),
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                    context, MaterialPageRoute(builder: (context) => const PricingPage()));
+                              },
+                              child: commonText(
+                                text: "View our pricing plans",
+                                color: const Color(0xFF8A3FFC),
+                                fontSize: 14,
+                                textDecoration: TextDecoration.underline,
                               ),
                             ),
                           ),
                         ],
                       ),
-                    );
-                }
-                return
-                  Column(
-                    children: [
-                      Container(
-                        height: 65,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.white24,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.2),
-                              spreadRadius: 2,
-                              blurRadius: 3,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            SizedBox(
-                                width: localizationController.currentLanguage
-                                    .value == 'ta' ? 215 : 165,
-                                child: GradientButton(
-                                    title: LocalizationController.getInstance()
-                                        .getTranslatedValue("Add Horoscope"),
-                                    textColor: Colors.white,
-                                    buttonColors: const [
-                                      Color(0xFFf2b20a),
-                                      Color(0xFFf34509)
-                                    ],
-                                    onPressed: (Offset buttonOffset) {
-                                      addHoroscopeController.refreshAlerts();
-                                      Navigator.push(
-                                          context, MaterialPageRoute(
-                                          builder: (
-                                              context) => const AddNativePhoto()));
-                                      // if (APIEndPoints.baseUrl ==
-                                      //     'https://planetcombo.com/') {
-                                      //   CustomDialog.showAlert(context,
-                                      //       'Website under maintenance please try after some time',
-                                      //       true, 14);
-                                      // } else {
-                                      //   addHoroscopeController.refreshAlerts();
-                                      //   Navigator.push(
-                                      //       context, MaterialPageRoute(
-                                      //       builder: (
-                                      //           context) => const AddNativePhoto()));
-                                      // }
-                                    },
-                                    materialIcon: Icons.add,
-                                    materialIconSize: 21)),
-                            const SizedBox(width: 15)
-                          ],
-                        ),
-                      ),
-                      applicationBaseController.horoscopeList.isEmpty
-                          ? Expanded(
-                        child: Center(
-                          child:
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 20, horizontal: 20),
-                            child: commonText(
-                                textAlign: TextAlign.center,
-                                text: 'Horoscope list is empty, please click the add button to add horoscope',
-                                color: Colors.black26, fontSize: 12
-                            ),
-                          ),
-                        ),
-                      )
-                          : Expanded(
-                        child: ListView.builder(
-                          itemCount: applicationBaseController.horoscopeList
-                              .length,
-                          itemBuilder: (BuildContext context, int index) {
-                            return Container(
+                    )
+                        : Expanded(
+                      child: ListView.builder(
+                        itemCount: applicationBaseController.horoscopeList
+                            .length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final bool isPaid = applicationBaseController
+                              .horoscopeList[index].isPaid == "true";
+                          final bool isHoroscopeGenerated = applicationBaseController
+                              .horoscopeList[index].hstatus == "5";
+                          return // Replace your existing card structure with this
+                            Container(
                               decoration: const BoxDecoration(
                                 border: Border(
                                   bottom: BorderSide(
                                     color: Colors.grey,
-                                    width: 0.2, // Specify the thickness of the border
+                                    width: 0.2,
                                   ),
                                 ),
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 7, horizontal: 7),
-                                child: Column(
+                                padding: const EdgeInsets.fromLTRB(7, 7, 7, 7),
+                                child: Stack(
                                   children: [
-                                    Row(
+                                    // Main content
+                                    Column(
                                       children: [
-                                        GestureDetector(
-                                          onTap: () {
-                                            _openImagePicker(context,
-                                                applicationBaseController
-                                                    .horoscopeList[index].hid!);
-                                          },
-                                          child: ClipOval(
-                                            child: Container(
-                                              width: 55,
-                                              height: 55,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                image: DecorationImage(
-                                                  image: NetworkImage(
-                                                    applicationBaseController
-                                                        .horoscopeList[index]
-                                                        .hnativephoto!,
-                                                    headers: {
-                                                      'Access-Control-Allow-Origin': '*',
-                                                      'Access-Control-Allow-Methods': 'GET',
-                                                    },
-                                                  ),
-                                                  fit: BoxFit.cover,
-                                                  onError: (error, stackTrace) {
-                                                    print(
-                                                        'Error loading image: $error');
-                                                  },
-                                                ),
-                                              ),
-                                              child: Image.network(
-                                                applicationBaseController
-                                                    .horoscopeList[index]
-                                                    .hnativephoto!,
-                                                width: 55,
-                                                height: 55,
-                                                fit: BoxFit.cover,
-                                                loadingBuilder: (context, child,
-                                                    loadingProgress) {
-                                                  if (loadingProgress == null)
-                                                    return child;
-                                                  return Center(
-                                                    child: CircularProgressIndicator(
-                                                      value: loadingProgress
-                                                          .expectedTotalBytes !=
-                                                          null
-                                                          ? loadingProgress
-                                                          .cumulativeBytesLoaded /
-                                                          loadingProgress
-                                                              .expectedTotalBytes!
-                                                          : null,
+                                        Row(
+                                          children: [
+                                            // Profile image
+                                            GestureDetector(
+                                              onTap: () {
+                                                _openImagePicker(context,
+                                                    applicationBaseController.horoscopeList[index].hid!);
+                                              },
+                                              child: ClipOval(
+                                                child: Container(
+                                                  width: 55,
+                                                  height: 55,
+                                                  // Image code remains the same
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    image: DecorationImage(
+                                                      image: NetworkImage(
+                                                        applicationBaseController.horoscopeList[index].hnativephoto!,
+                                                        headers: {
+                                                          'Access-Control-Allow-Origin': '*',
+                                                          'Access-Control-Allow-Methods': 'GET',
+                                                        },
+                                                      ),
+                                                      fit: BoxFit.cover,
+                                                      onError: (error, stackTrace) {
+                                                        print('Error loading image: $error');
+                                                      },
                                                     ),
-                                                  );
-                                                },
-                                                errorBuilder: (context, error,
-                                                    stackTrace) {
-                                                  print(
-                                                      'Web image error: $error');
-                                                  return Container(
+                                                  ),
+                                                  child: Image.network(
+                                                    applicationBaseController.horoscopeList[index].hnativephoto!,
                                                     width: 55,
                                                     height: 55,
-                                                    color: Colors.grey[300],
-                                                    child: const Icon(Icons
-                                                        .person, size: 25,
-                                                        color: Colors.black54),
-                                                  );
-                                                },
+                                                    fit: BoxFit.cover,
+                                                    loadingBuilder: (context, child, loadingProgress) {
+                                                      if (loadingProgress == null) return child;
+                                                      return Center(
+                                                        child: CircularProgressIndicator(
+                                                          value: loadingProgress.expectedTotalBytes != null
+                                                              ? loadingProgress.cumulativeBytesLoaded /
+                                                              loadingProgress.expectedTotalBytes!
+                                                              : null,
+                                                        ),
+                                                      );
+                                                    },
+                                                    errorBuilder: (context, error, stackTrace) {
+                                                      print('Web image error: $error');
+                                                      return Container(
+                                                        width: 55,
+                                                        height: 55,
+                                                        color: Colors.grey[300],
+                                                        child: const Icon(Icons.person, size: 25, color: Colors.black54),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
                                               ),
                                             ),
-                                          ),
+                                            const SizedBox(width: 12),
+                                            // Horoscope details
+                                            Column(
+                                              mainAxisAlignment: MainAxisAlignment.start,
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    // Horoscope name
+                                                    Flexible(
+                                                      child: LayoutBuilder(
+                                                        builder: (context, constraints) {
+                                                          // Check if screen width is mobile size
+                                                          bool isMobileSize = MediaQuery.of(context).size.width < 600; // You can adjust this breakpoint
+                                                          return commonBoldText(
+                                                            textOverflow: TextOverflow.ellipsis,
+                                                            text: applicationBaseController.horoscopeList[index].hname!,
+                                                            fontSize: 14,
+                                                          );
+                                                        },
+                                                      ),
+                                                    ),
+                                                    if(!isPaid) SizedBox(width: 4),
+                                                    // Edit icon button
+                                                    if(!isPaid) Material(
+                                                      color: Colors.transparent,
+                                                      child: InkWell(
+                                                        borderRadius: BorderRadius.circular(16),
+                                                        onTap: () {
+                                                          // Handle edit action
+                                                          if (applicationBaseController.horoscopeList[index].hstatus == "1") {
+                                                            addHoroscopeController.editHoroscope(
+                                                                applicationBaseController.horoscopeList[index]);
+                                                            Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(builder: (context) => const AddNativePhoto()),
+                                                            );
+                                                          } else {
+                                                            CustomDialog.showAlert(context,
+                                                                "You can't edit this horoscope because it has already been generated",
+                                                                false, 12);
+                                                          }
+                                                        },
+                                                        child: Padding(
+                                                          padding: const EdgeInsets.all(2.0),
+                                                          child: Container(
+                                                            padding: const EdgeInsets.all(2),
+                                                            decoration: BoxDecoration(
+                                                              shape: BoxShape.circle,
+                                                              border: Border.all(color: Colors.grey[300]!),
+                                                            ),
+                                                            child: Icon(
+                                                              Icons.edit_outlined,
+                                                              size: 12,
+                                                              color: Colors.grey[600],
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    // Delete icon button
+                                                    if(!isPaid) Material(
+                                                      color: Colors.transparent,
+                                                      child: InkWell(
+                                                        borderRadius: BorderRadius.circular(16),
+                                                        onTap: () {
+                                                          // Handle delete action
+                                                          yesOrNoDialog(
+                                                            context: context,
+                                                            cancelAction: () {
+                                                              Navigator.pop(context);
+                                                            },
+                                                            dialogMessage: 'Are you sure you want to delete this horoscope?',
+                                                            cancelText: 'No',
+                                                            okText: 'Yes',
+                                                            okAction: () {
+                                                              Navigator.pop(context);
+                                                              deleteHoroscope(
+                                                                applicationBaseController.horoscopeList[index].huserid!,
+                                                                applicationBaseController.horoscopeList[index].hid!.trim(),
+                                                              );
+                                                            },
+                                                          );
+                                                        },
+                                                        child: Padding(
+                                                          padding: const EdgeInsets.all(2.0),
+                                                          child: Container(
+                                                            padding: const EdgeInsets.all(2),
+                                                            decoration: BoxDecoration(
+                                                              shape: BoxShape.circle,
+                                                              border: Border.all(color: Colors.grey[300]!),
+                                                            ),
+                                                            child: Icon(
+                                                              Icons.delete_outline,
+                                                              size: 12,
+                                                              color: Colors.red[400],
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                commonText(
+                                                    text: 'DOB: ${convertDateFormat(
+                                                        applicationBaseController.horoscopeList[index].hdobnative!.substring(
+                                                            0,
+                                                            applicationBaseController.horoscopeList[index].hdobnative!.indexOf("T")
+                                                        )
+                                                    )}',
+                                                    color: Colors.black38,
+                                                    fontSize: 11
+                                                ),
+                                                commonText(
+                                                    text: 'Horoscope ID: ${applicationBaseController.horoscopeList[index].hid}',
+                                                    color: Colors.black38,
+                                                    fontSize: 11
+                                                ),
+                                                if(isPaid && applicationBaseController.horoscopeList[index].hstatus != '5')commonBoldText(
+                                                    text: 'Your Horoscope preparation is in progress',
+                                                    color: Colors.green[600],
+                                                    fontSize: 11
+                                                )
+                                              ],
+                                            ),
+                                          ],
                                         ),
-                                        const SizedBox(width: 12),
-                                        Column(
-                                          mainAxisAlignment: MainAxisAlignment
-                                              .start,
-                                          crossAxisAlignment: CrossAxisAlignment
-                                              .start,
+                                        const SizedBox(height: 12),
+                                        // Action buttons
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
                                           children: [
-                                            commonBoldText(
-                                                text: applicationBaseController
-                                                    .horoscopeList[index]
-                                                    .hname!, fontSize: 14),
-                                            commonText(
-                                                text: 'DOB: ${convertDateFormat(
-                                                    applicationBaseController
-                                                        .horoscopeList[index]
-                                                        .hdobnative!.substring(
-                                                        0,
+                                            Expanded(
+                                              child: GradientButton(
+                                                  title: LocalizationController
+                                                      .getInstance()
+                                                      .getTranslatedValue("Plans"),
+                                                  buttonHeight: 30,
+                                                  textColor: Colors.white,
+                                                  isDisabled: (!isPaid && applicationBaseController.horoscopeList[index].hstatus != '5') || (isPaid && applicationBaseController.horoscopeList[index].hstatus != '5'),
+                                                  buttonColors: const [
+                                                    Color(0xFFf2b20a),
+                                                    Color(0xFFf34509)
+                                                  ],
+                                                  onPressed: (
+                                                      Offset buttonOffset) async {
+                                                    if (!isPaid) {
+                                                      navigateToPaymentScreen();
+                                                      return;
+                                                    }
+                                                    SharedPreferences prefs = await SharedPreferences.getInstance();
+                                                    await prefs.setString('paymentHid',
                                                         applicationBaseController
                                                             .horoscopeList[index]
-                                                            .hdobnative!
-                                                            .indexOf("T")))}',
-                                                color: Colors.black38,
-                                                fontSize: 11),
-                                            commonText(
-                                                text: 'Chart ID: ${applicationBaseController
-                                                    .horoscopeList[index].hid}',
-                                                color: Colors.black38,
-                                                fontSize: 11)
-                                          ],
-                                        )
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment
-                                          .spaceAround,
-                                      children: [
-                                        Expanded(
-                                          child: GradientButton(
-                                              title: LocalizationController
-                                                  .getInstance()
-                                                  .getTranslatedValue("Plans"),
-                                              buttonHeight: 30,
-                                              textColor: Colors.white,
-                                              buttonColors: const [
-                                                Color(0xFFf2b20a),
-                                                Color(0xFFf34509)
-                                              ],
-                                              onPressed: (
-                                                  Offset buttonOffset) async {
-                                                if (applicationBaseController
-                                                    .horoscopeList[index]
-                                                    .hstatus == '5') {
-                                                  if (horoscopeRequestController
-                                                      .deviceCurrentLocationFound
-                                                      .value == true) {
+                                                            .hid!
+                                                    );
+                                                    if (applicationBaseController
+                                                        .horoscopeList[index]
+                                                        .hstatus == '5') {
+                                                      if (horoscopeRequestController
+                                                          .deviceCurrentLocationFound
+                                                          .value == true) {
+                                                        final RenderBox overlay = Overlay
+                                                            .of(context)!.context
+                                                            .findRenderObject() as RenderBox;
+                                                        final RelativeRect position = RelativeRect
+                                                            .fromRect(
+                                                          Rect.fromPoints(
+                                                            buttonOffset,
+                                                            buttonOffset +
+                                                                buttonOffset, // buttonSize is the size of the button
+                                                          ),
+                                                          Offset.zero & overlay
+                                                              .size, // Overlay size
+                                                        );
+                                                        final selectedValue = await showMenu(
+                                                          context: context,
+                                                          position: position,
+                                                          items: [
+                                                            PopupMenuItem(
+                                                              value: 1,
+                                                              child: commonText(
+                                                                  text: LocalizationController
+                                                                      .getInstance()
+                                                                      .getTranslatedValue(
+                                                                      "90-day Prediction"),
+                                                                  fontSize: 14),
+                                                            ),
+                                                            PopupMenuItem(
+                                                              value: 3,
+                                                              child: commonText(
+                                                                  text: LocalizationController
+                                                                      .getInstance()
+                                                                      .getTranslatedValue(
+                                                                      "Life Guidance Questions"),
+                                                                  fontSize: 14),
+                                                            )
+                                                          ],
+                                                        );
+
+                                                        if (selectedValue != null) {
+                                                          switch (selectedValue) {
+                                                            case 1:
+                                                              horoscopeRequestController
+                                                                  .selectedRequest
+                                                                  .value = 1;
+                                                              Navigator.push(
+                                                                context,
+                                                                MaterialPageRoute(
+                                                                    builder: (
+                                                                        context) =>
+                                                                        DailyPredictions(
+                                                                            horoscope: applicationBaseController
+                                                                                .horoscopeList[index])),
+                                                              );
+                                                              break;
+                                                            case 3:
+                                                              horoscopeRequestController
+                                                                  .selectedRequest
+                                                                  .value = 3;
+                                                              Navigator.push(
+                                                                context,
+                                                                MaterialPageRoute(
+                                                                    builder: (
+                                                                        context) =>
+                                                                        SpecialPredictions(
+                                                                            horoscope: applicationBaseController
+                                                                                .horoscopeList[index])),
+                                                              );
+                                                              break;
+                                                          }
+                                                        }
+                                                      } else {
+                                                        CustomDialog.showLoading(
+                                                            context, 'Please wait');
+                                                        var request = await horoscopeRequestController
+                                                            .getCurrentLocation(
+                                                            context);
+                                                        print(
+                                                            'the received value of request $request');
+                                                        if (request == true) {
+                                                          print(
+                                                              'the true value is occured');
+                                                          final RenderBox overlay = Overlay
+                                                              .of(context)!.context
+                                                              .findRenderObject() as RenderBox;
+                                                          final RelativeRect position = RelativeRect
+                                                              .fromRect(
+                                                            Rect.fromPoints(
+                                                              buttonOffset,
+                                                              buttonOffset +
+                                                                  buttonOffset, // buttonSize is the size of the button
+                                                            ),
+                                                            Offset.zero & overlay
+                                                                .size, // Overlay size
+                                                          );
+                                                          final selectedValue = await showMenu(
+                                                            context: context,
+                                                            position: position,
+                                                            items: [
+                                                              PopupMenuItem(
+                                                                value: 1,
+                                                                child: commonText(
+                                                                    text: LocalizationController
+                                                                        .getInstance()
+                                                                        .getTranslatedValue(
+                                                                        "90-day Prediction"),
+                                                                    fontSize: 14),
+                                                              ),
+                                                              PopupMenuItem(
+                                                                value: 3,
+                                                                child: commonText(
+                                                                    text: LocalizationController
+                                                                        .getInstance()
+                                                                        .getTranslatedValue(
+                                                                        "Life Guidance Questions"),
+                                                                    fontSize: 14),
+                                                              ),
+                                                            ],
+                                                          );
+                                                          if (selectedValue !=
+                                                              null) {
+                                                            switch (selectedValue) {
+                                                              case 1:
+                                                                horoscopeRequestController
+                                                                    .selectedRequest
+                                                                    .value = 2;
+                                                                Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                      builder: (
+                                                                          context) =>
+                                                                          DailyPredictions(
+                                                                              horoscope: applicationBaseController
+                                                                                  .horoscopeList[index])),
+                                                                );
+                                                                break;
+                                                              case 3:
+                                                                horoscopeRequestController
+                                                                    .selectedRequest
+                                                                    .value = 3;
+                                                                Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                      builder: (
+                                                                          context) =>
+                                                                          SpecialPredictions(
+                                                                              horoscope: applicationBaseController
+                                                                                  .horoscopeList[index])),
+                                                                );
+                                                                break;
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    } else {
+                                                      CustomDialog.showAlert(
+                                                          context,
+                                                          LocalizationController
+                                                              .getInstance()
+                                                              .getTranslatedValue(
+                                                              "Horoscope is under preparation"),
+                                                          null, 14);
+                                                    }
+                                                  }),
+                                            ),
+                                            Expanded(
+                                              child: GradientButton(
+                                                  title: LocalizationController
+                                                      .getInstance()
+                                                      .getTranslatedValue(
+                                                      "Predictions"),
+                                                  buttonHeight: 30,
+                                                  textColor: Colors.white,
+                                                  isDisabled: (!isPaid && applicationBaseController.horoscopeList[index].hstatus != '5') || (isPaid && applicationBaseController.horoscopeList[index].hstatus != '5'),
+                                                  buttonColors: const [
+                                                    Color(0xFFf2b20a),
+                                                    Color(0xFFf34509)
+                                                  ],
+                                                  onPressed: (
+                                                      Offset buttonOffset) async {
+                                                    if (!isPaid) {
+                                                      navigateToPaymentScreen();
+                                                      return;
+                                                    }
+                                                    SharedPreferences prefs = await SharedPreferences.getInstance();
+                                                    await prefs.setString('paymentHid',
+                                                        applicationBaseController
+                                                            .horoscopeList[index]
+                                                            .hid!
+                                                    );
+                                                    if (applicationBaseController
+                                                        .horoscopeList[index]
+                                                        .hstatus == '5') {
+                                                      _getUserPredictions(
+                                                          applicationBaseController
+                                                              .horoscopeList[index]
+                                                              .hid!.trim());
+                                                    } else {
+                                                      CustomDialog.showAlert(
+                                                          context,
+                                                          LocalizationController
+                                                              .getInstance()
+                                                              .getTranslatedValue(
+                                                              "Prediction is yet to be generated"),
+                                                          null, 14);
+                                                    }
+                                                  }),
+                                            ),
+                                            Expanded(
+                                              child: GradientButton(
+                                                  title: isPaid
+                                                      ? LocalizationController.getInstance().getTranslatedValue("Horoscope")
+                                                      : LocalizationController.getInstance().getTranslatedValue("Make Payment"),
+                                                  buttonHeight: 30,
+                                                  textColor: Colors.white,
+                                                  isDisabled: (isPaid && applicationBaseController.horoscopeList[index].hstatus != '5'),
+                                                  buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
+                                                  onPressed: (
+                                                      Offset buttonOffset) async {
+                                                    if (!isPaid) {
+                                                      // Navigate to payment screen
+                                                      if (appLoadController.loggedUserData!.value.ucurrency!
+                                                          .toLowerCase()
+                                                          .compareTo('INR'.toLowerCase()) ==
+                                                          0) {
+                                                        paymentController.payByUpi(
+                                                            applicationBaseController
+                                                                .horoscopeList[index]
+                                                                .huserid!,
+                                                            applicationBaseController
+                                                                .horoscopeList[index]
+                                                                .requestId!,
+                                                            applicationBaseController
+                                                                .horoscopeList[index]
+                                                                .amount!,
+                                                            appLoadController.loggedUserData.value.token!,
+                                                            'horoscope',
+                                                            context);
+                                                      }else if (appLoadController.loggedUserData!.value.ucurrency!
+                                                          .toLowerCase()
+                                                          .compareTo('AED'.toLowerCase()) ==
+                                                          0) {
+                                                        paymentController.payByStripe(
+                                                            applicationBaseController
+                                                                .horoscopeList[index]
+                                                                .huserid!,
+                                                            applicationBaseController
+                                                                .horoscopeList[index]
+                                                                .requestId!,
+                                                            applicationBaseController
+                                                                .horoscopeList[index]
+                                                                .amount!,
+                                                            'horoscope',
+                                                            appLoadController.loggedUserData.value.token!,
+                                                            context);
+                                                      } else {
+                                                        paymentController.payByStripe(
+                                                            applicationBaseController
+                                                                .horoscopeList[index]
+                                                                .huserid!,
+                                                            applicationBaseController
+                                                                .horoscopeList[index]
+                                                                .requestId!,
+                                                            applicationBaseController
+                                                                .horoscopeList[index]
+                                                                .amount!,
+                                                            'horoscope',
+                                                            appLoadController.loggedUserData.value.token!,
+                                                            context);
+                                                      }
+                                                      return;
+                                                    }
                                                     final RenderBox overlay = Overlay
-                                                        .of(context)!.context
+                                                        .of(context).context
                                                         .findRenderObject() as RenderBox;
                                                     final RelativeRect position = RelativeRect
                                                         .fromRect(
@@ -651,7 +1170,16 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                               text: LocalizationController
                                                                   .getInstance()
                                                                   .getTranslatedValue(
-                                                                  "90-day Prediction"),
+                                                                  'Show Horoscope'),
+                                                              fontSize: 14),
+                                                        ),
+                                                        if(!isPaid)PopupMenuItem(
+                                                          value: 2,
+                                                          child: commonText(
+                                                              text: LocalizationController
+                                                                  .getInstance()
+                                                                  .getTranslatedValue(
+                                                                  'Edit Horoscope'),
                                                               fontSize: 14),
                                                         ),
                                                         PopupMenuItem(
@@ -660,68 +1188,98 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                               text: LocalizationController
                                                                   .getInstance()
                                                                   .getTranslatedValue(
-                                                                  "Life Guidance Questions"),
+                                                                  'Two Page Horoscope'),
                                                               fontSize: 14),
-                                                        )
+                                                        ),
+                                                        if(!isPaid)PopupMenuItem(
+                                                          value: 4,
+                                                          child: commonText(
+                                                              text: LocalizationController
+                                                                  .getInstance()
+                                                                  .getTranslatedValue(
+                                                                  'Delete Horoscope'),
+                                                              fontSize: 14),
+                                                        ),
+                                                        if(isPaid)PopupMenuItem(
+                                                          value: 5,
+                                                          child: commonText(
+                                                              text: LocalizationController
+                                                                  .getInstance()
+                                                                  .getTranslatedValue(
+                                                                  'Messages'),
+                                                              fontSize: 14),
+                                                        ),
                                                       ],
                                                     );
 
                                                     if (selectedValue != null) {
                                                       switch (selectedValue) {
                                                         case 1:
-                                                          horoscopeRequestController
-                                                              .selectedRequest
-                                                              .value = 1;
-                                                          Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                                builder: (
-                                                                    context) =>
-                                                                    DailyPredictions(
-                                                                        horoscope: applicationBaseController
-                                                                            .horoscopeList[index])),
+                                                          viewHoroscope(
+                                                              applicationBaseController
+                                                                  .horoscopeList[index]
+                                                                  .huserid!,
+                                                              applicationBaseController
+                                                                  .horoscopeList[index]
+                                                                  .hid!.trim(),
+                                                              isPaid
                                                           );
                                                           break;
                                                         case 2:
-                                                          horoscopeRequestController
-                                                              .selectedRequest
-                                                              .value = 2;
-                                                          Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                                builder: (
-                                                                    context) =>
-                                                                    DailyPredictions(
-                                                                        horoscope: applicationBaseController
-                                                                            .horoscopeList[index])),
-                                                          );
+                                                          if (applicationBaseController
+                                                              .horoscopeList[index]
+                                                              .hstatus == "1") {
+                                                            addHoroscopeController
+                                                                .editHoroscope(
+                                                                applicationBaseController
+                                                                    .horoscopeList[index]);
+                                                            Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                  builder: (
+                                                                      context) => const AddNativePhoto()),
+                                                            );
+                                                          } else {
+                                                            CustomDialog.showAlert(
+                                                                context,
+                                                                "You cant edit this horoscope because horoscope already generated",
+                                                                false, 12);
+                                                          }
                                                           break;
                                                         case 3:
-                                                          horoscopeRequestController
-                                                              .selectedRequest
-                                                              .value = 3;
-                                                          Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                                builder: (
-                                                                    context) =>
-                                                                    SpecialPredictions(
-                                                                        horoscope: applicationBaseController
-                                                                            .horoscopeList[index])),
-                                                          );
+                                                          print(
+                                                              'the value of hpdf ${applicationBaseController
+                                                                  .horoscopeList[index]
+                                                                  .hpdf!}');
+                                                          viewTwoPageKundli(
+                                                              applicationBaseController
+                                                                  .horoscopeList[index]
+                                                                  .hpdf!);
                                                           break;
                                                         case 4:
-                                                          horoscopeRequestController
-                                                              .selectedRequest
-                                                              .value = 4;
-                                                          Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                                builder: (
-                                                                    context) =>
-                                                                    PlanetTransit(
-                                                                        horoscope: applicationBaseController
-                                                                            .horoscopeList[index])),
+                                                          print(
+                                                              'selected value is 4');
+                                                          yesOrNoDialog(
+                                                            context: context,
+                                                            cancelAction: () {
+                                                              Navigator.pop(
+                                                                  context);
+                                                            },
+                                                            dialogMessage: 'Are you sure you want to delete this horoscope?',
+                                                            cancelText: 'No',
+                                                            okText: 'Yes',
+                                                            okAction: () {
+                                                              Navigator.pop(
+                                                                  context);
+                                                              deleteHoroscope(
+                                                                applicationBaseController
+                                                                    .horoscopeList[index]
+                                                                    .huserid!,
+                                                                applicationBaseController
+                                                                    .horoscopeList[index]
+                                                                    .hid!.trim(),
+                                                              );
+                                                            },
                                                           );
                                                           break;
                                                         case 5:
@@ -731,514 +1289,73 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                                 builder: (
                                                                     context) =>
                                                                     MessagesList(
-                                                                      horoscopeId: applicationBaseController
-                                                                          .horoscopeList[index]
-                                                                          .hid!,)),
-                                                          );
-                                                          break;
-                                                        case 6:
-                                                          horoscopeRequestController
-                                                              .selectedRequest
-                                                              .value = 6;
-                                                          Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                                builder: (
-                                                                    context) =>
-                                                                    PlanetTransit(
-                                                                        horoscope: applicationBaseController
-                                                                            .horoscopeList[index])),
-                                                          );
-                                                          break;
-                                                        case 7:
-                                                          horoscopeRequestController
-                                                              .selectedRequest
-                                                              .value = 7;
-                                                          Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                                builder: (
-                                                                    context) =>
-                                                                    PlanetTransit(
-                                                                        horoscope: applicationBaseController
-                                                                            .horoscopeList[index])),
-                                                          );
-                                                          break;
-                                                        case 8:
-                                                          horoscopeRequestController
-                                                              .selectedRequest
-                                                              .value = 8;
-                                                          Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                                builder: (
-                                                                    context) =>
-                                                                    PlanetTransit(
-                                                                        horoscope: applicationBaseController
-                                                                            .horoscopeList[index])),
-                                                          );
-                                                          break;
-                                                        case 9:
-                                                          horoscopeRequestController
-                                                              .selectedRequest
-                                                              .value = 9;
-                                                          Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                                builder: (
-                                                                    context) =>
-                                                                    PlanetTransit(
-                                                                        horoscope: applicationBaseController
-                                                                            .horoscopeList[index])),
-                                                          );
-                                                          break;
-                                                        case 10:
-                                                          horoscopeRequestController
-                                                              .selectedRequest
-                                                              .value = 10;
-                                                          Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                                builder: (
-                                                                    context) =>
-                                                                    PlanetTransit(
-                                                                        horoscope: applicationBaseController
-                                                                            .horoscopeList[index])),
-                                                          );
-                                                          break;
-                                                      }
-                                                    }
-                                                  } else {
-                                                    CustomDialog.showLoading(
-                                                        context, 'Please wait');
-                                                    var request = await horoscopeRequestController
-                                                        .getCurrentLocation(
-                                                        context);
-                                                    print(
-                                                        'the received value of request $request');
-                                                    if (request == true) {
-                                                      print(
-                                                          'the true value is occured');
-                                                      final RenderBox overlay = Overlay
-                                                          .of(context)!.context
-                                                          .findRenderObject() as RenderBox;
-                                                      final RelativeRect position = RelativeRect
-                                                          .fromRect(
-                                                        Rect.fromPoints(
-                                                          buttonOffset,
-                                                          buttonOffset +
-                                                              buttonOffset, // buttonSize is the size of the button
-                                                        ),
-                                                        Offset.zero & overlay
-                                                            .size, // Overlay size
-                                                      );
-                                                      final selectedValue = await showMenu(
-                                                        context: context,
-                                                        position: position,
-                                                        items: [
-                                                          PopupMenuItem(
-                                                            value: 1,
-                                                            child: commonText(
-                                                                text: LocalizationController
-                                                                    .getInstance()
-                                                                    .getTranslatedValue(
-                                                                    "90-day Prediction"),
-                                                                fontSize: 14),
-                                                          ),
-                                                          PopupMenuItem(
-                                                            value: 3,
-                                                            child: commonText(
-                                                                text: LocalizationController
-                                                                    .getInstance()
-                                                                    .getTranslatedValue(
-                                                                    "Life Guidance Questions"),
-                                                                fontSize: 14),
-                                                          ),
-                                                        ],
-                                                      );
-
-                                                      if (selectedValue !=
-                                                          null) {
-                                                        switch (selectedValue) {
-                                                          case 1:
-                                                            horoscopeRequestController
-                                                                .selectedRequest
-                                                                .value = 2;
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                  builder: (
-                                                                      context) =>
-                                                                      DailyPredictions(
-                                                                          horoscope: applicationBaseController
-                                                                              .horoscopeList[index])),
-                                                            );
-                                                            break;
-                                                          case 2:
-                                                            horoscopeRequestController
-                                                                .selectedRequest
-                                                                .value = 3;
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                  builder: (
-                                                                      context) =>
-                                                                      DailyPredictions(
-                                                                          horoscope: applicationBaseController
-                                                                              .horoscopeList[index])),
-                                                            );
-                                                            break;
-                                                          case 3:
-                                                            horoscopeRequestController
-                                                                .selectedRequest
-                                                                .value = 3;
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                  builder: (
-                                                                      context) =>
-                                                                      SpecialPredictions(
-                                                                          horoscope: applicationBaseController
-                                                                              .horoscopeList[index])),
-                                                            );
-                                                            break;
-                                                          case 4:
-                                                            horoscopeRequestController
-                                                                .selectedRequest
-                                                                .value = 4;
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                  builder: (
-                                                                      context) =>
-                                                                      PlanetTransit(
-                                                                          horoscope: applicationBaseController
-                                                                              .horoscopeList[index])),
-                                                            );
-                                                            break;
-                                                          case 5:
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                  builder: (
-                                                                      context) =>
-                                                                      MessagesList(
                                                                         horoscopeId: applicationBaseController
                                                                             .horoscopeList[index]
-                                                                            .hid!,)),
-                                                            );
-                                                            break;
-                                                          case 6:
-                                                            horoscopeRequestController
-                                                                .selectedRequest
-                                                                .value = 6;
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                  builder: (
-                                                                      context) =>
-                                                                      PlanetTransit(
-                                                                          horoscope: applicationBaseController
-                                                                              .horoscopeList[index])),
-                                                            );
-                                                            break;
-                                                          case 7:
-                                                            horoscopeRequestController
-                                                                .selectedRequest
-                                                                .value = 7;
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                  builder: (
-                                                                      context) =>
-                                                                      PlanetTransit(
-                                                                          horoscope: applicationBaseController
-                                                                              .horoscopeList[index])),
-                                                            );
-                                                            break;
-                                                          case 8:
-                                                            horoscopeRequestController
-                                                                .selectedRequest
-                                                                .value = 8;
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                  builder: (
-                                                                      context) =>
-                                                                      PlanetTransit(
-                                                                          horoscope: applicationBaseController
-                                                                              .horoscopeList[index])),
-                                                            );
-                                                            break;
-                                                          case 9:
-                                                            horoscopeRequestController
-                                                                .selectedRequest
-                                                                .value = 9;
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                  builder: (
-                                                                      context) =>
-                                                                      PlanetTransit(
-                                                                          horoscope: applicationBaseController
-                                                                              .horoscopeList[index])),
-                                                            );
-                                                            break;
-                                                          case 10:
-                                                            horoscopeRequestController
-                                                                .selectedRequest
-                                                                .value = 10;
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                  builder: (
-                                                                      context) =>
-                                                                      PlanetTransit(
-                                                                          horoscope: applicationBaseController
-                                                                              .horoscopeList[index])),
-                                                            );
-                                                            break;
-                                                        }
+                                                                            .hid!)),
+                                                          );
+                                                          break;
                                                       }
                                                     }
-                                                  }
-                                                } else {
-                                                  CustomDialog.showAlert(
-                                                      context,
-                                                      LocalizationController
-                                                          .getInstance()
-                                                          .getTranslatedValue(
-                                                          "Chart is not ready yet"),
-                                                      null, 14);
-                                                }
-                                              }),
+                                                  }),
+                                            ),
+                                          ],
                                         ),
-                                        Expanded(
-                                          child: GradientButton(
-                                              title: LocalizationController
-                                                  .getInstance()
-                                                  .getTranslatedValue(
-                                                  "Predictions"),
-                                              buttonHeight: 30,
-                                              textColor: Colors.white,
-                                              buttonColors: const [
-                                                Color(0xFFf2b20a),
-                                                Color(0xFFf34509)
-                                              ],
-                                              onPressed: (
-                                                  Offset buttonOffset) async {
-                                                if (applicationBaseController
-                                                    .horoscopeList[index]
-                                                    .hstatus == '5') {
-                                                  _getUserPredictions(
-                                                      applicationBaseController
-                                                          .horoscopeList[index]
-                                                          .hid!.trim());
-                                                } else {
-                                                  CustomDialog.showAlert(
-                                                      context,
-                                                      LocalizationController
-                                                          .getInstance()
-                                                          .getTranslatedValue(
-                                                          "Prediction is yet to be generated"),
-                                                      null, 14);
-                                                }
-                                              }),
-                                        ),
-                                        Expanded(
-                                          child: GradientButton(
-                                              title: LocalizationController
-                                                  .getInstance()
-                                                  .getTranslatedValue("Chart"),
-                                              buttonHeight: 30,
-                                              textColor: Colors.white,
-                                              buttonColors: const [
-                                                Color(0xFFf2b20a),
-                                                Color(0xFFf34509)
-                                              ],
-                                              onPressed: (
-                                                  Offset buttonOffset) async {
-                                                final RenderBox overlay = Overlay
-                                                    .of(context)!.context
-                                                    .findRenderObject() as RenderBox;
-                                                final RelativeRect position = RelativeRect
-                                                    .fromRect(
-                                                  Rect.fromPoints(
-                                                    buttonOffset,
-                                                    buttonOffset +
-                                                        buttonOffset, // buttonSize is the size of the button
-                                                  ),
-                                                  Offset.zero & overlay
-                                                      .size, // Overlay size
-                                                );
-                                                final selectedValue = await showMenu(
-                                                  context: context,
-                                                  position: position,
-                                                  items: [
-                                                    PopupMenuItem(
-                                                      value: 1,
-                                                      child: commonText(
-                                                          text: LocalizationController
-                                                              .getInstance()
-                                                              .getTranslatedValue(
-                                                              'Show Horoscope'),
-                                                          fontSize: 14),
-                                                    ),
-                                                    if(applicationBaseController
-                                                        .horoscopeList[index]
-                                                        .isPaid !=
-                                                        "true")PopupMenuItem(
-                                                      value: 2,
-                                                      child: commonText(
-                                                          text: LocalizationController
-                                                              .getInstance()
-                                                              .getTranslatedValue(
-                                                              'Edit Horoscope'),
-                                                          fontSize: 14),
-                                                    ),
-                                                    PopupMenuItem(
-                                                      value: 3,
-                                                      child: commonText(
-                                                          text: LocalizationController
-                                                              .getInstance()
-                                                              .getTranslatedValue(
-                                                              'Two Page Kundli'),
-                                                          fontSize: 14),
-                                                    ),
-                                                    if(applicationBaseController
-                                                        .horoscopeList[index]
-                                                        .isPaid !=
-                                                        "true")PopupMenuItem(
-                                                      value: 4,
-                                                      child: commonText(
-                                                          text: LocalizationController
-                                                              .getInstance()
-                                                              .getTranslatedValue(
-                                                              'Delete Horoscope'),
-                                                          fontSize: 14),
-                                                    ),
-                                                    if(applicationBaseController
-                                                        .horoscopeList[index]
-                                                        .isPaid ==
-                                                        "true")PopupMenuItem(
-                                                      value: 5,
-                                                      child: commonText(
-                                                          text: LocalizationController
-                                                              .getInstance()
-                                                              .getTranslatedValue(
-                                                              'Messages'),
-                                                          fontSize: 14),
-                                                    ),
-                                                  ],
-                                                );
-
-                                                if (selectedValue != null) {
-                                                  switch (selectedValue) {
-                                                    case 1:
-                                                      viewHoroscope(
-                                                          applicationBaseController
-                                                              .horoscopeList[index]
-                                                              .huserid!,
-                                                          applicationBaseController
-                                                              .horoscopeList[index]
-                                                              .hid!.trim(),
-                                                          applicationBaseController
-                                                              .horoscopeList[index]
-                                                              .isPaid == 'true'
-                                                              ? true
-                                                              : false
-                                                      );
-                                                      break;
-                                                    case 2:
-                                                      if (applicationBaseController
-                                                          .horoscopeList[index]
-                                                          .hstatus == "1") {
-                                                        addHoroscopeController
-                                                            .editHoroscope(
-                                                            applicationBaseController
-                                                                .horoscopeList[index]);
-                                                        Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                              builder: (
-                                                                  context) => const AddNativePhoto()),
-                                                        );
-                                                      } else {
-                                                        CustomDialog.showAlert(
-                                                            context,
-                                                            "You cant edit this chart because chart already generated",
-                                                            false, 12);
-                                                      }
-                                                      break;
-                                                    case 3:
-                                                      print(
-                                                          'the value of hpdf ${applicationBaseController
-                                                              .horoscopeList[index]
-                                                              .hpdf!}');
-                                                      viewTwoPageKundli(
-                                                          applicationBaseController
-                                                              .horoscopeList[index]
-                                                              .hpdf!);
-                                                      // emailHoroscope(
-                                                      //   applicationBaseController.horoscopeList[index].huserid!,
-                                                      //   applicationBaseController.horoscopeList[index].hid!.trim(),
-                                                      // );
-                                                      break;
-                                                    case 4:
-                                                      print(
-                                                          'selected value is 4');
-                                                      yesOrNoDialog(
-                                                        context: context,
-                                                        cancelAction: () {
-                                                          Navigator.pop(
-                                                              context);
-                                                        },
-                                                        dialogMessage: 'Are you sure you want to delete this horoscope?',
-                                                        cancelText: 'No',
-                                                        okText: 'Yes',
-                                                        okAction: () {
-                                                          Navigator.pop(
-                                                              context);
-                                                          deleteHoroscope(
-                                                            applicationBaseController
-                                                                .horoscopeList[index]
-                                                                .huserid!,
-                                                            applicationBaseController
-                                                                .horoscopeList[index]
-                                                                .hid!.trim(),
-                                                          );
-                                                        },
-                                                      );
-                                                      // Handle Menu 3 option
-                                                      break;
-                                                    case 5:
-                                                      Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                            builder: (
-                                                                context) =>
-                                                                MessagesList(
-                                                                    horoscopeId: applicationBaseController
-                                                                        .horoscopeList[index]
-                                                                        .hid!)),
-                                                      );
-                                                  }
-                                                }
-                                              }),
-                                        ),
+                                        const SizedBox(height: 6),
                                       ],
                                     ),
-                                    const SizedBox(height: 6),
+
+                                    // Payment Status Badge - Positioned at the top right
+                                    Positioned(
+                                      top: 15,
+                                      right: 15,
+                                      child: !isPaid
+                                          ? Column(
+                                            children: [
+                                              Center(
+                                                child: commonBoldText(
+                                              text: 'Payment Pending',
+                                              color: Colors.red[800],
+                                              fontSize: 10,
+                                              textAlign: TextAlign.center)),
+                                              Center(
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    crossAxisAlignment: CrossAxisAlignment.baseline, // Align text baselines
+                                                    textBaseline: TextBaseline.alphabetic, // Required for baseline alignment
+                                                    children: [
+                                                      commonBoldText(
+                                                          text: '${appLoadController.loggedUserData.value.ucurrency}',
+                                                          color: Colors.grey,
+                                                          fontSize: 12,
+                                                          textAlign: TextAlign.center),
+                                                      commonBoldText(
+                                                          text: ' ${formatIndianRupees(applicationBaseController.horoscopeList[index].amount!)}',
+                                                          color: Colors.grey,
+                                                          fontSize: 24,
+                                                          textAlign: TextAlign.start),
+                                                    ],
+                                                  ))
+                                            ],
+                                          )
+                                          : Center(
+                                        child: commonBoldText(
+                                          text: 'Paid',
+                                          color: Colors.green[800],
+                                          fontSize: 12,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
                             );
-                          },
-                        ),
-                      )
-                    ],
-                  );
-              })
+                        },
+                      ),
+                    )
+                  ],
+                );
+            })
         ),
       );
     });

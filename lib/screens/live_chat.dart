@@ -41,6 +41,7 @@ class _LiveChatState extends State<LiveChat> {
   int _messageCount = 0;
   bool _isLoading = false;
   bool _isInitialized = false;
+  bool _showResponseNotification = false;
 
   // Cached user data
   late final String _userEmail;
@@ -143,10 +144,22 @@ class _LiveChatState extends State<LiveChat> {
           'from': entry.value['from'].toString(),
         }).toList();
 
+        // Sort messages by timestamp
+        newMessages.sort((a, b) => (a['time'] ?? 0).compareTo(b['time'] ?? 0));
+
+        // Check if last message is from user
+        bool lastMessageFromUser = false;
+        if (newMessages.isNotEmpty) {
+          lastMessageFromUser = newMessages.last['from'] == '2';
+        }
+
         setState(() {
           _messagesList
             ..clear()
             ..addAll(newMessages);
+
+          // Show notification if last message is from user
+          _showResponseNotification = lastMessageFromUser;
         });
         _scrollToBottom();
       }
@@ -175,13 +188,20 @@ class _LiveChatState extends State<LiveChat> {
         }),
       ]);
 
-      if (mounted) _messageController.clear();
+      if (mounted) {
+        _messageController.clear();
+        setState(() {
+          _showResponseNotification = true;
+        });
+      }
     } catch (e) {
       _handleError('Error sending message', e);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
+
+  // Removed the _showNotification() method as we no longer need timer-based hiding
 
   void _handleError(String context, dynamic error) {
     debugPrint('$context: $error');
@@ -286,6 +306,31 @@ class _LiveChatState extends State<LiveChat> {
     );
   }
 
+  Widget _buildResponseNotification() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      height: _showResponseNotification ? 40 : 0,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 300),
+        opacity: _showResponseNotification ? 1.0 : 0.0,
+        child: Container(
+          width: double.infinity,
+          color: Colors.blue.withOpacity(0.8),
+          child: const Center(
+            child: Text(
+              'You reached the technical support. feel free to leave your questions here, our team will reply within 24 hours',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
@@ -314,6 +359,7 @@ class _LiveChatState extends State<LiveChat> {
         ),
         child: Column(
           children: [
+            _buildResponseNotification(),
             if (_error != null)
               Container(
                 padding: const EdgeInsets.all(8),

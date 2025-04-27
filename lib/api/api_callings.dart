@@ -575,7 +575,7 @@ class APICallings {
       "token": token
       // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
     };
-    var url = Uri.parse('${APIEndPoints.getUserPredictions}$userId&hid=$hid');
+    var url = Uri.parse('${APIEndPoints.getUserPredictions}$userId&hid=$hid&isPaid=true');
     var response = await http.get(
       url,
       headers: headers,

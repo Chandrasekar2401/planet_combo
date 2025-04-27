@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/screens/payments/payment_dashboard.dart';
+import 'package:planetcombo/screens/payments/pricing.dart';
 import 'package:planetcombo/screens/profile/business_details.dart';
 import 'package:planetcombo/screens/profile/profile.dart';
 import 'package:planetcombo/screens/services/horoscope_services.dart';
@@ -204,7 +205,7 @@ class _DashboardState extends State<Dashboard> {
               ),
             ),
           ],
-          title: LocalizationController.getInstance().getTranslatedValue("Hi !  ${appLoadController.loggedUserData.value.username}"),
+          title: LocalizationController.getInstance().getTranslatedValue("Welcome !  ${appLoadController.loggedUserData.value.username}"),
           colors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
           centerTitle: true,
         ),
@@ -242,11 +243,9 @@ class _DashboardState extends State<Dashboard> {
                           children: [
                             const SizedBox(height: 10),
                             commonBoldText(
-                              fontSize: 19,
+                              fontSize: 21,
                               color: Colors.white,
                               text:
-                              appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr' ?
-                              LocalizationController.getInstance().getTranslatedValue("LEGAL NAME : VENKATARAMAN CHANDRASEKAR"):
                               LocalizationController.getInstance().getTranslatedValue("Welcome to Planet Combo")
                             ),
                             const SizedBox(height: 5),
@@ -257,28 +256,15 @@ class _DashboardState extends State<Dashboard> {
                                 color: Colors.white,
                                 textAlign: TextAlign.center,
                                 text:
-                                appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr' ?
-                                LocalizationController.getInstance().getTranslatedValue(
-                                  "ADDRESS:		7, KANNADASAN SALAI, T NAGAR THIYAGARAYA NAGAR CHENNAI",
-                                ):LocalizationController.getInstance().getTranslatedValue(
-                                  "Planetary calculation on charts, Dasas and transists powered by True Astrology software",
+                               LocalizationController.getInstance().getTranslatedValue(
+                                  "Planetary calculation on horoscopes, Dasas and transists powered by True Astrology software",
                                 ),
                               ),
                             ),
-                            SizedBox(height: 3),
-                            if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr')Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              child: commonText(
-                                fontSize: 14,
-                                color: Colors.white,
-                                textAlign: TextAlign.center,
-                                text: LocalizationController.getInstance().getTranslatedValue(
-                                  "STATE : TAMIL NADU , POSTAL CODE :		600017",
-                                ),
-                              ),
-                            ),
-                            if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr')SizedBox(height: 3),
-                            if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr')Center(
+                            SizedBox(height: 5),
+                            if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr')const SizedBox(height: 3),
+                            if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr')
+                              Center(
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -350,18 +336,18 @@ class _DashboardState extends State<Dashboard> {
                                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Profile())),
                                   ),
                                   buildMenuItem(
-                                    iconPath: 'assets/svg/support.svg',
-                                    text: "Chat Support",
-                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LiveChat())),
+                                    iconPath: 'assets/svg/app.svg',
+                                    text: "About Planetcombo",
+                                    onTap: () =>     Navigator.push(
+                                        context, MaterialPageRoute(builder: (context) => const FactsMyths())),
                                     showBorder: true,
                                   ),
                                   buildMenuItem(
-                                    iconPath: 'assets/svg/app.svg',
-                                    text: "About App",
-                                    onTap: () =>     Navigator.push(
-                                        context, MaterialPageRoute(builder: (context) => const FactsMyths())),
+                                    iconPath: 'assets/svg/support.svg',
+                                    text: "Tech Support",
+                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LiveChat())),
                                     showBorder: false,
-                                  ),
+                                  )
                                 ],
                               ),
                               // Divider
@@ -388,6 +374,15 @@ class _DashboardState extends State<Dashboard> {
                                     }
                                   ),
                                   buildMenuItem(
+                                    iconPath: 'assets/svg/wallet.svg',
+                                    text: "Pricing",
+                                    onTap: (){
+                                      Navigator.push(
+                                          context, MaterialPageRoute(builder: (context) => const PricingPage()));
+                                    },
+                                    showBorder: true,
+                                  ),
+                                  buildMenuItem(
                                     iconPath: 'assets/svg/Terms-conditions.svg',
                                     text: "Terms and Conditions",
                                     onTap: () {
@@ -403,18 +398,18 @@ class _DashboardState extends State<Dashboard> {
                                         launchUrl(Uri.parse(ApplicationBaseController.getInstance().termsAndConditionsLink.value));
                                       }
                                     },
-                                  ),
-                                  buildMenuItem(
-                                      iconPath: 'assets/svg/business.svg',
-                                      text: "Business Details",
-                                      onTap: (){
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(builder: (context) => BusinessDetails()),
-                                        );
-                                      },
-                                    showBorder: false,
-                                  ),
+                                  )
+                                  // buildMenuItem(
+                                  //     iconPath: 'assets/svg/business.svg',
+                                  //     text: "Business Details",
+                                  //     onTap: (){
+                                  //       Navigator.push(
+                                  //         context,
+                                  //         MaterialPageRoute(builder: (context) => BusinessDetails()),
+                                  //       );
+                                  //     },
+                                  //   showBorder: false,
+                                  // ),
                                 ],
                               ),
                             ],
@@ -485,39 +480,203 @@ class _DashboardState extends State<Dashboard> {
                 ),
               ),
               // Footer
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    commonBoldText(
-                      textAlign: TextAlign.center,
-                      text:
-                      appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr' ?
-                      LocalizationController.getInstance().getTranslatedValue("Domain Name : PlanetCombo.com"):
-                      LocalizationController.getInstance().getTranslatedValue("© Planet Combo... All rights reserved"),
-                      fontSize: 12,
-                    ),
-                    const SizedBox(height: 5),
-                    commonText(
-                      textAlign: TextAlign.center,
-                      text: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr' ?
-                      LocalizationController.getInstance().getTranslatedValue("Planetary calculations on charts, Dasas and transits powered by True Astrology software"):
-                      LocalizationController.getInstance().getTranslatedValue("Developed by Planetcombo Team"),
-                      fontSize: 11,
-                    ),
-                    const SizedBox(height: 5),
-                    commonText(
-                      fontSize: 14,
-                      color: Colors.black,
-                      textAlign: TextAlign.center,
-                      text:  appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr' ?
-                      '© ${LocalizationController.getInstance().getTranslatedValue("VENKATARAMAN CHANDRASEKAR... All rights reserved")}':
-                      LocalizationController.getInstance().getTranslatedValue("Version : 1.0.0"),
-                    ),
-                  ],
-                ),
-              ),
+              // Wrap the footer in a LayoutBuilder to make it responsive
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // Check if screen is wide enough for horizontal layout
+                  final bool isWideScreen = constraints.maxWidth > 600;
+
+                  if (isWideScreen) {
+                    // Horizontal layout for wide screens
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 30),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Left side - Contact information
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                commonBoldText(
+                                  text: "LEGAL NAME : VENKATARAMAN CHANDRASEKAR",
+                                  color: Colors.black,
+                                  fontSize: 11,
+                                ),
+                                const SizedBox(height: 4),
+                                commonText(
+                                  text: "ADDRESS: 7, KANNADASAN SALAI, T NAGAR THIYAGARAYA NAGAR CHENNAI",
+                                  color: Colors.black,
+                                  fontSize: 10,
+                                ),
+                                const SizedBox(height: 4),
+                                commonText(
+                                  text: "STATE : TAMIL NADU , POSTAL CODE : 600017",
+                                  color: Colors.black,
+                                  fontSize: 10,
+                                ),
+                                // const SizedBox(height: 8),
+                                // Row(
+                                //   children: [
+                                //     const Icon(Icons.email_outlined, color: Colors.black, size: 12),
+                                //     const SizedBox(width: 4),
+                                //     commonText(
+                                //       text: "info@planetcombo.com",
+                                //       color: Colors.black,
+                                //       fontSize: 10,
+                                //     ),
+                                //     const SizedBox(width: 16),
+                                //     const Icon(Icons.phone, color: Colors.black, size: 12),
+                                //     const SizedBox(width: 4),
+                                //     commonText(
+                                //       text: "+91 9600031647",
+                                //       color: Colors.black,
+                                //       fontSize: 10,
+                                //     ),
+                                //   ],
+                                // ),
+                              ],
+                            ),
+                          ),
+                          // Right side - Original footer content
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                commonBoldText(
+                                  textAlign: TextAlign.right,
+                                  text: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'
+                                      ? LocalizationController.getInstance().getTranslatedValue("Domain Name : PlanetCombo.com")
+                                      : LocalizationController.getInstance().getTranslatedValue("© Planet Combo... All rights reserved"),
+                                  fontSize: 11,
+                                  color: Colors.black,
+                                ),
+                                const SizedBox(height: 4),
+                                commonText(
+                                  textAlign: TextAlign.right,
+                                  text: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'
+                                      ? LocalizationController.getInstance().getTranslatedValue("Planetary calculations on horoscopes, Dasas and transits powered by True Astrology software")
+                                      : LocalizationController.getInstance().getTranslatedValue("Developed by Planetcombo Team"),
+                                  fontSize: 10,
+                                  color: Colors.black,
+                                ),
+                                const SizedBox(height: 4),
+                                commonText(
+                                  fontSize: 11,
+                                  color: Colors.black,
+                                  textAlign: TextAlign.right,
+                                  text: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'
+                                      ? '© ${LocalizationController.getInstance().getTranslatedValue("V.Chandrasekar... All rights reserved")}'
+                                      : LocalizationController.getInstance().getTranslatedValue("Version : 1.0.0"),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  } else {
+                    // Vertical layout for mobile screens
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      child: Column(
+                        children: [
+                          // Original footer content
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              commonBoldText(
+                                textAlign: TextAlign.center,
+                                text: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'
+                                    ? LocalizationController.getInstance().getTranslatedValue("Domain Name : PlanetCombo.com")
+                                    : LocalizationController.getInstance().getTranslatedValue("© Planet Combo... All rights reserved"),
+                                fontSize: 11,
+                                color: Colors.black,
+                              ),
+                              const SizedBox(height: 4),
+                              commonText(
+                                textAlign: TextAlign.center,
+                                text: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'
+                                    ? LocalizationController.getInstance().getTranslatedValue("Planetary calculations on horoscopes, Dasas and transits powered by True Astrology software")
+                                    : LocalizationController.getInstance().getTranslatedValue("Developed by Planetcombo Team"),
+                                fontSize: 10,
+                                color: Colors.black,
+                              ),
+                              const SizedBox(height: 4),
+                              commonText(
+                                fontSize: 11,
+                                color: Colors.black,
+                                textAlign: TextAlign.center,
+                                text: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'
+                                    ? '© ${LocalizationController.getInstance().getTranslatedValue("V.Chandrasekar... All rights reserved")}'
+                                    : LocalizationController.getInstance().getTranslatedValue("Version : 1.0.0"),
+                              ),
+                            ],
+                          ),
+                          const Divider(color: Colors.black12, height: 24),
+                          // Contact information below
+                          Column(
+                            children: [
+                              commonBoldText(
+                                textAlign: TextAlign.center,
+                                text: "LEGAL NAME : VENKATARAMAN CHANDRASEKAR",
+                                color: Colors.black,
+                                fontSize: 11,
+                              ),
+                              const SizedBox(height: 4),
+                              commonText(
+                                textAlign: TextAlign.center,
+                                text: "ADDRESS: 7, KANNADASAN SALAI, T NAGAR",
+                                color: Colors.black,
+                                fontSize: 10,
+                              ),
+                              commonText(
+                                textAlign: TextAlign.center,
+                                text: "THIYAGARAYA NAGAR CHENNAI",
+                                color: Colors.black,
+                                fontSize: 10,
+                              ),
+                              const SizedBox(height: 4),
+                              commonText(
+                                textAlign: TextAlign.center,
+                                text: "STATE : TAMIL NADU , POSTAL CODE : 600017",
+                                color: Colors.black,
+                                fontSize: 10,
+                              ),
+                              // const SizedBox(height: 8),
+                              // Row(
+                              //   mainAxisAlignment: MainAxisAlignment.center,
+                              //   children: [
+                              //     const Icon(Icons.email_outlined, color: Colors.black, size: 12),
+                              //     const SizedBox(width: 4),
+                              //     commonText(
+                              //       text: "info@planetcombo.com",
+                              //       color: Colors.black,
+                              //       fontSize: 10,
+                              //     ),
+                              //   ],
+                              // ),
+                              // const SizedBox(height: 4),
+                              // Row(
+                              //   mainAxisAlignment: MainAxisAlignment.center,
+                              //   children: [
+                              //     const Icon(Icons.phone, color: Colors.black, size: 12),
+                              //     const SizedBox(width: 4),
+                              //     commonText(
+                              //       text: "+91 9600031647",
+                              //       color: Colors.black,
+                              //       fontSize: 10,
+                              //     ),
+                              //   ],
+                              // ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                },
+              )
             ],
           ),
         ),

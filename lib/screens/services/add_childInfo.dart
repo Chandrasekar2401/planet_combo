@@ -38,7 +38,7 @@ class _AddChildInfoState extends State<AddChildInfo> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: selectedChildBirthDate,
-      firstDate: DateTime(1920),
+      firstDate: DateTime(addTwelveYears(addHoroscopeController.addHoroscopeBirthSelectedDate!.value)),
       lastDate: DateTime.now(),
       locale: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'usd' ? const Locale('en', 'US') : const Locale('en', 'GB'),
     );
@@ -48,6 +48,10 @@ class _AddChildInfoState extends State<AddChildInfo> {
         selectedChildBirthDate = picked;
       });
     }
+  }
+
+  int addTwelveYears(DateTime date) {
+    return date.year + 12;
   }
 
   Future<void> _selectWebChildBirthTime(BuildContext context) async {
@@ -126,7 +130,7 @@ class _AddChildInfoState extends State<AddChildInfo> {
                           DatePicker.showDatePicker(
                             context,
                             showTitleActions: true,
-                            minTime: DateTime(1920),
+                            minTime: DateTime(addTwelveYears(addHoroscopeController.addHoroscopeBirthSelectedDate!.value)),
                             maxTime: DateTime.now(),
                             onChanged: (date) {
                               print('change $date');

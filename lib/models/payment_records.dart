@@ -31,6 +31,7 @@ class PaymentRecord {
   double? totalAmount;
   String? currency;
   String? paidStatus;
+  String? unifiedRef;
 
   PaymentRecord({
     this.name,
@@ -57,6 +58,7 @@ class PaymentRecord {
     this.totalAmount,
     this.currency,
     this.paidStatus,
+    this.unifiedRef
   });
 
   factory PaymentRecord.fromJson(Map<String, dynamic> json) => PaymentRecord(
@@ -84,6 +86,7 @@ class PaymentRecord {
     totalAmount: json["total_amount"]?.toDouble(),
     currency: json["currency"],
     paidStatus: json["paid_status"],
+    unifiedRef: json["unifiedRef"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -110,5 +113,6 @@ class PaymentRecord {
     "total_amount": totalAmount,
     "currency": currency,
     "paid_status": paidStatus,
+    "unifiedRef":unifiedRef
   };
 }

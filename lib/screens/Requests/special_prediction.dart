@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:geocoding/geocoding.dart' hide kIsWeb;
 import 'package:planetcombo/common/app_widgets.dart';
-
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:planetcombo/controllers/request_controller.dart';
@@ -134,7 +134,8 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
 
   DateTime currentTime = DateTime.now();
   DateTime? todayDate = DateTime.now();
-  TextEditingController specialRequest = TextEditingController();
+  TextEditingController question1Controller = TextEditingController();
+  TextEditingController question2Controller = TextEditingController();
   String _address = 'Loading...';
 
   @override
@@ -142,6 +143,13 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
     super.initState();
     currentTime = DateTime.now();
     _getAddressFromLatLng();
+  }
+
+  @override
+  void dispose() {
+    question1Controller.dispose();
+    question2Controller.dispose();
+    super.dispose();
   }
 
   Future<void> _getAddressFromLatLng() async {
@@ -162,48 +170,6 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
   String taxCalc(double tax1, double tax2, double tax3) {
     double totalTax = tax1 + tax2 + tax3;
     return applicationBaseController.formatDecimalString(totalTax);
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
-              ),
-            ),
-            const Text(
-              ':',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 3,
-              child: Text(
-                value,
-                style: const TextStyle(fontSize: 15),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -235,199 +201,290 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
         ],
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          LocalizationController.getInstance().getTranslatedValue(
+                              "What would you like to know about your future?"),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Color(0xFF6A1B9A),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Question 1
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            commonBoldText(text:
+                              "Question 1:",
+                              fontSize: 12,
+                              color: Colors.grey.shade800,
+                            ),
+                            const SizedBox(height: 3),
+                            PrimaryInputText(
+                              hintText: 'Enter your first question here...',
+                              controller: question1Controller,
+                              onValidate: (v) => null,
+                              maxLines: 2,
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Question 2
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            commonBoldText(text:
+                              "Question 2:",
+                              fontSize: 12,
+                              color: Colors.grey.shade800,
+                            ),
+                            const SizedBox(height: 6),
+                            PrimaryInputText(
+                              hintText: 'Enter your second question here...',
+                              controller: question2Controller,
+                              onValidate: (v) => null,
+                              maxLines: 2,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFE67E22).withOpacity(0.2),
+                          blurRadius: 4,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          commonBoldText(
+                            text: "Life Guidance Questions",
+                            fontSize: 18,
+                            color: const Color(0xFF6A1B9A),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              commonBoldText(
+                                text: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'
+                                    ? "₹ 399"
+                                    : (appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'aed'
+                                    ? "AED 50"
+                                    : "\$ 20"),
+                                color: const Color(0xFF6A1B9A),
+                                fontSize: 24,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.check_circle, color: const Color(0xFF6A1B9A), size: 17),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: commonText(
+                                  text: "Ask up to 2 questions about your future",
+                                  color: Colors.black87,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.check_circle, color: const Color(0xFF6A1B9A), size: 17),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: commonText(
+                                  text: "Get expert astrological guidance for life decisions",
+                                  color: Colors.black87,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
                     children: [
-                      _buildInfoRow(
-                        LocalizationController.getInstance()
-                            .getTranslatedValue('Place'),
-                        _address,
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Colors.grey.shade300,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            LocalizationController.getInstance()
+                                .getTranslatedValue("Cancel"),
+                            style: const TextStyle(color: Colors.black87),
+                          ),
+                        ),
                       ),
-                      _buildInfoRow(
-                        LocalizationController.getInstance()
-                            .getTranslatedValue('Date'),
-                        DateFormat('MMMM dd, yyyy').format(todayDate!),
-                      ),
-                      _buildInfoRow(
-                        LocalizationController.getInstance()
-                            .getTranslatedValue('Local Time'),
-                        DateFormat('hh:mm:ss a').format(currentTime),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: GradientButton(
+                          title: LocalizationController.getInstance()
+                              .getTranslatedValue("Make Payment"),
+                          buttonHeight: 45,
+                          textColor: Colors.white,
+                          buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
+                          onPressed: (Offset buttonOffset) async {
+                            if (question1Controller.text.isEmpty && question2Controller.text.isEmpty) {
+                              showFailedToast('Please enter at least one question');
+                            } else {
+                              // Format questions as "1. [q1] 2. [q2]" format
+                              String formattedQuestions = "";
+
+                              if (question1Controller.text.isNotEmpty) {
+                                formattedQuestions += "1. ${question1Controller.text}";
+                              }
+
+                              if (question2Controller.text.isNotEmpty) {
+                                if (formattedQuestions.isNotEmpty) {
+                                  formattedQuestions += " 2. ${question2Controller.text}";
+                                } else {
+                                  formattedQuestions += "2. ${question2Controller.text}";
+                                }
+                              }
+
+                              CustomDialog.showLoading(context, 'Please wait');
+                              var result = await APICallings.addSpecialRequest(
+                                token: appLoadController.loggedUserData!.value.token!,
+                                hid: widget.horoscope.hid!.trim(),
+                                userId: widget.horoscope.huserid!,
+                                latitude: applicationBaseController.deviceLatitude.value
+                                    .toString(),
+                                longitude: applicationBaseController.deviceLongitude
+                                    .value
+                                    .toString(),
+                                reqDate: formatDateWithTimezone(currentTime,
+                                    applicationBaseController.getTimeZone.value),
+                                timestamp: DateTime.now().toString(),
+                                specialReq: '${formattedQuestions}| ${DateFormat('MMMM dd, yyyy').format(todayDate!)} | ${DateFormat('hh:mm:ss a').format(currentTime)}',
+                              );
+
+                              if (result != null) {
+                                CustomDialog.cancelLoading(context);
+                                var chargeData = json.decode(result);
+                                if (chargeData['status'] == 'Success') {
+                                  question1Controller.text = "";
+                                  question2Controller.text = "";
+                                  AppWidgets().multiTextAlignYesOrNoDialog(
+                                    iconUrl: 'assets/images/headletters.png',
+                                    context: context,
+                                    dialogMessage: 'Complete payment to unlock your personalized life guidance',
+                                    subText1Key: 'Amount',
+                                    subText1Value:
+                                    appLoadController.loggedUserData.value.ucurrency,
+                                    subText1Value1: applicationBaseController
+                                        .formatDecimalString(
+                                        chargeData['data']['amount']),
+                                    subText2Key: 'Tax Amount',
+                                    subText2Value:
+                                    appLoadController.loggedUserData.value.ucurrency,
+                                    subText2Value2: taxCalc(
+                                        chargeData['data']['tax1_amount'],
+                                        chargeData['data']['tax3_amount'],
+                                        chargeData['data']['tax3_amount']),
+                                    subText3Key: 'Total Amount',
+                                    subText3Value:
+                                    appLoadController.loggedUserData.value.ucurrency,
+                                    subText3Value3: applicationBaseController
+                                        .formatDecimalString(
+                                        chargeData['data']['total_amount']),
+                                    cancelText: 'Cancel',
+                                    okText: 'Pay Now',
+                                    cancelAction: () {
+                                      Navigator.pop(context);
+                                    },
+                                    okAction: () {
+                                      if (appLoadController.loggedUserData!.value
+                                          .ucurrency!.toLowerCase() ==
+                                          'inr') {
+                                        paymentController.payByUpi(
+                                          appLoadController
+                                              .loggedUserData.value!.userid!,
+                                          chargeData['data']['requestId'],
+                                          chargeData['data']['total_amount'],
+                                          appLoadController.loggedUserData!.value.token!,
+                                          'special',
+                                          context,
+                                        );
+                                      } else {
+                                        paymentController.payByStripe(
+                                          appLoadController
+                                              .loggedUserData.value!.userid!,
+                                          chargeData['data']['requestId'],
+                                          chargeData['data']['total_amount'],
+                                          'special',
+                                          appLoadController.loggedUserData!.value.token!,
+                                          context,
+                                        );
+                                      }
+                                    },
+                                  );
+                                } else if (chargeData['status'] == 'Failure') {
+                                  CustomDialog.showAlert(
+                                      context, chargeData['errorMessage'], null, 14);
+                                }
+                              } else {
+                                CustomDialog.cancelLoading(context);
+                                CustomDialog.showAlert(
+                                    context, 'Something went wrong', false, 14);
+                              }
+                            }
+                          },
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      LocalizationController.getInstance().getTranslatedValue(
-                          "What would you like to know about your future? (2 questions max)"),
-                      style: const TextStyle(
-                        color: Colors.black54,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    PrimaryInputText(
-                      hintText: 'Please ask your question here...',
-                      controller: specialRequest,
-                      onValidate: (v) => null,
-                      maxLines: 6,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: Colors.grey.shade300,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: Text(
-                        LocalizationController.getInstance()
-                            .getTranslatedValue("Cancel"),
-                        style: const TextStyle(color: Colors.black87),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  SizedBox(
-                    width: 150,
-                    child: GradientButton(
-                      title: LocalizationController.getInstance()
-                          .getTranslatedValue("Save"),
-                      buttonHeight: 45,
-                      textColor: Colors.white,
-                      buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
-                      onPressed: (Offset buttonOffset) async {
-                        if (specialRequest.text.isEmpty) {
-                          showFailedToast('Please enter the request');
-                        } else {
-                          CustomDialog.showLoading(context, 'Please wait');
-                          var result = await APICallings.addSpecialRequest(
-                            token: appLoadController.loggedUserData!.value.token!,
-                            hid: widget.horoscope.hid!.trim(),
-                            userId: widget.horoscope.huserid!,
-                            latitude: applicationBaseController.deviceLatitude.value
-                                .toString(),
-                            longitude: applicationBaseController.deviceLongitude
-                                .value
-                                .toString(),
-                            reqDate: formatDateWithTimezone(currentTime,
-                                applicationBaseController.getTimeZone.value),
-                            timestamp: DateTime.now().toString(),
-                            specialReq: '${specialRequest.text}| ${DateFormat('MMMM dd, yyyy').format(todayDate!)} | ${DateFormat('hh:mm:ss a').format(currentTime)}',
-                          );
-
-                          if (result != null) {
-                            CustomDialog.cancelLoading(context);
-                            var chargeData = json.decode(result);
-                            if (chargeData['status'] == 'Success') {
-                              specialRequest.text = "";
-                              AppWidgets().multiTextAlignYesOrNoDialog(
-                                iconUrl: 'assets/images/headletters.png',
-                                context: context,
-                                dialogMessage:
-                                'Special Prediction is created please Pay Now Or Pay Later',
-                                subText1Key: 'Amount',
-                                subText1Value:
-                                appLoadController.loggedUserData.value.ucurrency,
-                                subText1Value1: applicationBaseController
-                                    .formatDecimalString(
-                                    chargeData['data']['amount']),
-                                subText2Key: 'Tax Amount',
-                                subText2Value:
-                                appLoadController.loggedUserData.value.ucurrency,
-                                subText2Value2: taxCalc(
-                                    chargeData['data']['tax1_amount'],
-                                    chargeData['data']['tax3_amount'],
-                                    chargeData['data']['tax3_amount']),
-                                subText3Key: 'Total Amount',
-                                subText3Value:
-                                appLoadController.loggedUserData.value.ucurrency,
-                                subText3Value3: applicationBaseController
-                                    .formatDecimalString(
-                                    chargeData['data']['total_amount']),
-                                cancelText: 'Pay Later',
-                                okText: 'Pay Now',
-                                cancelAction: () {
-                                  Navigator.pop(context);
-                                  applicationBaseController.updateHoroscopeUiList();
-                                  Navigator.pushAndRemoveUntil(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                        const HoroscopeServices()),
-                                        (Route<dynamic> route) => false,
-                                  );
-                                },
-                                okAction: () {
-                                  if (appLoadController.loggedUserData!.value
-                                      .ucurrency!.toLowerCase() ==
-                                      'inr') {
-                                    paymentController.payByUpi(
-                                      appLoadController
-                                          .loggedUserData.value!.userid!,
-                                      chargeData['data']['requestId'],
-                                      chargeData['data']['total_amount'],
-                                      appLoadController.loggedUserData!.value.token!,
-                                      context,
-                                    );
-                                  } else {
-                                    paymentController.payByStripe(
-                                      appLoadController
-                                          .loggedUserData.value!.userid!,
-                                      chargeData['data']['requestId'],
-                                      chargeData['data']['total_amount'],
-                                      appLoadController.loggedUserData!.value.token!,
-                                      context,
-                                    );
-                                  }
-                                },
-                              );
-                            } else if (chargeData['status'] == 'Failure') {
-                              CustomDialog.showAlert(
-                                  context, chargeData['errorMessage'], null, 14);
-                            }
-                          } else {
-                            CustomDialog.cancelLoading(context);
-                            CustomDialog.showAlert(
-                                context, 'Something went wrong', false, 14);
-                          }
-                        }
-                      },
-                    ),
-                  ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

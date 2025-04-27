@@ -80,6 +80,8 @@ class _PaymentHistoryState extends State<PaymentHistory> {
       return "UPI";
     } else if (channel == "2") {
       return "Stripe";
+    }else if (channel == "3") {
+      return "PayU";
     }else{
       return "Not Updated";
     }
@@ -99,7 +101,7 @@ class _PaymentHistoryState extends State<PaymentHistory> {
   String findReqType(String type) {
     switch (type) {
       case "7":
-        return "Chart Request";
+        return "Horoscope Request";
       case "2":
         return "Daily Request";
       default:
@@ -248,7 +250,7 @@ class _PaymentHistoryState extends State<PaymentHistory> {
                       children: [
                         DetailRow(
                           icon: Icons.confirmation_number_outlined,
-                          label: 'Chart ID',
+                          label: 'Horoscope ID',
                           value: payment.hid.toString(),
                           iconColor: const Color(0xFF4A4A4A),
                         ),
@@ -268,13 +270,13 @@ class _PaymentHistoryState extends State<PaymentHistory> {
                           iconColor: const Color(0xFF4A4A4A),
                         ),
                         const SizedBox(height: 16),
-                        if(payment.gatewayReference != '')DetailRow(
+                        if(payment.unifiedRef != '')DetailRow(
                           icon: Icons.receipt_outlined,
-                          label: 'Gateway Reference',
-                          value: payment.gatewayReference ?? '',
+                          label: 'Bank Reference',
+                          value: payment.unifiedRef ?? '',
                           iconColor: const Color(0xFF4A4A4A),
                         ),
-                        if(payment.gatewayReference != '')SizedBox(height: 16),
+                        if(payment.unifiedRef != '')SizedBox(height: 16),
                         DetailRow(
                           icon: Icons.confirmation_number_outlined,
                           label: 'Request ID',

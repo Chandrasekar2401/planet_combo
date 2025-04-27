@@ -7,7 +7,7 @@ class PlaceAutocompleteWebInput extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
   final Function(String)? onChange;
-  final Function(String?)? onValidate;
+  final String? Function(String?)? onValidate;
   final Color borderColor;
 
   const PlaceAutocompleteWebInput({
@@ -31,6 +31,9 @@ class _PlaceAutocompleteInputState extends State<PlaceAutocompleteWebInput> {
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
   bool _isScriptLoaded = false;
+  bool _isValidSelection = false; // Track if the current text was selected from dropdown
+  String _lastValidValue = ''; // Store the last valid selection
+  bool _showError = false;
 
   @override
   void initState() {
@@ -40,12 +43,37 @@ class _PlaceAutocompleteInputState extends State<PlaceAutocompleteWebInput> {
       if (_focusNode.hasFocus) {
         _showOverlay = true;
         _showSuggestions();
+        // If text is not empty but was typed and not selected, show suggestions
+        if (widget.controller.text.isNotEmpty && !_isValidSelection) {
+          _getPlaceSuggestions(widget.controller.text);
+        }
       } else {
         Future.delayed(const Duration(milliseconds: 200), () {
           _hideOverlay();
+          // Validate on focus lost
+          if (widget.controller.text.isNotEmpty && !_isValidSelection) {
+            setState(() {
+              _showError = true;
+              // Restore last valid value if available
+              if (_lastValidValue.isNotEmpty) {
+                widget.controller.text = _lastValidValue;
+                _isValidSelection = true;
+                if (widget.onChange != null) {
+                  widget.onChange!(_lastValidValue);
+                }
+              }
+            });
+          }
         });
       }
     });
+
+    // If controller already has text (e.g. from editing a saved record)
+    // consider it a valid selection initially
+    if (widget.controller.text.isNotEmpty) {
+      _lastValidValue = widget.controller.text;
+      _isValidSelection = true;
+    }
   }
 
   void _loadGooglePlacesScript() {
@@ -78,6 +106,11 @@ class _PlaceAutocompleteInputState extends State<PlaceAutocompleteWebInput> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.controller.text = selectedValue;
+      // Mark as valid selection
+      _isValidSelection = true;
+      _lastValidValue = selectedValue;
+      _showError = false;
+
       print('Controller text updated to: ${widget.controller.text}');
 
       if (widget.onChange != null) {
@@ -177,60 +210,124 @@ class _PlaceAutocompleteInputState extends State<PlaceAutocompleteWebInput> {
     );
   }
 
+  // Custom validation function
+  String? _validateInput(String? value) {
+    // First run any external validation
+    if (widget.onValidate != null) {
+      final externalValidation = widget.onValidate!(value);
+      if (externalValidation != null) {
+        return externalValidation;
+      }
+    }
+
+    // Then check if it's a valid selection from dropdown
+    if (value == null || value.isEmpty) {
+      return 'Please enter a location';
+    }
+
+    if (!_isValidSelection) {
+      return 'Please select a location from the dropdown';
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Rest of your build method remains the same
     return CompositedTransformTarget(
       link: _layerLink,
-      child: TextFormField(
-        controller: widget.controller,
-        focusNode: _focusNode,
-        style: GoogleFonts.lexend(
-          fontSize: 14,
-        ),
-        decoration: InputDecoration(
-          isDense: true,
-          contentPadding: const EdgeInsets.fromLTRB(0, 12, 0, 7),
-          hintText: widget.hintText,
-          hintStyle: GoogleFonts.lexend(
-            fontSize: 14,
-            color: Colors.black54,
-          ),
-          border: UnderlineInputBorder(
-            borderSide: BorderSide(color: widget.borderColor),
-          ),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: widget.borderColor),
-          ),
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: widget.borderColor),
-          ),
-        ),
-        onChanged: (value) {
-          print('onChanged: $value');
-          if (widget.onChange != null) {
-            widget.onChange!(value);
-          }
-          if (_debounce?.isActive ?? false) _debounce!.cancel();
-          _debounce = Timer(const Duration(milliseconds: 500), () {
-            if (value.isNotEmpty) {
-              _getPlaceSuggestions(value);
-            } else {
-              setState(() {
-                _placesList = [];
-              });
-              if (_showOverlay) {
-                _overlayEntry?.markNeedsBuild();
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextFormField(
+            controller: widget.controller,
+            focusNode: _focusNode,
+            style: GoogleFonts.lexend(
+              fontSize: 14,
+            ),
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.fromLTRB(0, 12, 0, 7),
+              hintText: widget.hintText,
+              hintStyle: GoogleFonts.lexend(
+                fontSize: 14,
+                color: Colors.black54,
+              ),
+              border: UnderlineInputBorder(
+                borderSide: BorderSide(color: widget.borderColor),
+              ),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: widget.borderColor),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: widget.borderColor),
+              ),
+              errorText: _showError ? 'Please select a location from the dropdown' : null,
+              errorStyle: GoogleFonts.lexend(
+                fontSize: 12,
+                color: Colors.red,
+              ),
+              suffixIcon: widget.controller.text.isNotEmpty
+                  ? IconButton(
+                icon: const Icon(Icons.clear, size: 18),
+                onPressed: () {
+                  widget.controller.clear();
+                  _isValidSelection = false;
+                  _lastValidValue = '';
+                  _placesList = [];
+                  _showError = false;
+                  setState(() {});
+                  if (widget.onChange != null) {
+                    widget.onChange!('');
+                  }
+                },
+              )
+                  : null,
+            ),
+            onChanged: (value) {
+              print('onChanged: $value');
+              // When user types, it's no longer a validated selection
+              // unless it matches the last valid value
+              _isValidSelection = (value == _lastValidValue);
+              _showError = false;
+
+              if (widget.onChange != null) {
+                widget.onChange!(value);
               }
-            }
-          });
-        },
-        validator: (value) {
-          if (widget.onValidate != null) {
-            return widget.onValidate!(value);
-          }
-          return null;
-        },
+
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(const Duration(milliseconds: 500), () {
+                if (value.isNotEmpty) {
+                  _getPlaceSuggestions(value);
+                } else {
+                  setState(() {
+                    _placesList = [];
+                  });
+                  if (_showOverlay) {
+                    _overlayEntry?.markNeedsBuild();
+                  }
+                }
+              });
+            },
+            validator: _validateInput,
+            onFieldSubmitted: (value) {
+              // When user submits, check if it's a valid selection
+              if (!_isValidSelection && value.isNotEmpty) {
+                setState(() {
+                  _showError = true;
+                  // Restore last valid value if available
+                  if (_lastValidValue.isNotEmpty) {
+                    widget.controller.text = _lastValidValue;
+                    _isValidSelection = true;
+                    if (widget.onChange != null) {
+                      widget.onChange!(_lastValidValue);
+                    }
+                  }
+                });
+              }
+            },
+          )
+        ],
       ),
     );
   }

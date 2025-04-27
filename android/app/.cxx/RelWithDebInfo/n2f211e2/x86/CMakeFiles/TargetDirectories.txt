@@ -1,0 +1,2 @@
+/Users/purushoth/Desktop/Purushoth/planet_combo/android/app/.cxx/RelWithDebInfo/n2f211e2/x86/CMakeFiles/edit_cache.dir
+/Users/purushoth/Desktop/Purushoth/planet_combo/android/app/.cxx/RelWithDebInfo/n2f211e2/x86/CMakeFiles/rebuild_cache.dir

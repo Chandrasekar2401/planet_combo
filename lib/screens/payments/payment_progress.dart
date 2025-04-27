@@ -11,13 +11,20 @@ import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/controllers/applicationbase_controller.dart';
 import 'package:get/get.dart';
 import 'package:planetcombo/screens/dashboard.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../controllers/horoscope_services.dart';
+import '../predictions/predictions.dart';
+import '../services/horoscope_services.dart';
 
 class PaymentProgressPage extends StatefulWidget {
+  final String paymentType;
   final String paymentReferenceNumber;
   final Function(String) onPaymentComplete;
 
   const PaymentProgressPage({
     super.key,
+    required this.paymentType,
     required this.paymentReferenceNumber,
     required this.onPaymentComplete,
   });
@@ -31,13 +38,27 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
   late Timer _timer;
   late Timer _redirectTimer;
   String _paymentStatus = 'Pending';
-  int _remainingSeconds = 240; // 5 minutes in seconds
+  int _remainingSeconds = 240; // 4 minutes in seconds
+  bool _canGoBack = true; // Allow back button by default
 
   final AppLoadController appLoadController =
   Get.put(AppLoadController.getInstance(), permanent: true);
 
   final ApplicationBaseController applicationBaseController =
   Get.put(ApplicationBaseController.getInstance(), permanent: true);
+
+  final HoroscopeServiceController horoscopeServiceController =
+  Get.put(HoroscopeServiceController.getInstance(), permanent: true);
+
+  String paymentResponse(String paymentType){
+    if(paymentType == 'horoscope'){
+      return 'Payment successful, Your horoscope will be ready in 24-36 hours';
+    }else if(paymentType == 'daily'){
+      return 'Payment successful, Your daily request created successfully';
+    }else{
+      return 'Payment successful, Your questions saved you will get notified once predictions ready';
+    }
+  }
 
   @override
   void initState() {
@@ -60,7 +81,7 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
         } else {
           _redirectTimer.cancel();
           _timer.cancel();
-          _redirectToDashboard();
+          _showTimeoutDialog();
         }
       });
     });
@@ -80,62 +101,186 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
       "Accept": "application/json",
       "token": appLoadController.loggedUserData.value.token!
     };
-    final response = await http.get(
-        Uri.parse(APIEndPoints.paymentStatusCheck+widget.paymentReferenceNumber),
-        headers: headers
-    );
+    try {
+      final response = await http.get(
+          Uri.parse(APIEndPoints.paymentStatusCheck+widget.paymentReferenceNumber),
+          headers: headers
+      );
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        _paymentStatus = data['status'];
-      });
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _paymentStatus = data['status'];
+        });
 
-      if (_paymentStatus.toLowerCase().compareTo('Completed'.toLowerCase()) == 0 || _paymentStatus.toLowerCase().compareTo('Success'.toLowerCase()) == 0 ) {
-        _timer.cancel();
-        _redirectTimer.cancel();
-        _showPaymentCompleteToast();
-        widget.onPaymentComplete(_paymentStatus);
-      }else if(_paymentStatus.toLowerCase() == 'Cancelled' || _paymentStatus.toLowerCase() == 'Failed' ){
-        _timer.cancel();
-        _redirectTimer.cancel();
-        _showFailedToast();
-        widget.onPaymentComplete(_paymentStatus);
+        if (_paymentStatus.toLowerCase() == 'completed' || _paymentStatus.toLowerCase() == 'success') {
+          _timer.cancel();
+          _redirectTimer.cancel();
+          setState(() {
+            _canGoBack = false; // Prevent going back after success
+          });
+          _showPaymentCompleteToast();
+          widget.onPaymentComplete(_paymentStatus);
+        } else if (_paymentStatus.toLowerCase() == 'cancelled' || _paymentStatus.toLowerCase() == 'failed') {
+          _timer.cancel();
+          _redirectTimer.cancel();
+          _showFailedToast();
+          widget.onPaymentComplete(_paymentStatus);
+        }
       }
-    } else {
-      print('Failed to check payment status');
+    } catch (e) {
+      print('Failed to check payment status: $e');
     }
   }
 
-  void _showPaymentCompleteToast() {
-    CustomDialog.okActionAlert(context, 'Your Request Saved Successfully, Our Team Revert Shortly', 'OK', true, 14, (){
+  void _showPaymentCompleteToast() async{
+    final prefs = await SharedPreferences.getInstance();
+    CustomDialog.okActionAlert(context, paymentResponse(widget.paymentType), 'OK', true, 14, (){
       applicationBaseController.updateHoroscopeUiList();
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => Dashboard()),
-            (Route<dynamic> route) => false,
-      );
+      if(widget.paymentType == 'horoscope'){
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HoroscopeServices()),
+              (Route<dynamic> route) => false,
+        );
+      }else{
+        String? hid = prefs.getString('paymentHid');
+        _getUserPredictions(hid!);
+      }
+
     });
   }
 
+  Future<void> _getUserPredictions(String hid) async {
+    horoscopeServiceController.isLoading.value = true;
+    CustomDialog.showLoading(context, 'Please wait');
+    try {
+      bool result = await horoscopeServiceController.getUserPredictions(hid)
+          .timeout(const Duration(seconds: 30));
+      print('API Result: $result'); // Debug log
+
+      if (mounted) {
+        CustomDialog.cancelLoading(context);
+        horoscopeServiceController.isLoading.value = false;
+
+        if (result == true) {
+          print('Navigating to Predictions');
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const Predictions()),
+                (Route<dynamic> route) => false,
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No prediction data available'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } on TimeoutException catch (_) {
+      if (mounted) {
+        CustomDialog.cancelLoading(context);
+        horoscopeServiceController.isLoading.value = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error: Request timed out, please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        CustomDialog.cancelLoading(context);
+        horoscopeServiceController.isLoading.value = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${error.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   void _showFailedToast() {
-    CustomDialog.okActionAlert(context, 'Payment failed please try later', 'OK', false, 14, (){
-      applicationBaseController.updateHoroscopeUiList();
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => Dashboard()),
-            (Route<dynamic> route) => false,
-      );
+    CustomDialog.okActionAlert(context, 'Payment failed please try again', 'OK', false, 14, (){
+      Navigator.pop(context); // Go back to previous screen instead of dashboard
     });
   }
 
-  void _redirectToDashboard() {
-    applicationBaseController.updateHoroscopeUiList();
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => Dashboard()),
-          (Route<dynamic> route) => false,
+  void _showTimeoutDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Payment Time Expired'),
+          content: const Text('The payment session has timed out. Would you like to try again or return to the previous screen?'),
+          actions: [
+            TextButton(
+              child: const Text('Return'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop(); // Go back to previous screen
+              },
+            ),
+            TextButton(
+              child: Text('Try Again'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                // Reset timers and status to try again
+                setState(() {
+                  _remainingSeconds = 240;
+                  _paymentStatus = 'Pending';
+                });
+                _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+                  _checkPaymentStatus();
+                });
+                _redirectTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+                  setState(() {
+                    if (_remainingSeconds > 0) {
+                      _remainingSeconds--;
+                    } else {
+                      _redirectTimer.cancel();
+                      _timer.cancel();
+                      _showTimeoutDialog();
+                    }
+                  });
+                });
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _confirmCancel() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Cancel Payment?'),
+          content: Text('Are you sure you want to cancel this payment process?'),
+          actions: [
+            TextButton(
+              child: Text('No'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Yes'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // Go back to previous screen
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -147,12 +292,23 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
+    return WillPopScope(
+      onWillPop: () async {
+        if (_canGoBack) {
+          _confirmCancel();
+          return false;
+        }
+        return false; // Prevent back navigation after successful payment
+      },
       child: Scaffold(
         appBar: GradientAppBar(
-          colors: const [Color(0xFFf2b20a), Color(0xFFf34509)], centerTitle: true,
-          title:  "Payment Progress",
+          colors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
+          centerTitle: true,
+          title: "Payment Progress",
+          leading: _canGoBack ? IconButton(
+            icon: Icon(Icons.chevron_left_rounded, size: 21),
+            onPressed: _confirmCancel,
+          ) : null,
         ),
         body: Center(
           child: Column(
@@ -183,7 +339,7 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
                     ],
                   ),
                   child: Center(
-                    child: appLoadController.loggedUserData.value.ucurrency!.toLowerCase().compareTo('INR'.toLowerCase()) == 0 ?
+                    child: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr' ?
                     SizedBox(height: 35, child: SvgPicture.asset('assets/svg/upi-icon.svg')) :
                     SizedBox(height: 40, child: SvgPicture.asset('assets/svg/stripe.svg')),
                   ),
@@ -197,7 +353,15 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
               const SizedBox(height: 20),
               Text(
                 'Status: $_paymentStatus',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: _paymentStatus.toLowerCase() == 'pending'
+                      ? Colors.orange
+                      : _paymentStatus.toLowerCase() == 'completed' || _paymentStatus.toLowerCase() == 'success'
+                      ? Colors.green
+                      : Colors.red,
+                ),
               ),
               SizedBox(height: 20),
               Text(
@@ -215,12 +379,18 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
                   style: TextStyle(fontSize: 16),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
               Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40),
                   child: GestureDetector(
-                      onTap: _redirectToDashboard,
-                      child: commonText(text: 'If You are facing any Issue, Please click here for dashboard', color: Colors.blue, textDecoration: TextDecoration.underline, fontSize: 12))
+                      onTap: () => _confirmCancel(),
+                      child: commonText(
+                          text: 'Cancel payment and return',
+                          color: Colors.blue,
+                          textDecoration: TextDecoration.underline,
+                          fontSize: 14
+                      )
+                  )
               ),
             ],
           ),

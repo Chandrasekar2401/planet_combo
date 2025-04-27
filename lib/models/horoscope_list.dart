@@ -76,6 +76,8 @@ class HoroscopesList {
     this.timezone,
     this.recttifiedTImeString,
     this.senderEmail,
+    this.requestId,
+    this.amount
 });
   String? huserid;
   String? hid;
@@ -147,7 +149,8 @@ class HoroscopesList {
   String? timezone;
   String? recttifiedTImeString;
   String? senderEmail;
-
+  int? requestId;
+  double? amount;
   factory HoroscopesList.fromJson(Map<String, dynamic> json) => HoroscopesList(
     huserid: _parseString(json["huserid"] ?? json["HUSERID"]),
     hid: _parseString(json["hid"] ?? json["HID"]),
@@ -219,6 +222,8 @@ class HoroscopesList {
     timezone: _parseString(json["timezone"] ?? json["TIMEZONE"]),
     recttifiedTImeString: _parseString(json["recttifiedtimestring"] ?? json["RecttifiedTImeString"]),
     senderEmail: _parseString(json["senderemail"] ?? json["senderEmail"]),
+    requestId: json["requestId"] ?? 0,
+    amount: json["amount"] ?? 0,
   );
 
   // Helper methods to parse different types to String or double
@@ -306,5 +311,7 @@ class HoroscopesList {
     "timezone": timezone,
     "recttifiedtimestring": recttifiedTImeString,
     "senderemail": senderEmail,
+    "requestId":requestId,
+    "amount": amount
   };
 }

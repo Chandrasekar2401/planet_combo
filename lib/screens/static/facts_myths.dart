@@ -108,12 +108,12 @@ class _FactsMythsState extends State<FactsMyths> with TickerProviderStateMixin {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Color(0xFF2D1B69),
-                Color(0xFF6A1B9A),
-                Color(0xFF4A148C),
-                Color(0xFF1A1035),
+                Color(0xFFE6A43F), // Light orange/amber (top)
+                Color(0xFFE67E22), // Medium orange
+                Color(0xFFDD6B20), // Dark orange
+                Color(0xFFC05621), // Deep orange/brown (bottom)
               ],
-              stops: [0.0, 0.4, 0.7, 1.0],
+              stops: [0.0, 0.3, 0.7, 1.0],
             ),
           ),
           child: SafeArea(
@@ -163,9 +163,9 @@ class _FactsMythsState extends State<FactsMyths> with TickerProviderStateMixin {
                 child: ShaderMask(
                   shaderCallback: (bounds) => const LinearGradient(
                     colors: [
-                      Color(0xFFFFD700),
-                      Color(0xFFFFC107),
-                      Color(0xFFFFD700),
+                      Colors.white,
+                      Color(0xFFFFF9C4),
+                      Colors.white,
                     ],
                   ).createShader(bounds),
                   child: commonBoldText(
@@ -177,17 +177,18 @@ class _FactsMythsState extends State<FactsMyths> with TickerProviderStateMixin {
                   ),
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.home_outlined,
-                    color: Colors.white, size: 28),
-                onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => Dashboard()),
-                        (Route<dynamic> route) => false,
-                  );
-                },
-              ),
+              const SizedBox()
+              // IconButton(
+              //   icon: const Icon(Icons.home_outlined,
+              //       color: Colors.white, size: 28),
+              //   onPressed: () {
+              //     Navigator.pushAndRemoveUntil(
+              //       context,
+              //       MaterialPageRoute(builder: (context) => Dashboard()),
+              //           (Route<dynamic> route) => false,
+              //     );
+              //   },
+              // ),
             ],
           ),
         ],
@@ -205,19 +206,19 @@ class _FactsMythsState extends State<FactsMyths> with TickerProviderStateMixin {
         children: [
           _buildFactCard(
             'Fact#1.',
-            "Scientifically, it is not possible to determine from a horoscope whether the chart owner is deceased or alive. The app assumes that the chart owner is alive and seeks guidance.",
+            "Scientifically, it is not possible to determine from a horoscope whether the horoscope owner is deceased or alive. The app assumes that the horoscope owner is alive and seeks guidance.",
             isMobile,
           ),
           SizedBox(height: isMobile ? 16 : 20),
           _buildFactCard(
             'Fact#2.',
-            "According to experts, astrology is a predictive science that isn't purely scientific. This app demonstrates that its predictions rely on two key factors: a) planetary calculations based on the Ephemeris supplied by NASA, and b) a prediction engine developed using chart and transitory positions following event rules. Notably, there is no manual intervention, aligning with the universality of methods across charts.",
+            "According to experts, astrology is a predictive science that isn't purely scientific. This app demonstrates that its predictions rely on two key factors: a) planetary calculations based on the Ephemeris supplied by NASA, and b) a prediction engine developed using horoscope and transitory positions following event rules. Notably, there is no manual intervention, aligning with the universality of methods across horoscopes.",
             isMobile,
           ),
           SizedBox(height: isMobile ? 16 : 20),
           _buildFactCard(
             'Fact#3.',
-            "Planet Combo has developed a birth time adjustment methodology that aligns effectively with the predictive approach. Accurate data is crucial for chart generation; otherwise, predictions may be inaccurate. PLANETCOMBO offers a 30-day free service to verify predictions. Once validated, the chart is certified for full use.",
+            "Planet Combo has developed a birth time adjustment methodology that aligns effectively with the predictive approach. Accurate data is crucial for horoscope generation; otherwise, predictions may be inaccurate. PLANETCOMBO offers a 30-day free service to verify predictions. Once validated, the horoscope is certified for full use.",
             isMobile,
           ),
           SizedBox(height: isMobile ? 16 : 20),
@@ -229,7 +230,7 @@ class _FactsMythsState extends State<FactsMyths> with TickerProviderStateMixin {
           SizedBox(height: isMobile ? 16 : 20),
           _buildFactCard(
             'Fact#5.',
-            "Can the PLANETCOMBO app be used without birth details? The answer is NO. However, PLANETCOMBO will try to create a chart based on past life events and explore options for generating the chart. Even in such cases, having the place and date is critical, and efforts will be made to determine the exact time.",
+            "Can the PLANETCOMBO app be used without birth details? The answer is NO. However, PLANETCOMBO will try to create a horoscope based on past life events and explore options for generating the horoscope. Even in such cases, having the place and date is critical, and efforts will be made to determine the exact time.",
             isMobile,
           ),
         ],
@@ -241,14 +242,11 @@ class _FactsMythsState extends State<FactsMyths> with TickerProviderStateMixin {
     return Container(
       padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
-        border: Border.all(
-          color: Colors.amber.withOpacity(0.3),
-        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.amber.withOpacity(0.1),
+            color: const Color(0xFFE67E22).withOpacity(0.2),
             blurRadius: isMobile ? 15 : 20,
             spreadRadius: isMobile ? 3 : 5,
           ),
@@ -257,26 +255,17 @@ class _FactsMythsState extends State<FactsMyths> with TickerProviderStateMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [
-                Color(0xFFFFD700),
-                Color(0xFFFFC107),
-                Color(0xFFFFD700),
-              ],
-            ).createShader(bounds),
-            child: commonBoldText(
-              text: title,
-              fontSize: isMobile ? 20 : 24,
-              color: Colors.white,
-            ),
+          commonBoldText(
+            text: title,
+            fontSize: isMobile ? 20 : 24,
+            color: const Color(0xFF6A1B9A),
           ),
           SizedBox(height: isMobile ? 12 : 16),
           Text(
             content,
             style: GoogleFonts.lexend(
               fontSize: isMobile ? 14 : 16,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.black87,
               height: 1.6,
             ),
           ),

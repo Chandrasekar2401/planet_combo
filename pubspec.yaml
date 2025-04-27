@@ -48,7 +48,7 @@ dependencies:
   firebase_database: ^11.1.4
   youtube_player_iframe: ^5.2.1
   encrypt: ^5.0.3
-  payu_checkoutpro_flutter: ^1.3.0
+#  payu_checkoutpro_flutter: ^1.3.0
 
 dev_dependencies:
   build_runner: ^2.4.0

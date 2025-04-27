@@ -68,7 +68,7 @@ class _AddMessagesState extends State<AddMessages> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              commonText(fontSize: 12, text: 'Please do not use this option for asking predictions. This option is used by us to communicate any issues in chart generation.', color: Colors.grey),
+              commonText(fontSize: 12, text: 'Please do not use this option for asking predictions. This option is used by us to communicate any issues in horoscope generation.', color: Colors.grey),
               SizedBox(height: 5),
               commonBoldText(text: 'Horoscope'),
               SizedBox(height: 20),

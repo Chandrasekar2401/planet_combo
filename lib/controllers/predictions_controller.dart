@@ -83,7 +83,7 @@ class PredictionsController extends GetxController {
       if (jsonBody['status'] == 'Success') {
         if (jsonBody['message'] == "No data found") {
           CustomDialog.okActionAlert(context,
-              "Teams reviewing. Please stand by.",
+              "Your life guidance answers are being carefully prepared. Please check back soon.",
               'Ok', true, 14, () async {
                 Navigator.pop(context);
               });

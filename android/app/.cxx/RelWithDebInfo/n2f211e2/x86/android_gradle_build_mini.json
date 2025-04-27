@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/purushoth/development/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/purushoth/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/purushoth/Desktop/Purushoth/planet_combo/android/app/.cxx/RelWithDebInfo/n2f211e2/x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/purushoth/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/purushoth/Desktop/Purushoth/planet_combo/android/app/.cxx/RelWithDebInfo/n2f211e2/x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

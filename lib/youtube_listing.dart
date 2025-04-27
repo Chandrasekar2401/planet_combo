@@ -21,8 +21,8 @@ class _YouTubeVideosPageState extends State<YouTubeVideosPage> {
     },
     {
       'id': 'pupzTEBZWeI',
-      'title': 'How to create a chart | Planetcombo.com',
-      'description': 'Learn how to easily crate a chart in to Planetcombo.com. A step-by-step tutorial',
+      'title': 'How to create a horoscope | Planetcombo.com',
+      'description': 'Learn how to easily crate a horoscope in to Planetcombo.com. A step-by-step tutorial',
       'thumbnail': 'https://static.vecteezy.com/system/resources/thumbnails/005/048/106/small/black-and-yellow-grunge-modern-thumbnail-background-free-vector.jpg',
     },
     {

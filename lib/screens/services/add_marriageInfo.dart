@@ -37,7 +37,7 @@ class _AddMarriageInfoState extends State<AddMarriageInfo> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: selectedMarriageDate,
-      firstDate: DateTime(1920),
+      firstDate: DateTime(addTwelveYears(addHoroscopeController.addHoroscopeBirthSelectedDate!.value)),
       lastDate: DateTime.now(),
       locale: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'usd' ? const Locale('en', 'US') : const Locale('en', 'GB'),
     );
@@ -61,6 +61,10 @@ class _AddMarriageInfoState extends State<AddMarriageInfo> {
         selectedMarriageTime = picked;
       });
     }
+  }
+
+  int addTwelveYears(DateTime date) {
+    return date.year + 12;
   }
 
   void _resetMarriageDate() {
@@ -142,7 +146,7 @@ class _AddMarriageInfoState extends State<AddMarriageInfo> {
                         DatePicker.showDatePicker(
                           context,
                           showTitleActions: true,
-                          minTime: DateTime(1920),
+                          minTime: DateTime(addTwelveYears(addHoroscopeController.addHoroscopeBirthSelectedDate!.value)),
                           maxTime: DateTime.now(),
                           onChanged: (date) {
                             print('change $date');

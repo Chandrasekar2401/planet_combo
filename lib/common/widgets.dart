@@ -121,16 +121,43 @@ class GradientButton extends StatelessWidget {
   final Color? iconColor;
   final double? materialIconSize;
   final double? buttonHeight;
+  final bool isDisabled; // New parameter for disabled state
 
-  GradientButton({super.key, this.buttonHeight,  required this.buttonColors,this.iconColor, this.materialIconSize, required this.title,required this.textColor, required this.onPressed, this.materialIcon});
+  GradientButton({
+    super.key,
+    this.buttonHeight,
+    required this.buttonColors,
+    this.iconColor,
+    this.materialIconSize,
+    required this.title,
+    required this.textColor,
+    required this.onPressed,
+    this.materialIcon,
+    this.isDisabled = false, // Default to enabled
+  });
 
   final GlobalKey _buttonPositionKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
+    // Generate disabled colors (grayed out) if button is disabled
+    List<Color> actualButtonColors = isDisabled
+        ? [Colors.grey.shade400, Colors.grey.shade500]
+        : buttonColors;
+
+    Color actualTextColor = isDisabled
+        ? Colors.grey.shade200
+        : textColor;
+
+    Color actualIconColor = isDisabled
+        ? Colors.grey.shade200
+        : (iconColor ?? Colors.white);
+
     return ElevatedButton(
       key: _buttonPositionKey,
-      onPressed: () {
+      onPressed: isDisabled
+          ? null // Set to null when disabled to prevent standard elevation animation
+          : () {
         RenderBox? renderBox = _buttonPositionKey.currentContext!.findRenderObject() as RenderBox?;
         if (renderBox != null) {
           Offset offset = renderBox.localToGlobal(Offset.zero);
@@ -144,7 +171,7 @@ class GradientButton extends StatelessWidget {
           ),
         ),
         padding: WidgetStateProperty.all<EdgeInsetsGeometry>(
-          const EdgeInsets.all(4),
+          const EdgeInsets.all(8),
         ),
         backgroundColor: WidgetStateProperty.all<Color>(Colors.transparent),
         foregroundColor: WidgetStateProperty.all<Color>(Colors.white),
@@ -161,14 +188,16 @@ class GradientButton extends StatelessWidget {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.5),
-              spreadRadius: 2,
+              color: isDisabled
+                  ? Colors.grey.withOpacity(0.3) // Lighter shadow for disabled buttons
+                  : Colors.grey.withOpacity(0.5),
+              spreadRadius: isDisabled ? 1 : 2,
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),
           ],
           gradient: LinearGradient(
-            colors: buttonColors,
+            colors: actualButtonColors,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -183,14 +212,14 @@ class GradientButton extends StatelessWidget {
                   const SizedBox(width: 5),
                   Icon(
                     materialIcon,
-                    color: iconColor ?? Colors.white,
+                    color: actualIconColor,
                     size: materialIconSize ?? 16,
                   ),
                 ],
               ),
             Padding(
               padding: const EdgeInsets.fromLTRB(6, 0, 12, 0),
-              child: commonBoldText(text: title, color: textColor, fontSize: 12),
+              child: commonBoldText(text: title, color: actualTextColor, fontSize: 11),
             ),
           ],
         ),

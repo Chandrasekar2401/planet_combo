@@ -25,12 +25,25 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
   Get.put(AppLoadController.getInstance(), permanent: true);
 
   Timer? _refreshTimer;
+  final RxList<PendingPaymentList> _filteredPayments = <PendingPaymentList>[].obs;
 
   @override
   void initState() {
     super.initState();
     _loadData();
     _startAutoRefresh();
+
+    // Set up listener to filter payments whenever the list changes
+    ever(applicationBaseController.pendingPaymentsList, (_) {
+      _filterPayments();
+    });
+  }
+
+  void _filterPayments() {
+    // Filter to only show payments with requestType = "7"
+    _filteredPayments.value = applicationBaseController.pendingPaymentsList
+        .where((payment) => payment.requestType.toString() == "7")
+        .toList();
   }
 
   void _startAutoRefresh() {
@@ -51,6 +64,7 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _filteredPayments.close();
     super.dispose();
   }
 
@@ -63,7 +77,7 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
           icon: const Icon(Icons.chevron_left_rounded, size: 21,),
         ),
         title: LocalizationController.getInstance()
-            .getTranslatedValue("Pending Payments"),
+            .getTranslatedValue("Horoscope Payments"),
         colors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
         centerTitle: true,
         actions: [
@@ -80,87 +94,108 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
         ],
       ),
       body: Obx(() {
-      // Show loading indicator
-      if (applicationBaseController.pendingPayment.value) {
-        return const Center(child: CircularProgressIndicator());
-      }
+        // Show loading indicator
+        if (applicationBaseController.pendingPayment.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-      // Show error if exists
-      if (applicationBaseController.pendingPaymentsError.value.isNotEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 70,
-                color: Colors.red[400],
-              ),
-              const SizedBox(height: 16),
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 24),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.red[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red[200]!),
+        // Show error if exists
+        if (applicationBaseController.pendingPaymentsError.value.isNotEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 70,
+                  color: Colors.red[400],
                 ),
-                child: Text(
-                  applicationBaseController.pendingPaymentsError.value,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.red[700],
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: _loadData,
-                icon: const Icon(Icons.refresh, color: Colors.white),
-                label: const Text(
-                  'Retry',
-                  style: TextStyle(color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFf34509),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
+                const SizedBox(height: 16),
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Text(
+                    applicationBaseController.pendingPaymentsError.value,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.red[700],
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.5,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _loadData,
+                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  label: const Text(
+                    'Retry',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFf34509),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Show empty state
+        if (_filteredPayments.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.hourglass_empty,
+                  size: 70,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  "No horoscope payments pending",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Show list of filtered payments
+        return RefreshIndicator(
+          onRefresh: _loadData,
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            // Use optimized list for large datasets
+            itemCount: _filteredPayments.length,
+            itemBuilder: (context, index) {
+              final payment = _filteredPayments[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: PaymentCard(payment: payment),
+              );
+            },
           ),
         );
-      }
-
-      // Show empty state
-      if (applicationBaseController.pendingPaymentsList.isEmpty) {
-        return const Center(child: Text("No pending payments"));
-      }
-
-      // Show list of payments
-      return RefreshIndicator(
-        onRefresh: _loadData,
-        child: ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: applicationBaseController.pendingPaymentsList.length,
-          itemBuilder: (context, index) {
-            final payment = applicationBaseController.pendingPaymentsList[index];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: PaymentCard(payment: payment),
-            );
-          },
-        ),
-      );
-    }),
+      }),
     );
   }
 }
@@ -175,28 +210,6 @@ class PaymentCard extends StatelessWidget {
 
   final AppLoadController appLoadController =
   Get.put(AppLoadController.getInstance(), permanent: true);
-
-  Color getRequestTypeColor(String type) {
-    switch (type) {
-      case "7":
-        return Colors.blue;
-      case "2":
-        return Colors.green;
-      default:
-        return Colors.orange;
-    }
-  }
-
-  String findReqType(String type) {
-    switch (type) {
-      case "7":
-        return "Chart Request";
-      case "2":
-        return "Daily Request";
-      default:
-        return "Special Request";
-    }
-  }
 
   String formatIndianRupees(double amount) {
     double roundedAmount = (amount * 100).round() / 100;
@@ -236,9 +249,9 @@ class PaymentCard extends StatelessWidget {
             // Left color indicator
             Container(
               width: 8,
-              decoration: BoxDecoration(
-                color: getRequestTypeColor(payment.requestType.toString()),
-                borderRadius: const BorderRadius.only(
+              decoration: const BoxDecoration(
+                color: Colors.blue, // Always blue for horoscope requests
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(12),
                   bottomLeft: Radius.circular(12),
                 ),
@@ -261,15 +274,13 @@ class PaymentCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: getRequestTypeColor(payment.requestType.toString())
-                                  .withOpacity(0.1),
+                              color: Colors.blue.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Text(
-                              findReqType(payment.requestType.toString()),
+                            child: const Text(
+                              "Horoscope Request",
                               style: TextStyle(
-                                color: getRequestTypeColor(
-                                    payment.requestType.toString()),
+                                color: Colors.blue,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
                               ),
@@ -285,7 +296,7 @@ class PaymentCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           DetailRow(
-                            label: 'Chart ID',
+                            label: 'Horoscope ID',
                             value: payment.hid.toString(),
                           ),
                           DetailRow(
@@ -327,13 +338,29 @@ class PaymentCard extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                '${payment.currency} ${formatIndianRupees(payment.totalAmount!)}',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  Text(
+                                    payment.currency!,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    formatIndianRupees(payment.totalAmount!),
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -361,6 +388,7 @@ class PaymentCard extends StatelessWidget {
                                       payment.requestId!,
                                       payment.totalAmount!,
                                       appLoadController.loggedUserData.value.token!,
+                                      'horoscope',
                                       context);
                                 }else if (appLoadController.loggedUserData!.value.ucurrency!
                                     .toLowerCase()
@@ -370,6 +398,7 @@ class PaymentCard extends StatelessWidget {
                                       payment.userId!,
                                       payment.requestId!,
                                       payment.totalAmount!,
+                                      'horoscope',
                                       appLoadController.loggedUserData.value.token!,
                                       context);
                                 } else {
@@ -377,6 +406,7 @@ class PaymentCard extends StatelessWidget {
                                       payment.userId!,
                                       payment.requestId!,
                                       payment.totalAmount!,
+                                      'horoscope',
                                       appLoadController.loggedUserData.value.token!,
                                       context);
                                 }

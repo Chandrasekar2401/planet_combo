@@ -148,25 +148,6 @@ class _MysticalPricingPageState extends State<PricingPage>
       onKeyEvent: _handleKeyEvent,
       autofocus: true,
       child: Scaffold(
-        appBar: isMobile ? AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: Padding(
-            padding: const EdgeInsets.fromLTRB(0,17, 0, 0),
-            child: IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios,
-                color: Colors.white,
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ),
-          // Remove default back button label
-          automaticallyImplyLeading: false,
-        ) : null,
-        // Make the body fill the screen minus the status bar
         extendBodyBehindAppBar: true,
         body: Container(
           decoration: const BoxDecoration(
@@ -174,29 +155,31 @@ class _MysticalPricingPageState extends State<PricingPage>
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Color(0xFF2D1B69),
-                Color(0xFF6A1B9A),
-                Color(0xFF4A148C),
-                Color(0xFF1A1035),
+                Color(0xFFE6A43F), // Light orange/amber (top)
+                Color(0xFFE67E22), // Medium orange
+                Color(0xFFDD6B20), // Dark orange
+                Color(0xFFC05621), // Deep orange/brown (bottom)
               ],
-              stops: [0.0, 0.4, 0.7, 1.0],
+              stops: [0.0, 0.3, 0.7, 1.0],
             ),
           ),
-          child: Scrollbar(
-            controller: _scrollController,
-            thumbVisibility: true,
-            trackVisibility: true,
-            thickness: 8,
-            radius: const Radius.circular(4),
-            child: SingleChildScrollView(
+          child: SafeArea(
+            child: Scrollbar(
               controller: _scrollController,
-              child: _buildAnimatedContent(
-                Column(
-                  children: [
-                    _buildTopSection(isMobile, horizontalPadding, titleFontSize),
-                    _buildPricingSection(isMobile, horizontalPadding),
-                    _buildBottomSection(isMobile, horizontalPadding),
-                  ],
+              thumbVisibility: true,
+              trackVisibility: true,
+              thickness: 8,
+              radius: const Radius.circular(4),
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                child: _buildAnimatedContent(
+                  Column(
+                    children: [
+                      _buildTopSection(isMobile, horizontalPadding, titleFontSize),
+                      _buildPricingSection(isMobile, horizontalPadding),
+                      _buildBottomSection(isMobile, horizontalPadding),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -226,7 +209,7 @@ class _MysticalPricingPageState extends State<PricingPage>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: Colors.amber.withOpacity(0.3),
+              color: Colors.white.withOpacity(0.3),
               width: small ? 1 : 2,
             ),
           ),
@@ -237,7 +220,7 @@ class _MysticalPricingPageState extends State<PricingPage>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: Colors.amber.withOpacity(0.2),
+              color: Colors.white.withOpacity(0.2),
               width: 1,
             ),
           ),
@@ -257,7 +240,7 @@ class _MysticalPricingPageState extends State<PricingPage>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.amber.withOpacity(0.2),
+                      color: Colors.white.withOpacity(0.2),
                       blurRadius: small ? 15 : 30,
                       spreadRadius: small ? 1 : 2,
                     ),
@@ -285,19 +268,40 @@ class _MysticalPricingPageState extends State<PricingPage>
       child: Column(
         children: [
           const SizedBox(height: 20),
-          ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [
-                Color(0xFFFFD700),
-                Color(0xFFFFC107),
-                Color(0xFFFFD700),
-              ],
-            ).createShader(bounds),
-            child: commonBoldText(
-              text: 'KNOW YOUR FUTURE',
-              fontSize: isMobile ? 24 : titleFontSize,
-              color: Colors.white,
-            ),
+          // Back button and title row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(
+                  Icons.chevron_left_rounded,
+                  color: Colors.white,
+                  size: 32,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              Expanded(
+                child: Center(
+                  child: ShaderMask(
+                    shaderCallback: (bounds) => const LinearGradient(
+                      colors: [
+                        Colors.white,
+                        Color(0xFFFFF9C4),
+                        Colors.white,
+                      ],
+                    ).createShader(bounds),
+                    child: commonBoldText(
+                      text: 'KNOW YOUR FUTURE',
+                      fontSize: isMobile ? 24 : titleFontSize,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              // Empty SizedBox to balance the row
+              SizedBox(width: 48),
+            ],
           ),
           const SizedBox(height: 40),
           Padding(
@@ -385,7 +389,7 @@ class _MysticalPricingPageState extends State<PricingPage>
           padding: EdgeInsets.only(top: 4, right: 12),
           child: Icon(
             Icons.auto_awesome,
-            color: Colors.amber,
+            color: Colors.white,
             size: 20,
           ),
         ),
@@ -405,7 +409,7 @@ class _MysticalPricingPageState extends State<PricingPage>
                     text: highlightText,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.amber,
+                      color: Colors.white,
                     ),
                   ),
                 if (remainingText != null)
@@ -430,8 +434,8 @@ class _MysticalPricingPageState extends State<PricingPage>
                 _buildPricingCard(
                   'Introductory offer',
                   kundliAmount(),
-                  ['Personalized Chart Generation', '30 Days Free Daily Prediction', 'Two life guidance questions'],
-                  Colors.purple,
+                  ['Personalized Horoscope Generation', '30 Days Free Daily Prediction', 'Two life guidance questions'],
+                  const Color(0xFFB7791F),
                   isMobile: true,
                 ),
                 const SizedBox(height: 20),
@@ -439,7 +443,7 @@ class _MysticalPricingPageState extends State<PricingPage>
                   'Daily Predictions',
                   dailyRequestAmount(),
                   ['90 days Daily predictions'],
-                  Colors.amber,
+                  const Color(0xFFB7791F),
                   isPopular: true,
                   isMobile: true,
                 ),
@@ -448,7 +452,7 @@ class _MysticalPricingPageState extends State<PricingPage>
                   'Life Guidance',
                   lifeGuidanceAmount(),
                   ['Two Life Guidance Questions'],
-                  Colors.purple,
+                  const Color(0xFFB7791F),
                   isMobile: true,
                 ),
               ],
@@ -462,8 +466,8 @@ class _MysticalPricingPageState extends State<PricingPage>
                   child: _buildPricingCard(
                     'Introductory offer',
                     kundliAmount(),
-                    ['Personalized Chart Generation', '30 Days Free Daily Prediction', 'Two life guidance questions'],
-                    Colors.purple,
+                    ['Personalized Horoscope Generation', '30 Days Free Daily Prediction', 'Two life guidance questions'],
+                    const Color(0xFFB7791F),
                   ),
                 ),
                 const SizedBox(width: 20),
@@ -472,7 +476,7 @@ class _MysticalPricingPageState extends State<PricingPage>
                     'Daily Predictions',
                     dailyRequestAmount(),
                     ['90 days Daily predictions'],
-                    Colors.amber,
+                    const Color(0xFFB7791F),
                     isPopular: true,
                   ),
                 ),
@@ -482,7 +486,7 @@ class _MysticalPricingPageState extends State<PricingPage>
                     'Life Guidance',
                     lifeGuidanceAmount(),
                     ['Two Life Guidance Questions'],
-                    Colors.purple,
+                    const Color(0xFFB7791F),
                   ),
                 ),
               ],
@@ -507,7 +511,7 @@ class _MysticalPricingPageState extends State<PricingPage>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.2),
+            color: const Color(0xFFE67E22).withOpacity(0.2),
             blurRadius: 20,
             spreadRadius: 5,
           ),
@@ -520,13 +524,13 @@ class _MysticalPricingPageState extends State<PricingPage>
           commonBoldText(
             text: title,
             fontSize: isMobile ? 20 : 24,
-            color: color,
+            color: const Color(0xFF6A1B9A),
           ),
           const SizedBox(height: 16),
           commonBoldText(
             text: currencyType() + price,
             fontSize: isMobile ? 32 : 40,
-            color: color,
+            color: const Color(0xFF6A1B9A),
           ),
           const SizedBox(height: 24),
           ...features.map((feature) => Padding(
@@ -534,7 +538,7 @@ class _MysticalPricingPageState extends State<PricingPage>
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.check_circle, color: color, size: isMobile ? 20 : 24),
+                Icon(Icons.check_circle, color: const Color(0xFF6A1B9A), size: isMobile ? 20 : 24),
                 const SizedBox(width: 8),
                 Expanded(
                   child: commonText(
@@ -563,7 +567,7 @@ class _MysticalPricingPageState extends State<PricingPage>
                 text: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'
                     ? ' - Pay securely with UPI'
                     : ' - Pay securely with Stripe',
-                color: Colors.purple,
+                color: const Color(0xFF6A1B9A),
                 fontSize: isMobile ? 12 : 14,
               ),
             ],
@@ -589,8 +593,8 @@ class _MysticalPricingPageState extends State<PricingPage>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.amber.withOpacity(0),
-                  Colors.amber,
+                  Colors.white.withOpacity(0),
+                  Colors.white,
                 ],
               ),
             ),
@@ -599,9 +603,9 @@ class _MysticalPricingPageState extends State<PricingPage>
           ShaderMask(
             shaderCallback: (bounds) => const LinearGradient(
               colors: [
-                Color(0xFFFFD700),
-                Color(0xFFFFC107),
-                Color(0xFFFFD700),
+                Colors.white,
+                Color(0xFFFFF9C4),
+                Colors.white,
               ],
             ).createShader(bounds),
             child: commonBoldText(
@@ -617,8 +621,8 @@ class _MysticalPricingPageState extends State<PricingPage>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.amber,
-                  Colors.amber.withOpacity(0),
+                  Colors.white,
+                  Colors.white.withOpacity(0),
                 ],
               ),
             ),
@@ -646,7 +650,7 @@ class _MysticalPricingPageState extends State<PricingPage>
                 ),
                 const SizedBox(height: 20),
                 _buildInfoCard(
-                  'Horoscope/Kundli',
+                  'Horoscope',
                   'North Indian and South Indian Formats available.',
                   Icons.psychology,
                   "",
@@ -685,7 +689,7 @@ class _MysticalPricingPageState extends State<PricingPage>
                       ),
                       const SizedBox(height: 20),
                       _buildInfoCard(
-                        'Horoscope/Kundli',
+                        'Horoscope',
                         'North Indian and South Indian Formats available.',
                         Icons.psychology,
                         "",
@@ -733,14 +737,14 @@ class _MysticalPricingPageState extends State<PricingPage>
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
-          color: Colors.amber.withOpacity(0.3),
+          color: Colors.white.withOpacity(0.3),
         ),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           imagePath == ""
-              ? Icon(icon, color: Colors.amber, size: isMobile ? 28 : 32)
+              ? Icon(icon, color: Colors.white, size: isMobile ? 28 : 32)
               : SizedBox(height: 40, child: SvgPicture.asset(imagePath!)),
           SizedBox(height: isMobile ? 12 : 16),
           commonBoldText(

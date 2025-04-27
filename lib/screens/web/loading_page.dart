@@ -18,7 +18,7 @@ class LoadingPage extends StatelessWidget {
         builder: (context, snapshot) {
           // Check if the future is still being processed
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
+            return const Center(
               child: CircularProgressIndicator(),
             );
           } else if (snapshot.hasError) {

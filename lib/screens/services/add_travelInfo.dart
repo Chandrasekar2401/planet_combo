@@ -39,7 +39,7 @@ class _AddTravelInfoState extends State<AddTravelInfo> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: selectedDate,
-      firstDate: DateTime(1920),
+      firstDate: DateTime(getYear(addHoroscopeController.addHoroscopeBirthSelectedDate!.value)),
       lastDate: DateTime.now(),
       locale: appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'usd' ? const Locale('en', 'US') : const Locale('en', 'GB'),
     );
@@ -49,6 +49,10 @@ class _AddTravelInfoState extends State<AddTravelInfo> {
         selectedDate = picked;
       });
     }
+  }
+
+  int getYear(DateTime date) {
+    return date.year + 0;
   }
 
   Future<void> _selectWebTime(BuildContext context) async {
@@ -127,7 +131,7 @@ class _AddTravelInfoState extends State<AddTravelInfo> {
                         DatePicker.showDatePicker(
                           context,
                           showTitleActions: true,
-                          minTime: DateTime(1920),
+                          minTime: DateTime(getYear(addHoroscopeController.addHoroscopeBirthSelectedDate!.value)),
                           maxTime: DateTime.now(),
                           onChanged: (date) {
                             print('change $date');

@@ -169,7 +169,7 @@ class _AddNativePhotoState extends State<AddNativePhoto> {
           ),
           child: Center(
             child: commonBoldText(
-              text: 'Upload Horoscope Profile Picture',
+              text: 'Upload Photo',
               textAlign: TextAlign.center,
               color: Colors.white,
               fontSize: 10,

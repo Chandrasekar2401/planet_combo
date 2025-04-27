@@ -40,13 +40,13 @@ class _PaymentDashboardState extends State<PaymentDashboard> {
         title: LocalizationController.getInstance().getTranslatedValue("Payment & Services"),
         colors: const [Color(0xFFf2b20a), Color(0xFFf34509)], centerTitle: true,
         actions: [
-          IconButton(onPressed: (){
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => Dashboard()),
-                  (Route<dynamic> route) => false,
-            );
-          }, icon: const Icon(Icons.home_outlined))
+          // IconButton(onPressed: (){
+          //   Navigator.pushAndRemoveUntil(
+          //     context,
+          //     MaterialPageRoute(builder: (context) => Dashboard()),
+          //         (Route<dynamic> route) => false,
+          //   );
+          // }, icon: const Icon(Icons.home_outlined))
         ],
       ),
       body: SingleChildScrollView(
@@ -83,7 +83,7 @@ class _PaymentDashboardState extends State<PaymentDashboard> {
                           const SizedBox(height: 10),
                           commonBoldText(fontSize: 19, color: Colors.white, text: LocalizationController.getInstance().getTranslatedValue("Welcome to Planet Combo") ),
                           SizedBox(height: 5),
-                          commonText(fontSize: 14, color: Colors.white,textAlign: TextAlign.center, text: LocalizationController.getInstance().getTranslatedValue("Planetary calculation on charts, Dasas and transits powered by True Astrology software"))
+                          commonText(fontSize: 14, color: Colors.white,textAlign: TextAlign.center, text: LocalizationController.getInstance().getTranslatedValue("Planetary calculation on horoscopes, Dasas and transits powered by True Astrology software"))
                         ],
                       ),
                     ),

@@ -165,9 +165,9 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
                 children: [
                   commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Demise of close relatives (if applicable)')),
                   const SizedBox(height: 20),
-                  commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Relationship with chart owner'), fontSize: 12, color: Colors.black87, textAlign: TextAlign.start),
+                  commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Relationship with horoscope owner'), fontSize: 12, color: Colors.black87, textAlign: TextAlign.start),
                   PrimaryStraightInputText(hintText:
-                  LocalizationController.getInstance().getTranslatedValue('Relationship with chart owner'),
+                  LocalizationController.getInstance().getTranslatedValue('Relationship with horoscope owner'),
                     controller: addHoroscopeController.relationShipWithOwner,
                     onValidate: (v) {
                       if (v == null || v.isEmpty) {
@@ -409,7 +409,7 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
                       if(addHoroscopeController.addSelectedTravelDate != null){"Date Of Travel": DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addSelectedTravelDate!.value)},
                       if(addHoroscopeController.addSelectedTravelTime != null){"Time Of Travel": DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addSelectedTravelTime!.value.hour, addHoroscopeController.addSelectedTravelTime!.value.minute))},
                       if(addHoroscopeController.whereDidYouTraveled != null && addHoroscopeController.whereDidYouTraveled.text != ''){"Place of Travel": addHoroscopeController.whereDidYouTraveled.text},
-                      if(addHoroscopeController.relationShipWithOwner != null && addHoroscopeController.relationShipWithOwner.text != ''){"Relationship with chart owner": addHoroscopeController.relationShipWithOwner.text},
+                      if(addHoroscopeController.relationShipWithOwner != null && addHoroscopeController.relationShipWithOwner.text != ''){"Relationship with horoscope owner": addHoroscopeController.relationShipWithOwner.text},
                       if(addHoroscopeController.addSelectedEventDate != null){"Date Of Event": DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addSelectedEventDate!.value)},
                       if(addHoroscopeController.addSelectedEventTime != null){"Time Of Event": DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addSelectedEventTime!.value.hour, addHoroscopeController.addSelectedEventTime!.value.minute))},
                       if(addHoroscopeController.eventPlace != null && addHoroscopeController.eventPlace.text != ''){"Place, State and Country of event": addHoroscopeController.eventPlace.text},
