@@ -213,16 +213,16 @@ class _SocialLoginState extends State<SocialLogin> {
                         onPressed: () => _handleGoogleSignIn(context),
                         iconUrl: 'assets/svg/google.svg'
                     ),
-                    const SizedBox(height: 30),
-                    fullLeftIconColorButton(
-                        title: 'Login with facebook',
-                        textColor: Colors.white,
-                        iconColor: Colors.white,
-                        buttonColor: appLoadController.facebookBlue,
-                        context: context,
-                        onPressed: () => SocialLoginController.loginWithFacebook(context),
-                        iconUrl: 'assets/svg/facebook-logo.svg'
-                    ),
+                    // const SizedBox(height: 30),
+                    // fullLeftIconColorButton(
+                    //     title: 'Login with facebook',
+                    //     textColor: Colors.white,
+                    //     iconColor: Colors.white,
+                    //     buttonColor: appLoadController.facebookBlue,
+                    //     context: context,
+                    //     onPressed: () => SocialLoginController.loginWithFacebook(context),
+                    //     iconUrl: 'assets/svg/facebook-logo.svg'
+                    // ),
                     const SizedBox(height: 80),
                   ],
                 ),

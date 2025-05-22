@@ -371,15 +371,15 @@ class _HomePageState extends State<WebHomePage> with SingleTickerProviderStateMi
                             // Only show Facebook login on mobile
                             if (!kIsWeb) ...[
                               const SizedBox(height: 20),
-                              fullLeftIconColorButton(
-                                title: 'Login with Facebook',
-                                textColor: Colors.white,
-                                iconColor: Colors.white,
-                                buttonColor: appLoadController.facebookBlue,
-                                context: context,
-                                onPressed: () => SocialLoginController.loginWithFacebook(context),
-                                iconUrl: 'assets/svg/facebook-logo.svg',
-                              ),
+                              // fullLeftIconColorButton(
+                              //   title: 'Login with Facebook',
+                              //   textColor: Colors.white,
+                              //   iconColor: Colors.white,
+                              //   buttonColor: appLoadController.facebookBlue,
+                              //   context: context,
+                              //   onPressed: () => SocialLoginController.loginWithFacebook(context),
+                              //   iconUrl: 'assets/svg/facebook-logo.svg',
+                              // ),
                             ],
                           ],
                         ),

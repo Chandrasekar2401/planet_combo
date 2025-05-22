@@ -49,8 +49,19 @@
        <key>NSAllowsArbitraryLoads</key>
        <true/>
     </dict>
+
+    <!-- Privacy Permissions - Based on pubspec dependencies -->
     <key>NSPhotoLibraryUsageDescription</key>
     <string>This app requires access to the photo library for profile images.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>This app needs camera access to take photos for your profile.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>This app uses your location to provide astrology location-based calculations and services.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>This app uses your location to provide astrology location-based calculations and services.</string>
+    <key>NSFaceIDUsageDescription</key>
+    <string>This app uses Face ID for secure authentication and login.</string>
+
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
     <key>UILaunchStoryboardName</key>
