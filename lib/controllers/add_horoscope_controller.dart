@@ -683,10 +683,10 @@ class AddHoroscopeController extends GetxController {
        var response = await APICallings.updateHoroscope(updateHoroscope: addNewHoroscope, token: appLoadController.loggedUserData!.value.token!);
        CustomDialog.cancelLoading(context);
        if(response.success == true){
-         CustomDialog.okActionAlert(context, 'Horoscope updated successfully', 'OK', true, 14, () {
+         CustomDialog.okActionAlert(context, 'Your data has been updated successfully', 'OK', true, 14, () {
            applicationBaseController.updateHoroscopeUiList();
            CustomDialog.showLoading(context, 'Please wait');
-           Future.delayed(Duration(seconds: 2), () {
+           Future.delayed(const Duration(seconds: 2), () {
              CustomDialog.cancelLoading(context);
              Navigator.pushAndRemoveUntil(
                context,

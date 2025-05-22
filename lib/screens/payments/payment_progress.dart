@@ -52,11 +52,11 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
 
   String paymentResponse(String paymentType){
     if(paymentType == 'horoscope'){
-      return 'Payment successful, Your horoscope will be ready in 24-36 hours';
+      return 'Payment successful. Your horoscope will be ready in 24-36 hours';
     }else if(paymentType == 'daily'){
-      return 'Payment successful, Your daily request created successfully';
+      return 'Payment successful. Your daily prediction request is created and you will be notified when it is ready';
     }else{
-      return 'Payment successful, Your questions saved you will get notified once predictions ready';
+      return 'Payment successful. Your questions are saved,and you will be notified when predictions are ready';
     }
   }
 

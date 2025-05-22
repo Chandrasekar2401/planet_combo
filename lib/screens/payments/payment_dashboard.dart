@@ -197,7 +197,7 @@ class _PaymentDashboardState extends State<PaymentDashboard> {
                                         children: [
                                           SvgPicture.asset('assets/svg/wallet.svg', width: 52,height: 52, color: appLoadController.appPrimaryColor,),
                                           const SizedBox(height: 12),
-                                          commonBoldText(text: LocalizationController.getInstance().getTranslatedValue("Pricing"),fontSize: 13, color: appLoadController.appPrimaryColor)
+                                          commonBoldText(text: LocalizationController.getInstance().getTranslatedValue("Pricing Plans"),fontSize: 13, color: appLoadController.appPrimaryColor)
                                         ],
                                       )
                                   ),

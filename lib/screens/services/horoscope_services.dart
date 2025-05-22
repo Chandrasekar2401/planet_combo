@@ -379,7 +379,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                       (Route<dynamic> route) => false,
                 );
               }, icon: const Icon(Icons.chevron_left_rounded),),
-              title: LocalizationController.getInstance().getTranslatedValue("Horoscope Services (${appLoadController.loggedUserData.value.username})"),
+              title: LocalizationController.getInstance().getTranslatedValue("Horoscope Services - ${appLoadController.loggedUserData.value.username}"),
               colors: const [Color(0xFFf2b20a), Color(0xFFf34509)], centerTitle: true,
               actions: [
                 Row(
@@ -619,7 +619,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                     context, MaterialPageRoute(builder: (context) => const PricingPage()));
                               },
                               child: commonText(
-                                text: "View our pricing plans",
+                                text: "Checkout our pricing plans",
                                 color: const Color(0xFF8A3FFC),
                                 fontSize: 14,
                                 textDecoration: TextDecoration.underline,
@@ -806,10 +806,16 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                               shape: BoxShape.circle,
                                                               border: Border.all(color: Colors.grey[300]!),
                                                             ),
-                                                            child: Icon(
-                                                              Icons.delete_outline,
-                                                              size: 12,
-                                                              color: Colors.red[400],
+                                                            child: const SizedBox(
+                                                              width: 14,
+                                                              height: 14,
+                                                              child: Center(
+                                                                child: Icon(
+                                                                  Icons.delete_outline,
+                                                                  size: 12,
+                                                                  color: Colors.red,
+                                                                ),
+                                                              ),
                                                             ),
                                                           ),
                                                         ),
@@ -833,7 +839,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                     fontSize: 11
                                                 ),
                                                 if(isPaid && applicationBaseController.horoscopeList[index].hstatus != '5')commonBoldText(
-                                                    text: 'Your Horoscope preparation is in progress',
+                                                    text: 'Horoscope is in progress',
                                                     color: Colors.green[600],
                                                     fontSize: 11
                                                 )
@@ -899,7 +905,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                                   text: LocalizationController
                                                                       .getInstance()
                                                                       .getTranslatedValue(
-                                                                      "90-day Prediction"),
+                                                                      "Daily Predictions - 90 days"),
                                                                   fontSize: 14),
                                                             ),
                                                             PopupMenuItem(
@@ -980,7 +986,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                                     text: LocalizationController
                                                                         .getInstance()
                                                                         .getTranslatedValue(
-                                                                        "90-day Prediction"),
+                                                                        "Daily Predictions - 90 days"),
                                                                     fontSize: 14),
                                                               ),
                                                               PopupMenuItem(
@@ -1265,7 +1271,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                               Navigator.pop(
                                                                   context);
                                                             },
-                                                            dialogMessage: 'Are you sure you want to delete this horoscope?',
+                                                            dialogMessage: 'Are you sure you want to delete?',
                                                             cancelText: 'No',
                                                             okText: 'Yes',
                                                             okAction: () {
@@ -1283,6 +1289,12 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                           );
                                                           break;
                                                         case 5:
+                                                          SharedPreferences prefs = await SharedPreferences.getInstance();
+                                                          await prefs.setString('paymentHid',
+                                                              applicationBaseController
+                                                                  .horoscopeList[index]
+                                                                  .hid!
+                                                          );
                                                           Navigator.push(
                                                             context,
                                                             MaterialPageRoute(

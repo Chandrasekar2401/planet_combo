@@ -10,17 +10,20 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/screens/payments/payment_dashboard.dart';
 import 'package:planetcombo/screens/payments/pricing.dart';
-import 'package:planetcombo/screens/profile/business_details.dart';
 import 'package:planetcombo/screens/profile/profile.dart';
 import 'package:planetcombo/screens/services/horoscope_services.dart';
-import 'package:planetcombo/screens/social_login.dart';
 import 'package:planetcombo/screens/static/facts_myths.dart';
+import 'package:planetcombo/screens/web/web_aboutus.dart';
+import 'package:planetcombo/screens/web/web_article.dart';
+import 'package:planetcombo/screens/web/web_contactUS.dart';
 import 'package:planetcombo/screens/web/web_home.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:planetcombo/screens/live_chat.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:planetcombo/youtube_listing.dart';
+import 'package:planetcombo/common/constant.dart';
+import 'package:planetcombo/screens/common/drawer.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -34,11 +37,14 @@ class _DashboardState extends State<Dashboard> {
   final double width = 32;
   final double height = 32;
   final String defaultAvatarAsset = 'assets/imgs/profile_avatar.png';
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  int _selectedDrawerIndex = 0;
 
   // Controllers
   final LocalizationController localizationController = Get.put(LocalizationController.getInstance(), permanent: true);
   final AppLoadController appLoadController = Get.put(AppLoadController.getInstance(), permanent: true);
   final AddHoroscopeController addHoroscopeController = Get.put(AddHoroscopeController.getInstance(), permanent: true);
+  final Constants constants = Constants();
 
   // Profile Image Builder with Error Handling
   Widget _buildNetworkImage(String imageUrl) {
@@ -168,11 +174,34 @@ class _DashboardState extends State<Dashboard> {
         appLoadController.userValue.value = false;
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => kIsWeb ? WebHomePage() : SocialLogin()),
+          MaterialPageRoute(builder: (context) => WebHomePage()),
               (route) => false,
         );
       },
     );
+  }
+
+  void _handleDrawerItemTap(int index) {
+    appLoadController.userValue.value = true;
+    setState(() {
+      _selectedDrawerIndex = index;
+    });
+
+    Navigator.of(context).pop(); // Close the drawer
+
+    switch (index) {
+      case 0: // Dashboard (already on this page)
+        break;
+      case 1: // Articles
+        Navigator.push(context, MaterialPageRoute(builder: (context) => buildWebArticle()));
+        break;
+      case 2: // About Us
+        Navigator.push(context, MaterialPageRoute(builder: (context) => buildWebAboutUs()));
+        break;
+      case 3: // Contact
+        Navigator.push(context, MaterialPageRoute(builder: (context) => buildWebContactUs()));
+        break;
+    }
   }
 
   @override
@@ -180,17 +209,29 @@ class _DashboardState extends State<Dashboard> {
     return PopScope(
       canPop: false,
       child: Scaffold(
+        key: _scaffoldKey,
+        drawer: DashboardDrawer(
+          onItemTap: _handleDrawerItemTap,
+          selectedIndex: _selectedDrawerIndex,
+          isLoggedIn: true,
+        ),
         appBar: GradientAppBar(
           leading: Builder(
-            builder: (context) => GestureDetector(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white),
+              onPressed: () {
+                _scaffoldKey.currentState?.openDrawer();
+              },
+            ),
+          ),
+          actions: [
+            GestureDetector(
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Profile())),
               child: Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: ClipOval(child: _buildNetworkImage(appLoadController.loggedUserData.value.userphoto!)),
               ),
             ),
-          ),
-          actions: [
             Padding(
               padding: const EdgeInsets.only(right: 10),
               child: Row(
@@ -243,10 +284,10 @@ class _DashboardState extends State<Dashboard> {
                           children: [
                             const SizedBox(height: 10),
                             commonBoldText(
-                              fontSize: 21,
-                              color: Colors.white,
-                              text:
-                              LocalizationController.getInstance().getTranslatedValue("Welcome to Planet Combo")
+                                fontSize: 21,
+                                color: Colors.white,
+                                text:
+                                LocalizationController.getInstance().getTranslatedValue("Welcome to Planet Combo")
                             ),
                             const SizedBox(height: 5),
                             Padding(
@@ -256,7 +297,7 @@ class _DashboardState extends State<Dashboard> {
                                 color: Colors.white,
                                 textAlign: TextAlign.center,
                                 text:
-                               LocalizationController.getInstance().getTranslatedValue(
+                                LocalizationController.getInstance().getTranslatedValue(
                                   "Planetary calculation on horoscopes, Dasas and transists powered by True Astrology software",
                                 ),
                               ),
@@ -265,38 +306,38 @@ class _DashboardState extends State<Dashboard> {
                             if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr')const SizedBox(height: 3),
                             if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr')
                               Center(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  SvgPicture.asset(
-                                    'assets/svg/email.svg',
-                                    height: 16,
-                                    width: 16,
-                                  ),
-                                  const SizedBox(width: 5),  // Small spacing between icon and text
-                                  commonText(
-                                    textAlign: TextAlign.center,
-                                    color: Colors.white,
-                                    text: LocalizationController.getInstance().getTranslatedValue("info@planetcombo.com"),
-                                    fontSize: 12,
-                                  ),
-                                  const SizedBox(width: 15),
-                                  SvgPicture.asset(
-                                    'assets/svg/whatsapp.svg',
-                                    height: 16,
-                                    width: 16,
-                                  ),
-                                  const SizedBox(width: 5),  // Small spacing between icon and text
-                                  commonText(
-                                    textAlign: TextAlign.center,
-                                    color: Colors.white,
-                                    text: LocalizationController.getInstance().getTranslatedValue("+91 9600031647"),
-                                    fontSize: 12,
-                                  ),
-                                ],
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    SvgPicture.asset(
+                                      'assets/svg/email.svg',
+                                      height: 16,
+                                      width: 16,
+                                    ),
+                                    const SizedBox(width: 5),  // Small spacing between icon and text
+                                    commonText(
+                                      textAlign: TextAlign.center,
+                                      color: Colors.white,
+                                      text: LocalizationController.getInstance().getTranslatedValue("info@planetcombo.com"),
+                                      fontSize: 12,
+                                    ),
+                                    const SizedBox(width: 15),
+                                    SvgPicture.asset(
+                                      'assets/svg/whatsapp.svg',
+                                      height: 16,
+                                      width: 16,
+                                    ),
+                                    const SizedBox(width: 5),  // Small spacing between icon and text
+                                    commonText(
+                                      textAlign: TextAlign.center,
+                                      color: Colors.white,
+                                      text: LocalizationController.getInstance().getTranslatedValue("+91 9600031647"),
+                                      fontSize: 12,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
                           ],
                         ),
                       ),
@@ -331,16 +372,16 @@ class _DashboardState extends State<Dashboard> {
                                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HoroscopeServices())),
                                   ),
                                   buildMenuItem(
-                                    iconPath: 'assets/svg/Profile_Update.svg',
-                                    text: "Profile",
-                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Profile())),
-                                  ),
-                                  buildMenuItem(
                                     iconPath: 'assets/svg/app.svg',
                                     text: "About Planetcombo",
                                     onTap: () =>     Navigator.push(
                                         context, MaterialPageRoute(builder: (context) => const FactsMyths())),
                                     showBorder: true,
+                                  ),
+                                  buildMenuItem(
+                                    iconPath: 'assets/svg/Profile_Update.svg',
+                                    text: "Profile",
+                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Profile())),
                                   ),
                                   buildMenuItem(
                                     iconPath: 'assets/svg/support.svg',
@@ -365,22 +406,22 @@ class _DashboardState extends State<Dashboard> {
                                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentDashboard())),
                                   ),
                                   buildMenuItem(
-                                    iconPath: 'assets/svg/youtube.svg',
-                                    text: "How to Use",
-                                    onTap: (){
-                                      Navigator.push(
-                                          context,
-                                          MaterialPageRoute(builder: (_) => const YouTubeVideosPage()));
-                                    }
-                                  ),
-                                  buildMenuItem(
                                     iconPath: 'assets/svg/wallet.svg',
-                                    text: "Pricing",
+                                    text: "Pricing Plans",
                                     onTap: (){
                                       Navigator.push(
                                           context, MaterialPageRoute(builder: (context) => const PricingPage()));
                                     },
                                     showBorder: true,
+                                  ),
+                                  buildMenuItem(
+                                      iconPath: 'assets/svg/youtube.svg',
+                                      text: "How to Use",
+                                      onTap: (){
+                                        Navigator.push(
+                                            context,
+                                            MaterialPageRoute(builder: (_) => const YouTubeVideosPage()));
+                                      }
                                   ),
                                   buildMenuItem(
                                     iconPath: 'assets/svg/Terms-conditions.svg',
@@ -399,17 +440,6 @@ class _DashboardState extends State<Dashboard> {
                                       }
                                     },
                                   )
-                                  // buildMenuItem(
-                                  //     iconPath: 'assets/svg/business.svg',
-                                  //     text: "Business Details",
-                                  //     onTap: (){
-                                  //       Navigator.push(
-                                  //         context,
-                                  //         MaterialPageRoute(builder: (context) => BusinessDetails()),
-                                  //       );
-                                  //     },
-                                  //   showBorder: false,
-                                  // ),
                                 ],
                               ),
                             ],
@@ -515,26 +545,6 @@ class _DashboardState extends State<Dashboard> {
                                   color: Colors.black,
                                   fontSize: 10,
                                 ),
-                                // const SizedBox(height: 8),
-                                // Row(
-                                //   children: [
-                                //     const Icon(Icons.email_outlined, color: Colors.black, size: 12),
-                                //     const SizedBox(width: 4),
-                                //     commonText(
-                                //       text: "info@planetcombo.com",
-                                //       color: Colors.black,
-                                //       fontSize: 10,
-                                //     ),
-                                //     const SizedBox(width: 16),
-                                //     const Icon(Icons.phone, color: Colors.black, size: 12),
-                                //     const SizedBox(width: 4),
-                                //     commonText(
-                                //       text: "+91 9600031647",
-                                //       color: Colors.black,
-                                //       fontSize: 10,
-                                //     ),
-                                //   ],
-                                // ),
                               ],
                             ),
                           ),
@@ -643,32 +653,6 @@ class _DashboardState extends State<Dashboard> {
                                 color: Colors.black,
                                 fontSize: 10,
                               ),
-                              // const SizedBox(height: 8),
-                              // Row(
-                              //   mainAxisAlignment: MainAxisAlignment.center,
-                              //   children: [
-                              //     const Icon(Icons.email_outlined, color: Colors.black, size: 12),
-                              //     const SizedBox(width: 4),
-                              //     commonText(
-                              //       text: "info@planetcombo.com",
-                              //       color: Colors.black,
-                              //       fontSize: 10,
-                              //     ),
-                              //   ],
-                              // ),
-                              // const SizedBox(height: 4),
-                              // Row(
-                              //   mainAxisAlignment: MainAxisAlignment.center,
-                              //   children: [
-                              //     const Icon(Icons.phone, color: Colors.black, size: 12),
-                              //     const SizedBox(width: 4),
-                              //     commonText(
-                              //       text: "+91 9600031647",
-                              //       color: Colors.black,
-                              //       fontSize: 10,
-                              //     ),
-                              //   ],
-                              // ),
                             ],
                           ),
                         ],

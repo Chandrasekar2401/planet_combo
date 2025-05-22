@@ -40,7 +40,7 @@ class _DateListPageState extends State<DateListPage> {
         if (predictionsController.isLoading.value) {
           return Center(child: CircularProgressIndicator());
         } else if (predictionsController.datesList.isEmpty) {
-          return Center(child: Text('No dates available'));
+          return const Center(child: Text('No available data'));
         } else {
           return ListView.builder(
             itemCount: predictionsController.datesList.length,

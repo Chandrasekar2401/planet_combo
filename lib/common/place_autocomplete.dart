@@ -31,54 +31,59 @@ class _PlaceAutocompleteInputState extends State<PlaceAutocompleteWebInput> {
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
   bool _isScriptLoaded = false;
-  bool _isValidSelection = false; // Track if the current text was selected from dropdown
-  String _lastValidValue = ''; // Store the last valid selection
+  bool _isValidSelection = false;
+  String _lastValidValue = '';
   bool _showError = false;
 
   @override
   void initState() {
     super.initState();
     _loadGooglePlacesScript();
-    _focusNode.addListener(() {
-      if (_focusNode.hasFocus) {
-        _showOverlay = true;
-        _showSuggestions();
-        // If text is not empty but was typed and not selected, show suggestions
-        if (widget.controller.text.isNotEmpty && !_isValidSelection) {
-          _getPlaceSuggestions(widget.controller.text);
-        }
-      } else {
-        Future.delayed(const Duration(milliseconds: 200), () {
-          _hideOverlay();
-          // Validate on focus lost
-          if (widget.controller.text.isNotEmpty && !_isValidSelection) {
-            setState(() {
-              _showError = true;
-              // Restore last valid value if available
-              if (_lastValidValue.isNotEmpty) {
-                widget.controller.text = _lastValidValue;
-                _isValidSelection = true;
-                if (widget.onChange != null) {
-                  widget.onChange!(_lastValidValue);
-                }
-              }
-            });
-          }
-        });
-      }
-    });
 
-    // If controller already has text (e.g. from editing a saved record)
-    // consider it a valid selection initially
+    // Initialize with existing value if present
     if (widget.controller.text.isNotEmpty) {
       _lastValidValue = widget.controller.text;
       _isValidSelection = true;
+    }
+
+    _focusNode.addListener(_handleFocusChange);
+  }
+
+  void _handleFocusChange() {
+    if (_focusNode.hasFocus) {
+      _showOverlay = true;
+      _showSuggestions();
+      // If text is not empty, show suggestions immediately
+      if (widget.controller.text.isNotEmpty) {
+        _getPlaceSuggestions(widget.controller.text);
+      }
+    } else {
+      // Short delay to allow selection to complete before hiding overlay
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _hideOverlay();
+
+        // Validate after focus lost
+        if (widget.controller.text.isNotEmpty && !_isValidSelection) {
+          setState(() {
+            _showError = true;
+            if (_lastValidValue.isNotEmpty) {
+              widget.controller.text = _lastValidValue;
+              _isValidSelection = true;
+              if (widget.onChange != null) {
+                widget.onChange!(_lastValidValue);
+              }
+            }
+          });
+        }
+      });
     }
   }
 
   void _loadGooglePlacesScript() {
     if (WebInterop.checkScript('google-places-script')) {
-      _isScriptLoaded = true;
+      setState(() {
+        _isScriptLoaded = true;
+      });
       return;
     }
 
@@ -86,7 +91,9 @@ class _PlaceAutocompleteInputState extends State<PlaceAutocompleteWebInput> {
       'google-places-script',
       'https://maps.googleapis.com/maps/api/js?key=AIzaSyDRX8p3QXbJtS6vVpNgelztCe2RAQBgN44&libraries=places',
           () {
-        _isScriptLoaded = true;
+        setState(() {
+          _isScriptLoaded = true;
+        });
       },
     );
   }
@@ -94,30 +101,28 @@ class _PlaceAutocompleteInputState extends State<PlaceAutocompleteWebInput> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _focusNode.removeListener(_handleFocusChange);
     _focusNode.dispose();
     _hideOverlay();
     super.dispose();
   }
 
   void _handleSelection(dynamic place) {
-    print('_handleSelection called');
     final selectedValue = place['description'] ?? '';
-    print('Selected value: $selectedValue');
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    setState(() {
       widget.controller.text = selectedValue;
-      // Mark as valid selection
       _isValidSelection = true;
       _lastValidValue = selectedValue;
       _showError = false;
+    });
 
-      print('Controller text updated to: ${widget.controller.text}');
+    if (widget.onChange != null) {
+      widget.onChange!(selectedValue);
+    }
 
-      if (widget.onChange != null) {
-        widget.onChange!(selectedValue);
-      }
-
-      setState(() {});
+    // Hide overlay and unfocus after a short delay to ensure selection is registered
+    Future.delayed(Duration(milliseconds: 100), () {
       _hideOverlay();
       _focusNode.unfocus();
     });
@@ -140,24 +145,39 @@ class _PlaceAutocompleteInputState extends State<PlaceAutocompleteWebInput> {
           child: Material(
             elevation: 4,
             child: Container(
-              constraints: const BoxConstraints(maxHeight: 200),
+              constraints: const BoxConstraints(maxHeight: 250),
               color: Colors.white,
-              child: ListView.builder(
+              child: _placesList.isEmpty
+                  ? Container(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Type to search locations',
+                  style: GoogleFonts.lexend(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+              )
+                  : ListView.builder(
                 padding: EdgeInsets.zero,
                 shrinkWrap: true,
                 itemCount: _placesList.length,
                 itemBuilder: (context, index) {
                   final place = _placesList[index];
-                  return GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      print('GestureDetector onTap called');
-                      _handleSelection(place);
-                    },
+                  return InkWell(
+                    onTap: () => _handleSelection(place),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16.0,
                         vertical: 12.0,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.grey.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
                       ),
                       child: Text(
                         place['description'] ?? '',
@@ -194,17 +214,16 @@ class _PlaceAutocompleteInputState extends State<PlaceAutocompleteWebInput> {
       autocompleteService,
       request,
           (results, status) {
-        if (status == 'OK') {
-          setState(() {
+        setState(() {
+          if (status == 'OK' && results != null) {
             _placesList = List.from(results as List);
-          });
-          if (_showOverlay) {
-            _overlayEntry?.markNeedsBuild();
-          }
-        } else {
-          setState(() {
+          } else {
             _placesList = [];
-          });
+          }
+        });
+
+        if (_showOverlay && _overlayEntry != null) {
+          _overlayEntry!.markNeedsBuild();
         }
       },
     );
@@ -267,25 +286,37 @@ class _PlaceAutocompleteInputState extends State<PlaceAutocompleteWebInput> {
                 fontSize: 12,
                 color: Colors.red,
               ),
-              suffixIcon: widget.controller.text.isNotEmpty
-                  ? IconButton(
-                icon: const Icon(Icons.clear, size: 18),
-                onPressed: () {
-                  widget.controller.clear();
-                  _isValidSelection = false;
-                  _lastValidValue = '';
-                  _placesList = [];
-                  _showError = false;
-                  setState(() {});
-                  if (widget.onChange != null) {
-                    widget.onChange!('');
-                  }
-                },
-              )
-                  : null,
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!_isScriptLoaded)
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(widget.borderColor),
+                      ),
+                    ),
+                  if (widget.controller.text.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () {
+                        widget.controller.clear();
+                        _isValidSelection = false;
+                        _lastValidValue = '';
+                        _placesList = [];
+                        _showError = false;
+                        setState(() {});
+                        if (widget.onChange != null) {
+                          widget.onChange!('');
+                        }
+                      },
+                    ),
+                ],
+              ),
             ),
             onChanged: (value) {
-              print('onChanged: $value');
               // When user types, it's no longer a validated selection
               // unless it matches the last valid value
               _isValidSelection = (value == _lastValidValue);
@@ -296,20 +327,33 @@ class _PlaceAutocompleteInputState extends State<PlaceAutocompleteWebInput> {
               }
 
               if (_debounce?.isActive ?? false) _debounce!.cancel();
-              _debounce = Timer(const Duration(milliseconds: 500), () {
+              _debounce = Timer(const Duration(milliseconds: 300), () {
                 if (value.isNotEmpty) {
                   _getPlaceSuggestions(value);
+                  if (!_showOverlay) {
+                    _showOverlay = true;
+                    _showSuggestions();
+                  }
                 } else {
                   setState(() {
                     _placesList = [];
                   });
-                  if (_showOverlay) {
-                    _overlayEntry?.markNeedsBuild();
+                  if (_showOverlay && _overlayEntry != null) {
+                    _overlayEntry!.markNeedsBuild();
                   }
                 }
               });
             },
             validator: _validateInput,
+            onTap: () {
+              if (!_showOverlay) {
+                _showOverlay = true;
+                _showSuggestions();
+                if (widget.controller.text.isNotEmpty) {
+                  _getPlaceSuggestions(widget.controller.text);
+                }
+              }
+            },
             onFieldSubmitted: (value) {
               // When user submits, check if it's a valid selection
               if (!_isValidSelection && value.isNotEmpty) {
@@ -326,7 +370,18 @@ class _PlaceAutocompleteInputState extends State<PlaceAutocompleteWebInput> {
                 });
               }
             },
-          )
+          ),
+          if (_isScriptLoaded == false)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Loading location service...',
+                style: GoogleFonts.lexend(
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
         ],
       ),
     );

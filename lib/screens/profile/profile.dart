@@ -115,12 +115,22 @@ class _ProfileState extends State<Profile> {
       );
     }
   }
+  
+  String fullLang(String lang){
+    if(lang == 'en'){
+      return 'English';
+    }else if(lang == 'ta'){
+      return 'Tamil';
+    }else{
+      return 'Hindi';
+    }
+  }
 
   @override
   void initState() {
     // TODO: implement initState
     profileController.profileEmail.text = appLoadController.loggedUserData.value.useremail!;
-    profileController.profileLanguage.text = appLoadController.loggedUserData.value.userpplang!;
+    profileController.profileLanguage.text = fullLang(appLoadController.loggedUserData.value.userpplang!);
     profileController.profilePaymentCurrency.text = profileCurrency(appLoadController.loggedUserData.value.ucurrency!);
     super.initState();
   }

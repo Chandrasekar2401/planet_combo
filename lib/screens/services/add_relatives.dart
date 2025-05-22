@@ -83,39 +83,310 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
   }
 
   void _showConfirmationPopup(BuildContext playContext) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWideScreen = screenWidth > 600; // Threshold for wide screen
+
+    // Group data by form type
+    List<Map<String, String>> personalInfoData = [];
+    List<Map<String, String>> marriageDetailsData = [];
+    List<Map<String, String>> childInfoData = [];
+    List<Map<String, String>> travelInfoData = [];
+    List<Map<String, String>> relativesInfoData = [];
+
+    // Personal Info data
+    if (addHoroscopeController.horoscopeName.text.isNotEmpty) {
+      personalInfoData.add({"Name": addHoroscopeController.horoscopeName.text});
+    }
+    if (addHoroscopeController.addHoroscopeGender.value.isNotEmpty) {
+      personalInfoData.add({"Gender": addHoroscopeController.addHoroscopeGender.value});
+    }
+    if (addHoroscopeController.addHoroscopeBirthSelectedDate != null) {
+      personalInfoData.add({"Birth Date": DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addHoroscopeBirthSelectedDate!.value)});
+    }
+    if (addHoroscopeController.addHoroscopeBirthSelectedTime != null) {
+      personalInfoData.add({"Birth Time": DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addHoroscopeBirthSelectedTime!.value.hour, addHoroscopeController.addHoroscopeBirthSelectedTime!.value.minute))});
+    }
+    if (addHoroscopeController.placeStateCountryOfBirth.text.isNotEmpty) {
+      personalInfoData.add({"City of Birth": addHoroscopeController.placeStateCountryOfBirth.text});
+    }
+    if (addHoroscopeController.birthOrder.value.isNotEmpty) {
+      personalInfoData.add({"Order of Birth": addHoroscopeController.birthOrder.value});
+    }
+    if (addHoroscopeController.landmarkOfBirth.text.isNotEmpty) {
+      personalInfoData.add({"Nearest landmark for place of birth": addHoroscopeController.landmarkOfBirth.text});
+    }
+
+    // Marriage Details data
+    if (addHoroscopeController.addSelectedMarriageDate != null) {
+      marriageDetailsData.add({"Date Of Marriage": DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addSelectedMarriageDate!.value)});
+    }
+    if (addHoroscopeController.addSelectedMarriageTime != null) {
+      marriageDetailsData.add({"Time Of Marriage": DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addSelectedMarriageTime!.value.hour, addHoroscopeController.addSelectedMarriageTime!.value.minute))});
+    }
+    if (addHoroscopeController.placeStateCountryOfMarriage.text.isNotEmpty) {
+      marriageDetailsData.add({"Place of Marriage": addHoroscopeController.placeStateCountryOfMarriage.text});
+    }
+
+    // Child Info data
+    if (addHoroscopeController.addSelectedChildBirthDate != null) {
+      childInfoData.add({"Date Of Child Birth": DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addSelectedChildBirthDate!.value)});
+    }
+    if (addHoroscopeController.addSelectedChildBirthTime != null) {
+      childInfoData.add({"Time Of Child Birth": DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addSelectedChildBirthTime!.value.hour, addHoroscopeController.addSelectedChildBirthTime!.value.minute))});
+    }
+    if (addHoroscopeController.placeStateCountryOfChildBirth.text.isNotEmpty) {
+      childInfoData.add({"Place of Child Birth": addHoroscopeController.placeStateCountryOfChildBirth.text});
+    }
+
+    // Travel Info data
+    if (addHoroscopeController.addSelectedTravelDate != null) {
+      travelInfoData.add({"Date Of Travel": DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addSelectedTravelDate!.value)});
+    }
+    if (addHoroscopeController.addSelectedTravelTime != null) {
+      travelInfoData.add({"Time Of Travel": DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addSelectedTravelTime!.value.hour, addHoroscopeController.addSelectedTravelTime!.value.minute))});
+    }
+    if (addHoroscopeController.whereDidYouTraveled.text.isNotEmpty) {
+      travelInfoData.add({"Place of Travel": addHoroscopeController.whereDidYouTraveled.text});
+    }
+
+    // Relatives Info data
+    if (addHoroscopeController.relationShipWithOwner.text.isNotEmpty) {
+      relativesInfoData.add({"Relationship": addHoroscopeController.relationShipWithOwner.text});
+    }
+    if (addHoroscopeController.addSelectedEventDate != null) {
+      relativesInfoData.add({"Date Of Event": DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addSelectedEventDate!.value)});
+    }
+    if (addHoroscopeController.addSelectedEventTime != null) {
+      relativesInfoData.add({"Time Of Event": DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addSelectedEventTime!.value.hour, addHoroscopeController.addSelectedEventTime!.value.minute))});
+    }
+    if (addHoroscopeController.eventPlace.text.isNotEmpty) {
+      relativesInfoData.add({"Place of Event": addHoroscopeController.eventPlace.text});
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Confirm Details', style: GoogleFonts.lexend(fontSize: 20)),
-        content: SizedBox(
+        backgroundColor: Colors.white,
+        contentPadding: EdgeInsets.zero,
+        content: Container(
           width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: confirmationData.length, // Placeholder for demonstration
-            itemBuilder: (context, index) => ListTile(
-              title: Text(
-                confirmationData[index].keys.first,
-                style: GoogleFonts.lexend(fontWeight: FontWeight.bold),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Personal Info Section
+                      if (personalInfoData.isNotEmpty) _buildSectionHeader("Personal Data"),
+                      if (personalInfoData.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: _buildDataSection(personalInfoData, isWideScreen),
+                        ),
+
+                      // Marriage Details Section
+                      if (marriageDetailsData.isNotEmpty) _buildSectionHeader("Marriage Data"),
+                      if (marriageDetailsData.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: _buildDataSection(marriageDetailsData, isWideScreen),
+                        ),
+
+                      // Child Info Section
+                      if (childInfoData.isNotEmpty) _buildSectionHeader("First Child Data"),
+                      if (childInfoData.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: _buildDataSection(childInfoData, isWideScreen),
+                        ),
+
+                      // Travel Info Section
+                      if (travelInfoData.isNotEmpty) _buildSectionHeader("Travel Data"),
+                      if (travelInfoData.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: _buildDataSection(travelInfoData, isWideScreen),
+                        ),
+
+                      // Relatives Info Section
+                      if (relativesInfoData.isNotEmpty) _buildSectionHeader("Incident Data"),
+                      if (relativesInfoData.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: _buildDataSection(relativesInfoData, isWideScreen),
+                        ),
+
+                      // Add padding at the bottom to ensure content doesn't get hidden behind buttons
+                      SizedBox(height: 60),
+                    ],
+                  ),
+                ),
               ),
-              subtitle: Text(confirmationData[index].values.first),
-            ),
+            ],
           ),
         ),
+        // Fixed buttons at the bottom
+        actionsAlignment: MainAxisAlignment.end,
+        actionsPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Back', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: appLoadController.appMidColor,
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                top: BorderSide(
+                  color: Colors.grey.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
             ),
-            onPressed: () {
-              addHoroscopeController.addNewHoroscope(playContext);
-            },
-            child: const Text('Confirm', style: TextStyle(color: Colors.white)),
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Back',
+                    style: GoogleFonts.lexend(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: appLoadController.appMidColor,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () {
+                    addHoroscopeController.addNewHoroscope(playContext);
+                  },
+                  child: Text(
+                    'Confirm',
+                    style: GoogleFonts.lexend(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+// Helper method to build section headers
+  Widget _buildSectionHeader(String title) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Divider(
+              color: appLoadController.appMidColor.withOpacity(0.7),
+              thickness: 0.5,
+              indent: 60,
+              endIndent: 30,
+            ),
+          ),
+          Text(
+            title,
+            style: GoogleFonts.lexend(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: appLoadController.appMidColor,
+            ),
+          ),
+          Expanded(
+            child: Divider(
+              color: appLoadController.appMidColor.withOpacity(0.7),
+              thickness: 0.5,
+              indent: 30,
+              endIndent: 60,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+// Helper method to build data sections
+  Widget _buildDataSection(List<Map<String, String>> data, bool isWideScreen) {
+    if (isWideScreen) {
+      // Two-column layout for wide screens
+      return LayoutBuilder(
+          builder: (context, constraints) {
+            return Wrap(
+              spacing: 16.0,
+              runSpacing: 8.0,
+              children: List.generate(
+                data.length,
+                    (index) => SizedBox(
+                  width: (constraints.maxWidth - 16) / 2,
+                  child: _buildDetailTile(
+                    data[index].keys.first,
+                    data[index].values.first,
+                  ),
+                ),
+              ),
+            );
+          }
+      );
+    } else {
+      // Single column layout for smaller screens
+      return ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: data.length,
+        itemBuilder: (context, index) => _buildDetailTile(
+          data[index].keys.first,
+          data[index].values.first,
+        ),
+      );
+    }
+  }
+
+// Helper method to build individual detail tiles
+  Widget _buildDetailTile(String title, String value) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 8),
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // This ensures the column takes minimum required height
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.lexend(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 2), // Reduced spacing
+            Text(
+              value,
+              style: GoogleFonts.lexend(
+                fontSize: 12,
+                color: Colors.black54,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }

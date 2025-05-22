@@ -273,8 +273,8 @@ class _DailyPredictionsState extends State<DailyPredictions> {
             icon: const Icon(Icons.chevron_left_rounded),
           ),
           title: horoscopeRequestController.selectedRequest.value == 2
-              ? LocalizationController.getInstance().getTranslatedValue("90 days Prediction Request")
-              : LocalizationController.getInstance().getTranslatedValue("90 days Prediction Request"),
+              ? LocalizationController.getInstance().getTranslatedValue("Daily predictions request - 90 days")
+              : LocalizationController.getInstance().getTranslatedValue("Daily predictions request - 90 days"),
           colors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
           centerTitle: true,
           actions: [
@@ -412,7 +412,7 @@ class _DailyPredictionsState extends State<DailyPredictions> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           commonBoldText(
-                            text: "90-Day Daily Predictions",
+                            text: "Daily Predictions - 90 days",
                             fontSize: 20,
                             color: const Color(0xFF6A1B9A),
                           ),
@@ -582,7 +582,7 @@ class _DailyPredictionsState extends State<DailyPredictions> {
                                           AppWidgets().multiTextAlignYesOrNoDialog(
                                               iconUrl: 'assets/images/headletters.png',
                                               context: context,
-                                              dialogMessage: 'Complete payment to reveal your astrological future',
+                                              dialogMessage: 'Make Payment to unlock daily predictions for 90 days',
                                               subText1Key: 'Amount',
                                               subText1Value: appLoadController.loggedUserData.value.ucurrency,
                                               subText1Value1: applicationBaseController.formatDecimalString(chargeData['data']['amount']),

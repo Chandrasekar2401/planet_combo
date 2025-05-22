@@ -101,11 +101,11 @@ class _PaymentHistoryState extends State<PaymentHistory> {
   String findReqType(String type) {
     switch (type) {
       case "7":
-        return "Horoscope Request";
+        return "Horoscope";
       case "2":
-        return "Daily Request";
+        return "Daily Predictions";
       default:
-        return "Special Request";
+        return "Life Guidance Question";
     }
   }
 

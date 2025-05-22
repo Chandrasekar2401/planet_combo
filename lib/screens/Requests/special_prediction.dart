@@ -181,7 +181,7 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
           icon: const Icon(Icons.chevron_left_rounded),
         ),
         title: LocalizationController.getInstance()
-            .getTranslatedValue("Ask Life Guidance Question"),
+            .getTranslatedValue("Ask Life Guidance Questions"),
         colors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
         centerTitle: true,
         actions: [
@@ -415,7 +415,7 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
                                   AppWidgets().multiTextAlignYesOrNoDialog(
                                     iconUrl: 'assets/images/headletters.png',
                                     context: context,
-                                    dialogMessage: 'Complete payment to unlock your personalized life guidance',
+                                    dialogMessage: 'Make payment to unravel the life guidance queries',
                                     subText1Key: 'Amount',
                                     subText1Value:
                                     appLoadController.loggedUserData.value.ucurrency,

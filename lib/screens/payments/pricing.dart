@@ -231,8 +231,8 @@ class _MysticalPricingPageState extends State<PricingPage>
             return Transform.rotate(
               angle: _controller.value * 2 * math.pi,
               child: Container(
-                width: small ? 170 : 440,
-                height: small ? 170 : 440,
+                width: small ? 220 : 510,
+                height: small ? 220 : 510,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: const RadialGradient(
@@ -466,7 +466,7 @@ class _MysticalPricingPageState extends State<PricingPage>
                   child: _buildPricingCard(
                     'Introductory offer',
                     kundliAmount(),
-                    ['Personalized Horoscope Generation', '30 Days Free Daily Prediction', 'Two life guidance questions'],
+                    ['Personalized Horoscope Generation', '30 Days Free Daily Predictions', 'Two life guidance questions'],
                     const Color(0xFFB7791F),
                   ),
                 ),
@@ -733,13 +733,13 @@ class _MysticalPricingPageState extends State<PricingPage>
       }) {
     return Container(
       padding: EdgeInsets.all(isMobile ? 16 : 24),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.3),
-        ),
-      ),
+      // decoration: BoxDecoration(
+      //   color: Colors.white.withOpacity(0.1),
+      //   borderRadius: BorderRadius.circular(15),
+      //   border: Border.all(
+      //     color: Colors.white.withOpacity(0.3),
+      //   ),
+      // ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

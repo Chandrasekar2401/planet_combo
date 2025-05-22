@@ -1,21 +1,24 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:planetcombo/common/constant.dart';
-import 'package:planetcombo/common/widgets.dart';
 
-class CustomDrawer extends StatelessWidget {
+import '../../common/constant.dart';
+import '../../common/widgets.dart';
+
+class DashboardDrawer extends StatelessWidget {
   final Function(int) onItemTap;
   final int selectedIndex;
   final bool isLoggedIn;
 
   final Constants constant = Constants();
 
-  CustomDrawer({
+  DashboardDrawer({
+    Key? key,
     required this.onItemTap,
     required this.selectedIndex,
-    this.isLoggedIn = false
-  });
+    this.isLoggedIn = true
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

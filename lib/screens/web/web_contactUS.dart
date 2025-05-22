@@ -1,60 +1,137 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:universal_html/html.dart' as html;
+import 'package:planetcombo/common/widgets.dart';
+import 'package:planetcombo/common/constant.dart';
+import 'package:planetcombo/controllers/appLoad_controller.dart';
+import 'package:get/get.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:planetcombo/screens/dashboard.dart';
+import 'package:planetcombo/screens/web/web_article.dart';
+import 'package:planetcombo/screens/web/web_aboutus.dart';
+import 'package:planetcombo/screens/web/web_home.dart';
 
 Widget buildWebContactUs() {
-  return ContactPage();
+  return const ContactPage();
 }
 
-class ContactPage extends StatelessWidget {
+class ContactPage extends StatefulWidget {
+  const ContactPage({Key? key}) : super(key: key);
+
+  @override
+  _ContactPageState createState() => _ContactPageState();
+}
+
+class _ContactPageState extends State<ContactPage> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  int _selectedIndex = 3; // Contact tab
+  final AppLoadController appLoadController = Get.put(AppLoadController.getInstance(), permanent: true);
+  final Constants constants = Constants();
+
+  void _handleItemTap(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    Navigator.of(context).pop(); // Close drawer
+
+    switch (index) {
+      case 0: // Home/Dashboard
+        if (appLoadController.userValue.value) {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Dashboard()));
+        } else {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => WebHomePage()));
+        }
+        break;
+      case 1: // Articles
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => buildWebArticle()));
+        break;
+      case 2: // About Us
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => buildWebAboutUs()));
+        break;
+      case 3: // Contact (current page)
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bool isLoggedIn = appLoadController.userValue.value;
+
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: CustomDrawer(
+        onItemTap: _handleItemTap,
+        selectedIndex: _selectedIndex,
+        isLoggedIn: isLoggedIn,
+      ),
       body: Container(
-        decoration: BoxDecoration(
+        constraints: BoxConstraints(
+          minHeight: MediaQuery.of(context).size.height,
+        ),
+        decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/images/web/article_bg.jpg'),
             fit: BoxFit.cover,
           ),
         ),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(60, 20, 60, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ContactInfoSection(),
-                SizedBox(height: 20),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    if (constraints.maxWidth > 900) {
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(0, 30, 0, 0),
-                              child: MapSection(),
-                            ),
-                          ),
-                          SizedBox(width: 20),
-                          Expanded(child: MessageForm()),
-                        ],
-                      );
-                    } else {
-                      return Column(
-                        children: [
-                          MapSection(),
-                          SizedBox(height: 20),
-                          MessageForm(),
-                        ],
-                      );
-                    }
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(60, 70, 60, 0), // Updated padding for menu
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ContactInfoSection(),
+                    const SizedBox(height: 20),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth > 900) {
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(0, 30, 0, 0),
+                                  child: MapSection(),
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(child: MessageForm()),
+                            ],
+                          );
+                        } else {
+                          return Column(
+                            children: [
+                              MapSection(),
+                              const SizedBox(height: 20),
+                              MessageForm(),
+                              const SizedBox(height: 50), // Add space at bottom for mobile
+                            ],
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 16.0,
+              left: 16.0,
+              child: SafeArea(
+                child: IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () {
+                    _scaffoldKey.currentState?.openDrawer();
                   },
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -64,26 +141,55 @@ class ContactPage extends StatelessWidget {
 class ContactInfoSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        ContactInfoItem(
-          icon: Icons.location_on,
-          title: 'Address',
-          content: '123 Street Name, City, 32008',
-        ),
-        ContactInfoItem(
-          icon: Icons.phone,
-          title: 'Phone',
-          content: '+974 4430 0437',
-        ),
-        ContactInfoItem(
-          icon: Icons.email,
-          title: 'Email Address',
-          content: 'headlettersapi@gmail.com',
-        ),
-      ],
-    );
+    final Size screenSize = MediaQuery.of(context).size;
+    final bool isSmallScreen = screenSize.width < 650;
+
+    if (isSmallScreen) {
+      // Vertical layout for small screens
+      return Column(
+        children: [
+          ContactInfoItem(
+            icon: Icons.location_on,
+            title: 'Address',
+            content: '123 Street Name, City, 32008',
+          ),
+          const SizedBox(height: 20),
+          ContactInfoItem(
+            icon: Icons.phone,
+            title: 'Phone',
+            content: '+974 4430 0437',
+          ),
+          const SizedBox(height: 20),
+          ContactInfoItem(
+            icon: Icons.email,
+            title: 'Email Address',
+            content: 'headlettersapi@gmail.com',
+          ),
+        ],
+      );
+    } else {
+      // Horizontal layout for wider screens
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          ContactInfoItem(
+            icon: Icons.location_on,
+            title: 'Address',
+            content: '123 Street Name, City, 32008',
+          ),
+          ContactInfoItem(
+            icon: Icons.phone,
+            title: 'Phone',
+            content: '+974 4430 0437',
+          ),
+          ContactInfoItem(
+            icon: Icons.email,
+            title: 'Email Address',
+            content: 'headlettersapi@gmail.com',
+          ),
+        ],
+      );
+    }
   }
 }
 
@@ -92,26 +198,28 @@ class ContactInfoItem extends StatelessWidget {
   final String title;
   final String content;
 
-  ContactInfoItem({
+  const ContactInfoItem({
+    Key? key,
     required this.icon,
     required this.title,
     required this.content,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         Icon(icon, color: Colors.orangeAccent, size: 40),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         Text(
           title,
-          style: TextStyle(color: Colors.white, fontSize: 18),
+          style: const TextStyle(color: Colors.white, fontSize: 18),
         ),
-        SizedBox(height: 5),
+        const SizedBox(height: 5),
         Text(
           content,
-          style: TextStyle(color: Colors.white, fontSize: 14),
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          textAlign: TextAlign.center,
         ),
       ],
     );
@@ -123,10 +231,25 @@ class MapSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 300,
-      child: GoogleMap(
-        initialCameraPosition: CameraPosition(
-          target: LatLng(45.5231, -122.6765), // Portland, OR coordinates
-          zoom: 6,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white, width: 1),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: GoogleMap(
+          initialCameraPosition: CameraPosition(
+            target: LatLng(45.5231, -122.6765), // Portland, OR coordinates
+            zoom: 6,
+          ),
+          zoomControlsEnabled: false,
+          markers: <Marker>{
+            Marker(
+              markerId: MarkerId('office_location'),
+              position: LatLng(45.5231, -122.6765),
+              infoWindow: InfoWindow(title: 'Our Office'),
+            ),
+          },
         ),
       ),
     );
@@ -152,7 +275,6 @@ class _MessageFormState extends State<MessageForm> {
     super.initState();
   }
 
-
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'Email is required';
@@ -176,10 +298,11 @@ class _MessageFormState extends State<MessageForm> {
     setState(() => _isSending = true);
 
     try {
+      // Send email logic would go here
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Message sent successfully!'),
             backgroundColor: Colors.green,
           ),
@@ -194,7 +317,7 @@ class _MessageFormState extends State<MessageForm> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Failed to send message. Please try again.'),
             backgroundColor: Colors.red,
           ),
@@ -210,14 +333,18 @@ class _MessageFormState extends State<MessageForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(8),
+      ),
       padding: const EdgeInsets.all(20.0),
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Leave a Message',
               style: TextStyle(
                 color: Colors.white,
@@ -225,78 +352,90 @@ class _MessageFormState extends State<MessageForm> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextFormField(
               controller: _nameController,
               validator: _validateRequired,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 fillColor: Colors.white,
                 filled: true,
                 hintText: 'Name',
                 border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _emailController,
               validator: _validateEmail,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 fillColor: Colors.white,
                 filled: true,
                 hintText: 'Email',
                 border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _phoneController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 fillColor: Colors.white,
                 filled: true,
                 hintText: 'Phone',
                 border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _subjectController,
               validator: _validateRequired,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 fillColor: Colors.white,
                 filled: true,
                 hintText: 'Subject',
                 border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _messageController,
               validator: _validateRequired,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 fillColor: Colors.white,
                 filled: true,
                 hintText: 'Message',
                 border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               ),
               maxLines: 4,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 24),
             Center(
               child: ElevatedButton(
                 onPressed: _isSending ? null : _sendEmail,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orangeAccent,
-                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: _isSending
-                    ? SizedBox(
+                    ? const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     color: Colors.white,
+                    strokeWidth: 2,
                   ),
                 )
-                    : Text('Submit'),
+                    : const Text(
+                  'Submit',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],
@@ -313,5 +452,110 @@ class _MessageFormState extends State<MessageForm> {
     _subjectController.dispose();
     _messageController.dispose();
     super.dispose();
+  }
+}
+
+// Custom Drawer Widget
+class CustomDrawer extends StatelessWidget {
+  final Function(int) onItemTap;
+  final int selectedIndex;
+  final bool isLoggedIn;
+
+  final Constants constant = Constants();
+
+  CustomDrawer({super.key, required this.onItemTap, required this.selectedIndex, this.isLoggedIn = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.zero,
+      ),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+        ),
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            Container(
+              height: 220,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.transparent),
+                boxShadow: const [],
+              ),
+              child: Image.asset('assets/images/headletters.png'),
+            ),
+            _createDrawerItem(
+              icon: Icons.home_outlined,
+              text: isLoggedIn ? 'Dashboard' : 'Home',
+              onTap: () => onItemTap(0),
+              isSelected: selectedIndex == 0,
+            ),
+            _createDrawerItem(
+              svgIcon: 'assets/svg/article.svg',
+              text: 'Articles',
+              onTap: () => onItemTap(1),
+              isSelected: selectedIndex == 1,
+            ),
+            _createDrawerItem(
+              svgIcon: 'assets/svg/about1.svg',
+              text: 'About us',
+              onTap: () => onItemTap(2),
+              isSelected: selectedIndex == 2,
+            ),
+            _createDrawerItem(
+              svgIcon: 'assets/svg/contact1.svg',
+              text: 'Contact',
+              onTap: () => onItemTap(3),
+              isSelected: selectedIndex == 3,
+            ),
+            const SizedBox(height: 10),
+            Padding(
+                padding: const EdgeInsets.all(12),
+                child: commonBoldText(text: '© 2024 Planet Combo - All Rights Reserved.', fontSize: 14)
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _createDrawerItem({
+    String? svgIcon,
+    IconData? icon,
+    required String text,
+    required GestureTapCallback onTap,
+    required bool isSelected,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 15),
+      child: ListTile(
+        leading: svgIcon == null ? Icon(
+          icon,
+          size: 21,
+          color: isSelected ? constant.appPrimaryColor : Colors.black,
+        ) :
+        SvgPicture.asset(
+          svgIcon,
+          colorFilter: ColorFilter.mode(
+            isSelected ? constant.appPrimaryColor : Colors.black,
+            BlendMode.srcIn,
+          ),
+          width: 21,
+          height: 21,
+        ),
+        title: Text(
+          text,
+          style: GoogleFonts.lexend(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: isSelected ? constant.appPrimaryColor  : Colors.black,
+          ),
+        ),
+        selected: isSelected,
+        onTap: onTap,
+      ),
+    );
   }
 }

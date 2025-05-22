@@ -218,19 +218,19 @@ class _FactsMythsState extends State<FactsMyths> with TickerProviderStateMixin {
           SizedBox(height: isMobile ? 16 : 20),
           _buildFactCard(
             'Fact#3.',
-            "Planet Combo has developed a birth time adjustment methodology that aligns effectively with the predictive approach. Accurate data is crucial for horoscope generation; otherwise, predictions may be inaccurate. PLANETCOMBO offers a 30-day free service to verify predictions. Once validated, the horoscope is certified for full use.",
+            "Planet Combo has developed a birth time adjustment methodology that aligns effectively with the predictive approach. Accurate data is crucial for horoscope generation; otherwise, predictions may be inaccurate. Planet Combo offers a 30-day free service to verify predictions. Once validated, the horoscope is certified for full use.",
             isMobile,
           ),
           SizedBox(height: isMobile ? 16 : 20),
           _buildFactCard(
             'Fact#4.',
-            "Traditional Vedic astrology draws upon concepts such as Doshams, Yogams, Uttcham, and Neecham of houses and planets to make life predictions. CP Astrology, which builds upon the extended and expanded rules of KP Astrology, is actively researching Vedic principles further. PLANETCOMBO remains committed to this research.",
+            "Traditional Vedic astrology draws upon concepts such as Doshams, Yogams, Uttcham, and Neecham of houses and planets to make life predictions. CP Astrology, which builds upon the extended and expanded rules of KP Astrology, is actively researching Vedic principles further. Planet Combo remains committed to this research.",
             isMobile,
           ),
           SizedBox(height: isMobile ? 16 : 20),
           _buildFactCard(
             'Fact#5.',
-            "Can the PLANETCOMBO app be used without birth details? The answer is NO. However, PLANETCOMBO will try to create a horoscope based on past life events and explore options for generating the horoscope. Even in such cases, having the place and date is critical, and efforts will be made to determine the exact time.",
+            "Can the Planet Combo app be used without birth details? The answer is NO. However, Planet Combo will try to create a horoscope based on past life events and explore options for generating the horoscope. Even in such cases, having the place and date is critical, and efforts will be made to determine the exact time.",
             isMobile,
           ),
         ],
