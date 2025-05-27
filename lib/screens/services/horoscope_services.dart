@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:planetcombo/api/api_callings.dart';
 import 'package:planetcombo/common/widgets.dart';
@@ -27,6 +28,7 @@ import 'package:planetcombo/screens/services/add_nativePhoto.dart';
 import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/screens/messages/message_list.dart';
 
+import '../messages/view_history_direct.dart';
 import '../payments/pricing.dart';
 
 class HoroscopeServices extends StatefulWidget {
@@ -311,21 +313,25 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
       );
 
       if (pickedImage != null) {
-        if (kIsWeb) {
-          // Handle web image
-          // Store original file for upload
-          addHoroscopeController.updateHoroscopeImage?.value = pickedImage;
-          print('you entered web logic $pickedImage');
-          addHoroscopeController.updateHoroscopeImageOnly(hid);
-        } else {
-          // Handle mobile image
-          // addHoroscopeController.setImageFileListFromFile(pickedImage);
-          // addHoroscopeController.selectedImageFile.value = pickedImage;
-        }
+        print('Image selected: ${pickedImage.path}');
+        print('Platform: ${kIsWeb ? "Web" : "Mobile"}');
+
+        // Set the image for both web and mobile
+        addHoroscopeController.updateHoroscopeImage?.value = pickedImage;
+
+        // Call the update method (now handles both web and mobile)
+        await addHoroscopeController.updateHoroscopeImageOnly(hid);
       }
     } catch (e) {
       print('Error picking image: $e');
-      // Show error message to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error selecting image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -806,14 +812,18 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                               shape: BoxShape.circle,
                                                               border: Border.all(color: Colors.grey[300]!),
                                                             ),
-                                                            child: const SizedBox(
+                                                            child: SizedBox(
                                                               width: 14,
                                                               height: 14,
                                                               child: Center(
-                                                                child: Icon(
-                                                                  Icons.delete_outline,
-                                                                  size: 12,
-                                                                  color: Colors.red,
+                                                                child: SvgPicture.asset(
+                                                                  'assets/svg/delete.svg',
+                                                                  width: 12,
+                                                                  height: 12,
+                                                                  colorFilter: const ColorFilter.mode(
+                                                                    Colors.red,
+                                                                    BlendMode.srcIn,
+                                                                  ),
                                                                 ),
                                                               ),
                                                             ),
@@ -853,7 +863,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                                           children: [
                                             Expanded(
-                                              child: GradientButton(
+                                              child: ServicesButton(
                                                   title: LocalizationController
                                                       .getInstance()
                                                       .getTranslatedValue("Plans"),
@@ -1046,8 +1056,9 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                     }
                                                   }),
                                             ),
+                                            const SizedBox(width: 5),
                                             Expanded(
-                                              child: GradientButton(
+                                              child: ServicesButton(
                                                   title: LocalizationController
                                                       .getInstance()
                                                       .getTranslatedValue(
@@ -1089,8 +1100,9 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                     }
                                                   }),
                                             ),
+                                            const SizedBox(width: 5),
                                             Expanded(
-                                              child: GradientButton(
+                                              child: ServicesButton(
                                                   title: isPaid
                                                       ? LocalizationController.getInstance().getTranslatedValue("Horoscope")
                                                       : LocalizationController.getInstance().getTranslatedValue("Make Payment"),
@@ -1295,15 +1307,18 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                                   .horoscopeList[index]
                                                                   .hid!
                                                           );
+
+                                                          // Navigate directly to ViewHistoryDirect instead of MessagesList
                                                           Navigator.push(
                                                             context,
                                                             MaterialPageRoute(
-                                                                builder: (
-                                                                    context) =>
-                                                                    MessagesList(
-                                                                        horoscopeId: applicationBaseController
-                                                                            .horoscopeList[index]
-                                                                            .hid!)),
+                                                                builder: (context) => ViewHistoryDirect(
+                                                                    horoscopeId: applicationBaseController
+                                                                        .horoscopeList[index]
+                                                                        .hid!,
+                                                                    horoscopeName: applicationBaseController
+                                                                        .horoscopeList[index]
+                                                                        .hname!)),
                                                           );
                                                           break;
                                                       }

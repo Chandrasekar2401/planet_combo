@@ -145,7 +145,7 @@ class _ProfileState extends State<Profile> {
               children: [
                 Container(
                   height: 230,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                       color: Colors.transparent
                   ),
                 ),
@@ -161,7 +161,7 @@ class _ProfileState extends State<Profile> {
                     padding: const EdgeInsets.all(8.0),
                     child: Column(
                       children: [
-                        SizedBox(height: 25),
+                        const SizedBox(height: 25),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [

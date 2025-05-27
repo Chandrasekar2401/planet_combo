@@ -17,6 +17,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
 import 'package:planetcombo/screens/web/webLogin.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:planetcombo/service/ipAddressService.dart';
 
 class ProfileEdit extends StatefulWidget {
   const ProfileEdit({Key? key}) : super(key: key);
@@ -51,6 +52,36 @@ class _ProfileEditState extends State<ProfileEdit> {
   bool isPaymentInfoChecked = false;
 
   Future<Map<String, dynamic>>? _locationFuture;
+
+  String? userIPAddress;
+  bool isLoadingIP = false;
+
+  Future<void> _getUserIPAddress() async {
+    if (appLoadController.addNewUser.value == "YES") {
+      setState(() {
+        isLoadingIP = true;
+      });
+
+      try {
+        String ipAddress = await IPAddressService.getIPAddressWithFallback();
+        setState(() {
+          userIPAddress = ipAddress;
+          // Set the IP address in your logged user data
+          appLoadController.loggedUserData.value.ipAddress = ipAddress;
+          isLoadingIP = false;
+        });
+
+        print('User IP Address: $ipAddress');
+      } catch (e) {
+        setState(() {
+          userIPAddress = 'Unknown';
+          appLoadController.loggedUserData.value.ipAddress = 'Unknown';
+          isLoadingIP = false;
+        });
+        print('Error getting IP address: $e');
+      }
+    }
+  }
 
   String currentValue(String value) {
     if (value == 'ta') {
@@ -411,9 +442,13 @@ class _ProfileEditState extends State<ProfileEdit> {
       userCountry.text = "";
       userCurrency.text = "";
 
-      // Initialize location fetching
-      Future.microtask(() {
+      // Initialize location fetching and IP address detection
+      Future.microtask(() async {
         if (mounted) {
+          // Get IP address first
+          await _getUserIPAddress();
+
+          // Then get location
           setState(() {
             _locationFuture = _getCurrentLocationAndCountry();
           });
@@ -422,6 +457,8 @@ class _ProfileEditState extends State<ProfileEdit> {
     } else {
       userCountry.text = appLoadController.loggedUserData.value.ucountry!;
       userCurrency.text = appLoadController.loggedUserData.value.ucurrency!;
+      // For existing users, IP might already be available
+      userIPAddress = appLoadController.loggedUserData.value.ipAddress;
     }
   }
 
@@ -490,6 +527,49 @@ class _ProfileEditState extends State<ProfileEdit> {
         children: [
           const SizedBox(height: 20),
           _buildProfileImage(),
+
+          // Show IP address loading status for new users
+          // if (appLoadController.addNewUser.value == "YES") ...[
+          //   if (isLoadingIP)
+          //     Container(
+          //       padding: const EdgeInsets.all(10),
+          //       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          //       decoration: BoxDecoration(
+          //         color: Colors.blue[50],
+          //         borderRadius: BorderRadius.circular(8),
+          //         border: Border.all(color: Colors.blue[200]!),
+          //       ),
+          //       child: Row(
+          //         children: [
+          //           SizedBox(
+          //             width: 20,
+          //             height: 20,
+          //             child: CircularProgressIndicator(strokeWidth: 2),
+          //           ),
+          //           const SizedBox(width: 10),
+          //           Text('Detecting IP address...'),
+          //         ],
+          //       ),
+          //     )
+          //   else if (userIPAddress != null)
+          //     Container(
+          //       padding: const EdgeInsets.all(10),
+          //       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          //       decoration: BoxDecoration(
+          //         color: Colors.green[50],
+          //         borderRadius: BorderRadius.circular(8),
+          //         border: Border.all(color: Colors.green[200]!),
+          //       ),
+          //       child: Row(
+          //         children: [
+          //           Icon(Icons.check_circle, color: Colors.green, size: 20),
+          //           const SizedBox(width: 10),
+          //           Text('IP Address: $userIPAddress'),
+          //         ],
+          //       ),
+          //     ),
+          // ],
+
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
             child: Column(
@@ -822,12 +902,21 @@ class _ProfileEditState extends State<ProfileEdit> {
       title: LocalizationController.getInstance().getTranslatedValue("Save"),
       buttonHeight: 45,
       textColor: Colors.white,
-      buttonColors: ((appLoadController.addNewUser.value == "YES" && isChecked && isPaymentInfoChecked) || appLoadController.addNewUser.value == "NO") ? const [Color(0xFFf2b20a), Color(0xFFf34509)] : const [Color(0x19f2b20a), Color(0x19f34509)],
+      buttonColors: ((appLoadController.addNewUser.value == "YES" && isChecked && isPaymentInfoChecked && !isLoadingIP) || appLoadController.addNewUser.value == "NO")
+          ? const [Color(0xFFf2b20a), Color(0xFFf34509)]
+          : const [Color(0x19f2b20a), Color(0x19f34509)],
       onPressed: (Offset buttonOffset) async {
         if (appLoadController.addNewUser.value == 'YES') {
-          if(appLoadController.loggedUserData.value.ucountry == 'Unknown'){
+          if (isLoadingIP) {
+            showFailedToast('Please wait for IP address detection to complete');
+            return;
+          }
+
+          if (appLoadController.loggedUserData.value.ucountry == 'Unknown') {
             CustomDialog.showAlert(context, 'You are trying to save profile without location enable, please allow the location and try again', false, 14);
-          }else if (isChecked && isPaymentInfoChecked) {
+          } else if (userIPAddress == null || userIPAddress!.isEmpty) {
+            CustomDialog.showAlert(context, 'IP address detection failed. Please check your internet connection and try again.', false, 14);
+          } else if (isChecked && isPaymentInfoChecked) {
             var response = await addHoroscopeController.addNewProfileWithoutImage(context);
             print('the response from the api new profile is');
             print(response.toString());

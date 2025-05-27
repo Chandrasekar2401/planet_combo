@@ -313,7 +313,7 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.check_circle, color: const Color(0xFF6A1B9A), size: 17),
+                              const Icon(Icons.check_circle, color: Color(0xFF6A1B9A), size: 17),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: commonText(
@@ -328,7 +328,7 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.check_circle, color: const Color(0xFF6A1B9A), size: 17),
+                              const Icon(Icons.check_circle, color: Color(0xFF6A1B9A), size: 17),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: commonText(
@@ -410,8 +410,6 @@ class _SpecialPredictionsState extends State<SpecialPredictions> {
                                 CustomDialog.cancelLoading(context);
                                 var chargeData = json.decode(result);
                                 if (chargeData['status'] == 'Success') {
-                                  question1Controller.text = "";
-                                  question2Controller.text = "";
                                   AppWidgets().multiTextAlignYesOrNoDialog(
                                     iconUrl: 'assets/images/headletters.png',
                                     context: context,

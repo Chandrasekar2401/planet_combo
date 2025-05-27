@@ -71,7 +71,7 @@ class APIEndPoints {
   static String getTermsAndConditions = '${baseUrl}api/termCondition/TCLinkandCharCharges?userId=';
 
   ///Get invoice List
-  static String getInvoiceList = '${baseUrl}api/Payments/invoice-records/';
+  static String getInvoiceList = '${baseUrl}api/Payments/invoice-records?userId=';
 
   ///Get user wallet balance
   static String getUserWalletBalance = '${baseUrl}api/account/getStatements?userId=';

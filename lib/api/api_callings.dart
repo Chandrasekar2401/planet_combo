@@ -532,7 +532,7 @@ class APICallings {
       "token": token
       // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
     };
-    var url = Uri.parse(APIEndPoints.getUserMessages+userId);
+    var url = Uri.parse('${APIEndPoints.getUserMessages}$userId');
     var response = await http.get(
       url,
       headers: headers,
@@ -541,6 +541,40 @@ class APICallings {
     if (response.statusCode == 200) {
       return response.body;
     } else {
+      return null;
+    }
+  }
+
+  // Add this method to your APICallings class
+
+  static Future<String?> getUserMessagesForHoroscope({
+    required String userId,
+    required String horoscopeId,
+    required String token,
+  }) async {
+    try {
+      Map<String, String> headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "token": token
+      };
+
+      // Using the same pattern as your existing getUserMessages but with horoscope ID filter
+      var url = Uri.parse('${APIEndPoints.getUserMessages}$userId&hid=$horoscopeId');
+      var response = await http.get(
+        url,
+        headers: headers,
+      );
+
+      print("Get Messages for Horoscope URL: $url");
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+        print('API Error: ${response.statusCode} - ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Network Error: $e');
       return null;
     }
   }
@@ -619,7 +653,7 @@ class APICallings {
       // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
     };
     var url = Uri.parse(APIEndPoints.getInvoiceList+userId);
-    var response = await http.post(
+    var response = await http.get(
       url,
       headers: headers,
     );

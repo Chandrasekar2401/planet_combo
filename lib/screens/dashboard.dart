@@ -213,7 +213,7 @@ class _DashboardState extends State<Dashboard> {
         drawer: DashboardDrawer(
           onItemTap: _handleDrawerItemTap,
           selectedIndex: _selectedDrawerIndex,
-          isLoggedIn: true,
+          isLoggedIn: true, context: context,
         ),
         appBar: GradientAppBar(
           leading: Builder(
@@ -227,9 +227,13 @@ class _DashboardState extends State<Dashboard> {
           actions: [
             GestureDetector(
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Profile())),
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: ClipOval(child: _buildNetworkImage(appLoadController.loggedUserData.value.userphoto!)),
+              child: SizedBox(
+                height: 40,
+                width: 40,
+                child: Padding(
+                  padding: const EdgeInsets.all(5.0),
+                  child: ClipOval(child: _buildNetworkImage(appLoadController.loggedUserData.value.userphoto!)),
+                ),
               ),
             ),
             Padding(
@@ -529,7 +533,7 @@ class _DashboardState extends State<Dashboard> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 commonBoldText(
-                                  text: "LEGAL NAME : VENKATARAMAN CHANDRASEKAR",
+                                  text: "NAME : VENKATARAMAN CHANDRASEKAR",
                                   color: Colors.black,
                                   fontSize: 11,
                                 ),
@@ -629,7 +633,7 @@ class _DashboardState extends State<Dashboard> {
                             children: [
                               commonBoldText(
                                 textAlign: TextAlign.center,
-                                text: "LEGAL NAME : VENKATARAMAN CHANDRASEKAR",
+                                text: "NAME : VENKATARAMAN CHANDRASEKAR",
                                 color: Colors.black,
                                 fontSize: 11,
                               ),

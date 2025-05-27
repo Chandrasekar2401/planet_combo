@@ -10,8 +10,9 @@ android {
     ndkVersion = "25.1.8937393"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        coreLibraryDesugaringEnabled true
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
@@ -20,8 +21,8 @@ android {
 
     defaultConfig {
         applicationId = "com.chandrasekar.planetcombo.planetcombo.chandra"
-        minSdk = 23
-        targetSdk = 33
+        minSdk = 26
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
@@ -46,14 +47,15 @@ android {
 }
 
 dependencies {
-    implementation platform('com.google.firebase:firebase-bom:32.7.0')
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+    implementation platform('com.google.firebase:firebase-bom:33.5.1')
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-firestore'
 
-    // Add Kotlin dependencies
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.10"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.10"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-common:2.1.10"
+    // Updated Kotlin dependencies to match the latest version
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.20"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-common:2.1.20"
 
     // Add multidex support
     implementation 'androidx.multidex:multidex:2.0.1'

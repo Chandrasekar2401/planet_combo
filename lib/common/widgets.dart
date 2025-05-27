@@ -228,6 +228,476 @@ class GradientButton extends StatelessWidget {
   }
 }
 
+class ServicesButton extends StatelessWidget {
+  final String title;
+  final Color textColor;
+  final Function(Offset) onPressed;
+  final IconData? materialIcon;
+  final List<Color> buttonColors;
+  final Color? iconColor;
+  final double? materialIconSize;
+  final double? buttonHeight;
+  final bool isDisabled;
+
+  ServicesButton({
+    super.key,
+    this.buttonHeight,
+    required this.buttonColors,
+    this.iconColor,
+    this.materialIconSize,
+    required this.title,
+    required this.textColor,
+    required this.onPressed,
+    this.materialIcon,
+    this.isDisabled = false,
+  });
+
+  final GlobalKey _buttonPositionKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: buttonHeight ?? 40,
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      decoration: BoxDecoration(
+        // Enhanced shadow system
+        boxShadow: isDisabled
+            ? [
+          // Flat, inset-like shadow for disabled
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 0,
+            blurRadius: 1,
+            offset: const Offset(0, 1),
+          ),
+        ]
+            : [
+          // Primary shadow - colored and prominent
+          BoxShadow(
+            color: buttonColors.first.withOpacity(0.3),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+          // Secondary shadow - subtle depth
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 0,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        gradient: isDisabled
+            ? null
+            : LinearGradient(
+          colors: buttonColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        // Flat disabled background
+        color: isDisabled ? Colors.grey.shade300 : null,
+        borderRadius: BorderRadius.circular(24.0),
+        // Subtle border for disabled state
+        border: isDisabled
+            ? Border.all(
+          color: Colors.grey.shade400,
+          width: 0.5,
+        )
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          key: _buttonPositionKey,
+          onTap: isDisabled
+              ? null
+              : () {
+            RenderBox? renderBox = _buttonPositionKey.currentContext!
+                .findRenderObject() as RenderBox?;
+            if (renderBox != null) {
+              Offset offset = renderBox.localToGlobal(Offset.zero);
+              onPressed(offset);
+            }
+          },
+          borderRadius: BorderRadius.circular(24),
+          // Enhanced ripple effect for enabled buttons
+          splashColor: isDisabled
+              ? Colors.transparent
+              : Colors.white.withOpacity(0.3),
+          highlightColor: isDisabled
+              ? Colors.transparent
+              : Colors.white.withOpacity(0.1),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (materialIcon != null) ...[
+                  Icon(
+                    materialIcon,
+                    color: isDisabled
+                        ? Colors.grey.shade500
+                        : (iconColor ?? Colors.white),
+                    size: materialIconSize ?? 16,
+                  ),
+                  const SizedBox(width: 6),
+                ],
+                commonBoldText(
+                  text: title,
+                  color: isDisabled
+                      ? Colors.black54
+                      : textColor,
+                  fontSize: 11,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Alternative version with even more pronounced 3D effect
+class ServicesButton3D extends StatelessWidget {
+  final String title;
+  final Color textColor;
+  final Function(Offset) onPressed;
+  final IconData? materialIcon;
+  final List<Color> buttonColors;
+  final Color? iconColor;
+  final double? materialIconSize;
+  final double? buttonHeight;
+  final bool isDisabled;
+
+  ServicesButton3D({
+    super.key,
+    this.buttonHeight,
+    required this.buttonColors,
+    this.iconColor,
+    this.materialIconSize,
+    required this.title,
+    required this.textColor,
+    required this.onPressed,
+    this.materialIcon,
+    this.isDisabled = false,
+  });
+
+  final GlobalKey _buttonPositionKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: isDisabled ? null : (_) {}, // For press animation
+      onTapUp: isDisabled ? null : (_) {},
+      onTapCancel: isDisabled ? null : () {},
+      onTap: isDisabled
+          ? null
+          : () {
+        RenderBox? renderBox = _buttonPositionKey.currentContext!
+            .findRenderObject() as RenderBox?;
+        if (renderBox != null) {
+          Offset offset = renderBox.localToGlobal(Offset.zero);
+          onPressed(offset);
+        }
+      },
+      child: AnimatedContainer(
+        key: _buttonPositionKey,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeInOut,
+        margin: const EdgeInsets.symmetric(vertical: 3),
+        height: buttonHeight ?? 40,
+        decoration: BoxDecoration(
+          // Multi-layered shadow for 3D effect
+          boxShadow: isDisabled
+              ? [
+            // Minimal inset-like shadow
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.15),
+              spreadRadius: 0,
+              blurRadius: 1,
+              offset: const Offset(0, 1),
+            ),
+          ]
+              : [
+            // Large soft shadow for depth
+            BoxShadow(
+              color: buttonColors.first.withOpacity(0.25),
+              spreadRadius: 2,
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+            // Sharp shadow for definition
+            BoxShadow(
+              color: buttonColors.last.withOpacity(0.4),
+              spreadRadius: 0,
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+            // Highlight shadow (top)
+            BoxShadow(
+              color: Colors.white.withOpacity(0.2),
+              spreadRadius: 0,
+              blurRadius: 2,
+              offset: const Offset(0, -1),
+            ),
+          ],
+          gradient: isDisabled
+              ? null
+              : LinearGradient(
+            colors: [
+              // Add slight highlights for 3D effect
+              Color.lerp(buttonColors.first, Colors.white, 0.1)!,
+              buttonColors.first,
+              buttonColors.last,
+              Color.lerp(buttonColors.last, Colors.black, 0.1)!,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            stops: const [0.0, 0.3, 0.7, 1.0],
+          ),
+          color: isDisabled ? Colors.grey.shade300 : null,
+          borderRadius: BorderRadius.circular(24.0),
+          border: isDisabled
+              ? Border.all(color: Colors.grey.shade400, width: 0.5)
+              : Border.all(
+            color: Colors.white.withOpacity(0.2),
+            width: 0.5,
+          ),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (materialIcon != null) ...[
+                Icon(
+                  materialIcon,
+                  color: isDisabled
+                      ? Colors.grey.shade500
+                      : (iconColor ?? Colors.white),
+                  size: materialIconSize ?? 16,
+                ),
+                const SizedBox(width: 6),
+              ],
+              commonBoldText(
+                text: title,
+                color: isDisabled
+                    ? Colors.grey.shade500
+                    : textColor,
+                fontSize: 11,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Horoscope page example matching your screenshot
+class HoroscopeServicesExample extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey.shade100,
+      appBar: AppBar(
+        backgroundColor: Colors.orange,
+        title: Text("Horoscope Services - Pu...", style: TextStyle(color: Colors.white)),
+        leading: Icon(Icons.arrow_back, color: Colors.white),
+        actions: [
+          Container(
+            margin: EdgeInsets.all(8),
+            child: ElevatedButton.icon(
+              onPressed: () {},
+              icon: Icon(Icons.add, size: 16),
+              label: Text("Add Horoscope", style: TextStyle(fontSize: 12)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange.shade600,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: EdgeInsets.all(16),
+        children: [
+          // First user - has active predictions
+          _buildUserCard(
+            name: "Kuruvamma",
+            joinDate: "OCB: Apr 16, 2026",
+            horoscope: "Gemini/Ga 1-14",
+            status: "Horoscope is in progress",
+            isPaid: true,
+            buttonsEnabled: [false, true, false], // Only predictions enabled
+          ),
+
+          SizedBox(height: 16),
+
+          // Second user - has active horoscope
+          _buildUserCard(
+            name: "Chellama",
+            joinDate: "OCB: April 02, 2026",
+            horoscope: "Leo/Ma 1-14",
+            status: "Horoscope is in progress",
+            isPaid: true,
+            buttonsEnabled: [false, false, true], // Only horoscope enabled
+          ),
+
+          SizedBox(height: 16),
+
+          // Third user - all services available
+          _buildUserCard(
+            name: "Susritha",
+            joinDate: "OCB: April 02, 2026",
+            horoscope: "Gemini/Ga 2-6",
+            status: "Horoscope is in progress",
+            isPaid: true,
+            buttonsEnabled: [true, true, true], // All buttons enabled
+          ),
+
+          SizedBox(height: 16),
+
+          // Fourth user - predictions active
+          _buildUserCard(
+            name: "Mahi bai",
+            joinDate: "OCB: April 12, 1999",
+            horoscope: "Cancer/Ka 4",
+            status: "Horoscope is in progress",
+            isPaid: true,
+            buttonsEnabled: [false, true, false], // Only predictions enabled
+          ),
+
+          SizedBox(height: 16),
+
+          // Fifth user - no active services
+          _buildUserCard(
+            name: "Kalyani",
+            joinDate: "OCB: April 04, 1999",
+            horoscope: "Taurus/Ka 1-4",
+            status: "Horoscope is in progress",
+            isPaid: true,
+            buttonsEnabled: [true, true, true], // All available
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserCard({
+    required String name,
+    required String joinDate,
+    required String horoscope,
+    required String status,
+    required bool isPaid,
+    required List<bool> buttonsEnabled, // [Plans, Predictions, Horoscope]
+  }) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: Colors.orange,
+                child: Text(
+                  name[0].toUpperCase(),
+                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      joinDate,
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    ),
+                    Text(
+                      horoscope,
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    ),
+                    Text(
+                      status,
+                      style: TextStyle(fontSize: 12, color: Colors.green),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                isPaid ? "Paid" : "Unpaid",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isPaid ? Colors.green : Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ServicesButton(
+                  title: "Plans",
+                  textColor: Colors.white,
+                  buttonColors: [Colors.grey.shade600, Colors.grey.shade700],
+                  onPressed: (offset) => print("Plans pressed"),
+                  isDisabled: !buttonsEnabled[0],
+                ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: ServicesButton(
+                  title: "Predictions",
+                  textColor: Colors.white,
+                  buttonColors: [Colors.orange, Colors.deepOrange],
+                  onPressed: (offset) => print("Predictions pressed"),
+                  isDisabled: !buttonsEnabled[1],
+                ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: ServicesButton(
+                  title: "Horoscope",
+                  textColor: Colors.white,
+                  buttonColors: [Colors.grey.shade600, Colors.grey.shade700],
+                  onPressed: (offset) => print("Horoscope pressed"),
+                  isDisabled: !buttonsEnabled[2],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 Widget fullIconGradientCurveColorButton(
     {required String title,
       required Color textColor,

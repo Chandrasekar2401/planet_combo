@@ -474,25 +474,26 @@ class AddHoroscopeController extends GetxController {
 
   updateProfile(context ,String username) async{
     if(editProfileImageFileList!.isNotEmpty || editProfileImageBase64!.isNotEmpty){
-        updateProfileWithImage(context, username);
+      updateProfileWithImage(context, username);
     }else{
       Map<String, dynamic> updateProfile = {
-          "USERID": appLoadController.loggedUserData.value.userid,
-          "USERNAME": username,
-          "USEREMAIL": appLoadController.loggedUserData.value.useremail,
-          "USERIDD":  appLoadController.loggedUserData.value.useridd!.replaceAll(" ", ""),
-          "USERMOBILE": appLoadController.loggedUserData.value.usermobile,
-          "UCOUNTRY": appLoadController.loggedUserData.value.ucountry,
-          "UCURRENCY": appLoadController.loggedUserData.value.ucurrency,
-          "USERPDATE": getCurrentDateTime(),
-          "USERPPLANG": appLoadController.loggedUserData.value.userpplang,
-          "TOKENFACEBOOK": appLoadController.loggedUserData.value.tokenfacebook,
-          "TOKENGOOGLE": appLoadController.loggedUserData.value.tokengoogle,
-          "TOKENYAHOO": appLoadController.loggedUserData.value.tokenyahoo,
-          "USERPHOTO": appLoadController.loggedUserData.value.userphoto,
-          "TOUCHID": appLoadController.loggedUserData.value.touchid,
-          "PASSWORD": appLoadController.loggedUserData.value.password,
-          "TCCODE": appLoadController.loggedUserData.value.tccode,
+        "USERID": appLoadController.loggedUserData.value.userid,
+        "USERNAME": username,
+        "USEREMAIL": appLoadController.loggedUserData.value.useremail,
+        "USERIDD":  appLoadController.loggedUserData.value.useridd!.replaceAll(" ", ""),
+        "USERMOBILE": appLoadController.loggedUserData.value.usermobile,
+        "UCOUNTRY": appLoadController.loggedUserData.value.ucountry,
+        "UCURRENCY": appLoadController.loggedUserData.value.ucurrency,
+        "USERPDATE": getCurrentDateTime(),
+        "USERPPLANG": appLoadController.loggedUserData.value.userpplang,
+        "TOKENFACEBOOK": appLoadController.loggedUserData.value.tokenfacebook,
+        "TOKENGOOGLE": appLoadController.loggedUserData.value.tokengoogle,
+        "TOKENYAHOO": appLoadController.loggedUserData.value.tokenyahoo,
+        "USERPHOTO": appLoadController.loggedUserData.value.userphoto,
+        "TOUCHID": appLoadController.loggedUserData.value.touchid,
+        "PASSWORD": appLoadController.loggedUserData.value.password,
+        "TCCODE": appLoadController.loggedUserData.value.tccode,
+        "IPADDRESS": appLoadController.loggedUserData.value.ipAddress, // Include IP address in updates too
       };
       print('the passing value $updateProfile');
       CustomDialog.showLoading(context, 'Please wait');
@@ -511,10 +512,12 @@ class AddHoroscopeController extends GetxController {
 
   addNewProfileWithoutImage(context) async{
     if(editImageFileList!.isNotEmpty){
-
+      // Handle image upload if needed
     }else{
       if(appLoadController.loggedUserData.value.ucurrency == null || appLoadController.loggedUserData.value.ucurrency == ''){
         showFailedToast('Country not received, please check or come again, enable the location');
+      }else if(appLoadController.loggedUserData.value.ipAddress == null || appLoadController.loggedUserData.value.ipAddress == ''){
+        showFailedToast('IP address not detected, please check your internet connection and try again');
       }else{
         Map<String, dynamic> addProfile = {
           "USERID": appLoadController.loggedUserData.value.userid,
@@ -525,18 +528,23 @@ class AddHoroscopeController extends GetxController {
           "UCURRENCY": appLoadController.loggedUserData.value.ucurrency,
           "USERPDATE": appLoadController.loggedUserData.value.userpdate,
           "USERPPLANG": appLoadController.loggedUserData.value.userpplang,
-          "TjOKENGOOGLE": appLoadController.loggedUserData.value.tokengoogle,
+          "TOKENGOOGLE": appLoadController.loggedUserData.value.tokengoogle, // Fixed typo
           "USERPHOTO": appLoadController.loggedUserData.value.userphoto,
           "TOUCHID": appLoadController.loggedUserData.value.touchid,
           "PASSWORD": appLoadController.loggedUserData.value.password,
           "TCCODE": appLoadController.loggedUserData.value.tccode,
-          "USERMOBILE": "",
-          "TOKENFACEBOOK": "",
-          "TOKENYAHOO":""
+          "IPADDRESS": appLoadController.loggedUserData.value.ipAddress, // Added IP address
+          "USERMOBILE": appLoadController.loggedUserData.value.usermobile ?? "",
+          "TOKENFACEBOOK": appLoadController.loggedUserData.value.tokenfacebook ?? "",
+          "TOKENYAHOO": appLoadController.loggedUserData.value.tokenyahoo ?? ""
         };
+
+        print('Adding profile with IP address: ${appLoadController.loggedUserData.value.ipAddress}');
+
         CustomDialog.showLoading(context, 'Please wait');
         var response = await APICallings.addProfile(addProfile: addProfile);
         CustomDialog.cancelLoading(context);
+
         String firstFiveLetters = response.substring(0, 5);
         if(response == 'Server down'){
           CustomDialog.showAlert(context, 'Server Down, please try after some time', false, 14);
@@ -795,47 +803,82 @@ class AddHoroscopeController extends GetxController {
     });
   }
 
-  Future<void> updateHoroscopeImageOnly(String hid) async{
+  Future<void> updateHoroscopeImageOnly(String hid) async {
     try {
-      print('its showing you reached');
+      print('Update horoscope image reached');
+
+      if (updateHoroscopeImage.value == null) {
+        showFailedToast('No image selected');
+        return;
+      }
+
       final String filename = 'horoscope_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
       // Headers setup
       final Map<String, String> headers = {
         'TOKEN': appLoadController.loggedUserData.value.token!,
       };
+
       final String url = '${APIEndPoints.baseUrl}api/Horoscope/updateHoroscopeImage/${appLoadController.loggedUserData.value.userid}/$hid';
       final request = http.MultipartRequest('POST', Uri.parse(url))
         ..headers.addAll(headers);
-      if (kIsWeb && updateHoroscopeImage?.value != null) {
-        try {
-          final bytes = await updateHoroscopeImage!.value!.readAsBytes();
-          final multipartFile = http.MultipartFile.fromBytes(
+
+      try {
+        http.MultipartFile multipartFile;
+
+        if (kIsWeb) {
+          // Handle web image
+          print('Processing web image');
+          final bytes = await updateHoroscopeImage.value!.readAsBytes();
+          multipartFile = http.MultipartFile.fromBytes(
             'file',
             bytes,
             filename: filename,
             contentType: MediaType('image', 'jpeg'),
           );
-          request.files.add(multipartFile);
-          final streamedResponse = await request.send().timeout(
-            const Duration(minutes: 2),
-            onTimeout: () {
-              throw 'Connection timeout. Please check your internet connection.';
-            },
+        } else {
+          // Handle mobile image
+          print('Processing mobile image');
+          multipartFile = await http.MultipartFile.fromPath(
+            'file',
+            updateHoroscopeImage.value!.path,
+            filename: filename,
+            contentType: MediaType('image', 'jpeg'),
           );
-          final response = await http.Response.fromStream(streamedResponse);
-          resetImageValues();
-          // Process response
-          if (response.statusCode == 200) {
-            applicationBaseController.getUserHoroscopeList();
-          }else{
-            showFailedToast('Something went wrong');
-          }
-        } catch (e) {
-          throw 'Failed to process web image: $e';
         }
+
+        request.files.add(multipartFile);
+
+        print('Sending request to: $url');
+        final streamedResponse = await request.send().timeout(
+          const Duration(minutes: 2),
+          onTimeout: () {
+            throw 'Connection timeout. Please check your internet connection.';
+          },
+        );
+
+        final response = await http.Response.fromStream(streamedResponse);
+        print('Response status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
+
+        resetImageValues();
+
+        // Process response
+        if (response.statusCode == 200) {
+          showSuccessToast('Image updated successfully');
+          applicationBaseController.getUserHoroscopeList();
+        } else {
+          showFailedToast('Failed to update image. Status: ${response.statusCode}');
+        }
+
+      } catch (e) {
+        print('Error processing image: $e');
+        throw 'Failed to process image: $e';
       }
-    }catch (e) {
-      showFailedToast('Error $e');
+
+    } catch (e) {
+      print('Error in updateHoroscopeImageOnly: $e');
+      showFailedToast('Error: $e');
     }
   }
 

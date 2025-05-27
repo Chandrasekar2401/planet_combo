@@ -426,7 +426,7 @@ class _SpecialPredictionResponseState extends State<SpecialPredictionResponse> w
         padding: EdgeInsets.all(12),
         margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
         decoration: BoxDecoration(
-          color: isUser ? Colors.blue[100] : Colors.green[100],
+          color: isUser ? const Color(0xFFf2b20a).withOpacity(0.15) : const Color(0xFF8A6BB1).withOpacity(0.25),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(

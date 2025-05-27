@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:carousel_slider_plus/carousel_slider_plus.dart';
+import 'package:video_player/video_player.dart';
 import 'dart:convert';
+import 'dart:async';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/common/theme_widgets.dart';
 import 'package:planetcombo/common/constant.dart';
@@ -19,7 +20,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:planetcombo/screens/authentication.dart';
 import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/screens/profile/edit_profile.dart';
-import 'package:planetcombo/screens/web/webLogin.dart';
 import 'package:planetcombo/screens/web/web_article.dart';
 import 'package:planetcombo/screens/web/web_aboutus.dart';
 import 'package:planetcombo/screens/web/web_contactUS.dart';
@@ -27,14 +27,18 @@ import 'package:planetcombo/service/local_notification.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../controllers/localization_controller.dart';
+
 class WebHomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<WebHomePage> with SingleTickerProviderStateMixin {
+class _HomePageState extends State<WebHomePage> with TickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  int _currentIndex = 0;
+
+  // Video speed configuration (1.0 = normal, 0.5 = half speed, 2.0 = double speed)
+  static const double videoPlaybackSpeed = 0.8; // Slow down video to 80% speed
 
   // Controllers
   final AppLoadController appLoadController =
@@ -52,20 +56,15 @@ class _HomePageState extends State<WebHomePage> with SingleTickerProviderStateMi
   late final GoogleSignIn _googleSignIn;
   FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
 
-  final List<String> imgList = [
-    'assets/images/web/bg1.jpg',
-    'assets/images/web/1.jpg',
-    'assets/images/web/2.jpg',
+  // Video assets (add your video paths here)
+  final List<String> videoAssets = [
+    'assets/videos/vid.mp4',
   ];
 
-  final List<String> mobileImgList = [
-    'assets/images/logintn.jpg',
-    'assets/images/web/1.jpg',
-    'assets/images/web/2.jpg',
-  ];
-
-  late AnimationController _controller;
-  late Animation<double> _animation;
+  // Video controllers
+  List<VideoPlayerController> _videoControllers = [];
+  int _currentVideoIndex = 0;
+  bool _isVideoInitialized = false;
 
   int _selectedIndex = 0;
 
@@ -105,11 +104,99 @@ class _HomePageState extends State<WebHomePage> with SingleTickerProviderStateMi
       _initializeNotifications();
     }
 
-    _controller = AnimationController(
-      duration: const Duration(seconds: 15),
-      vsync: this,
-    )..repeat(reverse: true);
-    _animation = Tween<double>(begin: 1.0, end: 2.1).animate(_controller);
+    // Initialize videos
+    _initializeVideos();
+  }
+
+  Future<void> _initializeVideos() async {
+    try {
+      print('Initializing ${videoAssets.length} videos...');
+
+      // Initialize all video controllers
+      for (int i = 0; i < videoAssets.length; i++) {
+        final videoPath = videoAssets[i];
+        print('Initializing video: $videoPath');
+
+        final controller = VideoPlayerController.asset(videoPath);
+        await controller.initialize();
+
+        // Configure video settings
+        controller.setLooping(false); // We'll handle looping manually
+        controller.setVolume(0.0); // Mute videos
+        controller.setPlaybackSpeed(videoPlaybackSpeed); // Set custom speed
+
+        _videoControllers.add(controller);
+        print('Video $i initialized successfully');
+      }
+
+      if (_videoControllers.isNotEmpty) {
+        setState(() {
+          _isVideoInitialized = true;
+        });
+        print('All videos initialized, starting seamless loop');
+        _startVideoLoop();
+      }
+    } catch (e) {
+      print('Error initializing videos: $e');
+    }
+  }
+
+  void _startVideoLoop() {
+    if (_videoControllers.isEmpty) return;
+
+    print('Starting seamless video loop with ${_videoControllers.length} videos');
+
+    _currentVideoIndex = 0;
+    _playCurrentVideo();
+  }
+
+  void _playCurrentVideo() {
+    if (_currentVideoIndex >= _videoControllers.length) return;
+
+    final controller = _videoControllers[_currentVideoIndex];
+
+    // Reset video to beginning
+    controller.seekTo(Duration.zero);
+
+    // Set playback speed
+    controller.setPlaybackSpeed(videoPlaybackSpeed);
+
+    // Start playing
+    controller.play();
+
+    print('Playing video $_currentVideoIndex');
+
+    // Listen for video completion
+    controller.addListener(_videoListener);
+  }
+
+  void _videoListener() {
+    final controller = _videoControllers[_currentVideoIndex];
+
+    // Check if video has finished playing
+    if (controller.value.position >= controller.value.duration &&
+        controller.value.duration > Duration.zero) {
+      print('Video $_currentVideoIndex finished, switching to next');
+      _switchToNextVideo();
+    }
+  }
+
+  void _switchToNextVideo() {
+    if (!mounted) return;
+
+    // Remove listener from current video
+    _videoControllers[_currentVideoIndex].removeListener(_videoListener);
+
+    // Move to next video (loop back to first after last video)
+    _currentVideoIndex = (_currentVideoIndex + 1) % _videoControllers.length;
+
+    print('Switching to video $_currentVideoIndex');
+
+    // Update UI immediately
+    setState(() {});
+
+    // Play next video immediately
+    _playCurrentVideo();
   }
 
   void _initializeNotifications() {
@@ -123,7 +210,12 @@ class _HomePageState extends State<WebHomePage> with SingleTickerProviderStateMi
 
   @override
   void dispose() {
-    _controller.dispose();
+    // Dispose video controllers and remove listeners
+    for (var controller in _videoControllers) {
+      controller.removeListener(_videoListener);
+      controller.dispose();
+    }
+
     super.dispose();
   }
 
@@ -227,47 +319,41 @@ class _HomePageState extends State<WebHomePage> with SingleTickerProviderStateMi
         context, MaterialPageRoute(builder: (context) => const ProfileEdit()));
   }
 
+  Widget _buildVideoBackground() {
+    if (!_isVideoInitialized || _videoControllers.isEmpty) {
+      // Show loading or black screen while videos initialize
+      return Container(
+        color: Colors.black,
+        child: const Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
+    }
+
+    return SizedBox.expand(
+      child: FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: _videoControllers[_currentVideoIndex].value.size.width,
+          height: _videoControllers[_currentVideoIndex].value.size.height,
+          child: VideoPlayer(_videoControllers[_currentVideoIndex]),
+        ),
+      ),
+    );
+  }
+
   Widget _buildHomeContent() {
     final Size screenSize = MediaQuery.of(context).size;
     final bool isSmallScreen = screenSize.width < 600 || screenSize.height < 600;
-    final List<String> currentImgList = kIsWeb ? imgList : mobileImgList;
 
     return Stack(
       children: [
-        // Background Carousel
-        CarouselSlider.builder(
-          itemCount: currentImgList.length,
-          itemBuilder: (context, index, realIndex) {
-            return AnimatedBuilder(
-              animation: _animation,
-              builder: (context, child) {
-                double scale = _animation.value;
-                return Transform.scale(
-                  scale: scale,
-                  child: Container(
-                    width: MediaQuery.of(context).size.width,
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(currentImgList[index]),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-          options: CarouselOptions(
-            height: MediaQuery.of(context).size.height,
-            viewportFraction: 1.0,
-            autoPlay: true,
-            enlargeCenterPage: false,
-            onPageChanged: (index, reason) {
-              setState(() {
-                _currentIndex = index;
-              });
-            },
-          ),
+        // Video Background Only
+        _buildVideoBackground(),
+
+        // Dark overlay for better text readability
+        Container(
+          color: Colors.black.withOpacity(0.3),
         ),
 
         // Content overlay
@@ -341,9 +427,10 @@ class _HomePageState extends State<WebHomePage> with SingleTickerProviderStateMi
 
                   // Author text
                   commonBoldText(
-                    text: '(CHANDRASEKAR PATHATHI - CP ASTROLOGY)',
-                    fontSize: isSmallScreen ? 14 : 18,
-                    color: Colors.white,
+                      text: '(CHANDRASEKAR PATHATHI - CP ASTROLOGY)',
+                      fontSize: isSmallScreen ? 14 : 18,
+                      color: Colors.white,
+                      textAlign: TextAlign.center
                   ),
 
                   SizedBox(height: isSmallScreen ? 20 : 25),
@@ -405,6 +492,7 @@ class _HomePageState extends State<WebHomePage> with SingleTickerProviderStateMi
         onItemTap: _handleItemTap,
         selectedIndex: _selectedIndex,
         isLoggedIn: isLoggedIn,
+        context: context,
       ),
       body: Stack(
         children: [
@@ -427,15 +515,22 @@ class _HomePageState extends State<WebHomePage> with SingleTickerProviderStateMi
   }
 }
 
-// Custom Drawer Widget
+// CustomDrawer code remains the same...
 class CustomDrawer extends StatelessWidget {
   final Function(int) onItemTap;
   final int selectedIndex;
   final bool isLoggedIn;
+  final BuildContext context;
 
   final Constants constant = Constants();
 
-  CustomDrawer({super.key, required this.onItemTap, required this.selectedIndex, this.isLoggedIn = false});
+  CustomDrawer({
+    super.key,
+    required this.onItemTap,
+    required this.selectedIndex,
+    required this.context,
+    this.isLoggedIn = false
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -447,49 +542,146 @@ class CustomDrawer extends StatelessWidget {
         decoration: const BoxDecoration(
           color: Colors.white,
         ),
-        child: ListView(
-          padding: EdgeInsets.zero,
+        child: Column(
           children: [
+            // Header with blur effect
             Container(
-              height: 220,
+              height: 200,
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.transparent),
-                boxShadow: const [],
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: Image.asset('assets/images/headletters.png'),
+              child: Stack(
+                children: [
+                  Center(
+                    child: Image.asset(
+                      'assets/images/headletters.png',
+                      height: 260,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            _createDrawerItem(
-              icon: Icons.home_outlined,
-              text: isLoggedIn ? 'Dashboard' : 'Home',
-              onTap: () => onItemTap(0),
-              isSelected: selectedIndex == 0,
+
+            // Divider
+            Container(
+              height: 1,
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Colors.grey.withOpacity(0.3),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
             ),
-            _createDrawerItem(
-              svgIcon: 'assets/svg/article.svg',
-              text: 'Articles',
-              onTap: () => onItemTap(1),
-              isSelected: selectedIndex == 1,
+
+            // Menu Items
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                child: Column(
+                  children: [
+                    _createDrawerItem(
+                      icon: Icons.dashboard_outlined,
+                      text: isLoggedIn ? 'Dashboard' : 'Home',
+                      onTap: () => onItemTap(0),
+                      isSelected: selectedIndex == 0,
+                    ),
+                    _createDrawerItem(
+                      svgIcon: 'assets/svg/article.svg',
+                      text: 'Articles',
+                      onTap: () => onItemTap(1),
+                      isSelected: selectedIndex == 1,
+                    ),
+                    _createDrawerItem(
+                      svgIcon: 'assets/svg/about1.svg',
+                      text: 'About us',
+                      onTap: () => onItemTap(2),
+                      isSelected: selectedIndex == 2,
+                    ),
+                    _createDrawerItem(
+                      svgIcon: 'assets/svg/contact1.svg',
+                      text: 'Contact',
+                      onTap: () => onItemTap(3),
+                      isSelected: selectedIndex == 3,
+                    ),
+
+                    const Spacer(),
+
+                    // Logout section with divider
+                    if (isLoggedIn) ...[
+                      Container(
+                        height: 1,
+                        margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                        color: Colors.grey.withOpacity(0.2),
+                      ),
+                      _createDrawerItem(
+                        icon: Icons.logout_outlined,
+                        text: 'Logout',
+                        onTap: () => showLogoutDialog(),
+                        isSelected: false,
+                        isLogout: true,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
-            _createDrawerItem(
-              svgIcon: 'assets/svg/about1.svg',
-              text: 'About us',
-              onTap: () => onItemTap(2),
-              isSelected: selectedIndex == 2,
-            ),
-            _createDrawerItem(
-              svgIcon: 'assets/svg/contact1.svg',
-              text: 'Contact',
-              onTap: () => onItemTap(3),
-              isSelected: selectedIndex == 3,
-            ),
-            const SizedBox(height: 10),
-            Padding(
-                padding: const EdgeInsets.all(12),
-                child: commonBoldText(text: '© 2024 Planet Combo - All Rights Reserved.', fontSize: 14)
+
+            // Footer with divider
+            Column(
+              children: [
+                Container(
+                  height: 1,
+                  color: Colors.grey.withOpacity(0.1),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(15),
+                  child: Text(
+                    '© 2024 Planet Combo - All Rights Reserved.',
+                    style: GoogleFonts.lexend(
+                      fontSize: 11,
+                      color: Colors.grey[500],
+                      fontWeight: FontWeight.w400,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> showLogoutDialog() async {
+    return yesOrNoDialog(
+      context: context,
+      dialogMessage: LocalizationController.getInstance().getTranslatedValue('Are you sure you want to logout?'),
+      cancelText: LocalizationController.getInstance().getTranslatedValue('No'),
+      okText: LocalizationController.getInstance().getTranslatedValue('Yes'),
+      cancelAction: () => Navigator.pop(context),
+      okAction: () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear();
+        // appLoadController.userValue.value = false; // Uncomment if needed
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => WebHomePage()),
+              (route) => false,
+        );
+      },
     );
   }
 
@@ -499,33 +691,59 @@ class CustomDrawer extends StatelessWidget {
     required String text,
     required GestureTapCallback onTap,
     required bool isSelected,
+    bool isLogout = false,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 15),
+    final Color itemColor = isLogout
+        ? Colors.red[600]!
+        : isSelected
+        ? constant.appPrimaryColor
+        : Colors.grey[700]!;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: isSelected ? constant.appPrimaryColor.withOpacity(0.08) : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: isSelected
+            ? Border.all(color: constant.appPrimaryColor.withOpacity(0.2), width: 1)
+            : null,
+      ),
       child: ListTile(
-        leading: svgIcon == null ? Icon(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+        leading: svgIcon == null
+            ? Icon(
           icon,
-          size: 21,
-          color: isSelected ? constant.appPrimaryColor : Colors.black,
-        ) :
-        SvgPicture.asset(
+          size: 22,
+          color: itemColor,
+        )
+            : SvgPicture.asset(
           svgIcon,
           colorFilter: ColorFilter.mode(
-            isSelected ? constant.appPrimaryColor : Colors.black,
+            itemColor,
             BlendMode.srcIn,
           ),
-          width: 21,
-          height: 21,
+          width: 22,
+          height: 22,
         ),
         title: Text(
           text,
           style: GoogleFonts.lexend(
             fontSize: 15,
-            fontWeight: FontWeight.w500,
-            color: isSelected ? constant.appPrimaryColor  : Colors.black,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: itemColor,
+            letterSpacing: 0.2,
           ),
         ),
-        selected: isSelected,
+        trailing: isSelected
+            ? Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: constant.appPrimaryColor,
+            shape: BoxShape.circle,
+          ),
+        )
+            : null,
         onTap: onTap,
       ),
     );

@@ -29,7 +29,6 @@ class MessageController extends GetxController {
       CustomDialog.cancelLoading(context);
       var jsonBody = json.decode(response.body);
       if(jsonBody['status'] == 'Success'){
-        applicationBaseController.getUserMessages();
         CustomDialog.okActionAlert(context, jsonBody['message'], 'Ok', true, 14, (){
           Navigator.pop(context);
           Navigator.pop(context);
@@ -56,7 +55,6 @@ class MessageController extends GetxController {
       CustomDialog.cancelLoading(context);
       var jsonBody = json.decode(response.body);
       if(jsonBody['status'] == 'Success'){
-        applicationBaseController.getUserMessages();
         CustomDialog.okActionAlert(context, jsonBody['message'], 'Ok', true, 14, (){
           Navigator.pop(context);
           Navigator.pop(context);
@@ -80,7 +78,6 @@ class MessageController extends GetxController {
       CustomDialog.cancelLoading(context);
       var jsonBody = json.decode(response.body);
       if(jsonBody['status'] == 'Success'){
-        applicationBaseController.getUserMessages();
         CustomDialog.okActionAlert(context, jsonBody['message'], 'Ok', true, 14, (){
           Navigator.pop(context);
         });

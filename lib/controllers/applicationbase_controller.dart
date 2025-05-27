@@ -61,7 +61,6 @@ class ApplicationBaseController extends GetxController {
     _getUserPendingPayments();
     _getTermsAndConditions();
     _getTimeZone();
-    _getUserMessages();
     _getInvoiceList();
   }
 
@@ -147,6 +146,34 @@ class ApplicationBaseController extends GetxController {
       print(error);
         messagesHistory.value = [];
         print('the length of the message history is ${messagesHistory.length}');
+    }
+  }
+
+  Future<void> getUserMessagesForHoroscope(String horoscopeId) async {
+    try {
+      var result = await APICallings.getUserMessagesForHoroscope(
+          userId: appLoadController.loggedUserData!.value.useremail!,
+          horoscopeId: horoscopeId,
+          token: appLoadController.loggedUserData!.value.token!
+      );
+
+      if (result != null) {
+        var jsonData = jsonDecode(result);
+        if (jsonData['status'] == 'Success') {
+          List<MessageHistory> messagesList = [];
+          if (jsonData['data'] != null) {
+            for (var item in jsonData['data']) {
+              messagesList.add(MessageHistory.fromJson(item));
+            }
+          }
+          messagesHistory.value = messagesList;
+        } else {
+          messagesHistory.value = [];
+        }
+      }
+    } catch (e) {
+      print('Error getting horoscope messages: $e');
+      messagesHistory.value = [];
     }
   }
 

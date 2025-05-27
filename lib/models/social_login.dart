@@ -20,6 +20,7 @@ class SocialLoginData {
   String? token;
   String? tcFlag;
   String? tccode;
+  String? ipAddress;
 
   SocialLoginData({
     this.userid,
@@ -43,6 +44,7 @@ class SocialLoginData {
     this.token,
     this.tcFlag,
     this.tccode,
+    this.ipAddress
   });
 
   factory SocialLoginData.fromJson(Map<String, dynamic> json) {
@@ -68,6 +70,7 @@ class SocialLoginData {
       token: json["token"]?.toString(),
       tcFlag: json["tcFlag"]?.toString(),
       tccode: json["tccode"]?.toString(),
+      ipAddress: json["ipAddress"]?.toString()
     );
   }
 
@@ -110,6 +113,7 @@ class SocialLoginData {
       "token": token,
       "tcFlag": tcFlag,
       "tccode": tccode,
+      "ipAddress": ipAddress
     };
   }
 }
