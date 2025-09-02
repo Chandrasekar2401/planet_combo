@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:video_player/video_player.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:planetcombo/common/widgets.dart';
@@ -37,9 +36,6 @@ class WebHomePage extends StatefulWidget {
 class _HomePageState extends State<WebHomePage> with TickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // Video speed configuration (1.0 = normal, 0.5 = half speed, 2.0 = double speed)
-  static const double videoPlaybackSpeed = 0.8; // Slow down video to 80% speed
-
   // Controllers
   final AppLoadController appLoadController =
   Get.put(AppLoadController.getInstance(), permanent: true);
@@ -56,15 +52,22 @@ class _HomePageState extends State<WebHomePage> with TickerProviderStateMixin {
   late final GoogleSignIn _googleSignIn;
   FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
 
-  // Video assets (add your video paths here)
-  final List<String> videoAssets = [
-    'assets/videos/vid.mp4',
+  // Image carousel assets
+  final List<String> backgroundImages = [
+    'assets/images/web/bg1.jpg',
+    'assets/images/web/bg2.jpg',
+    'assets/images/web/bg3.jpg',
   ];
 
-  // Video controllers
-  List<VideoPlayerController> _videoControllers = [];
-  int _currentVideoIndex = 0;
-  bool _isVideoInitialized = false;
+  // Image carousel controller
+  PageController _pageController = PageController();
+  int _currentImageIndex = 0;
+  Timer? _carouselTimer;
+  static const Duration carouselDuration = Duration(seconds: 6); // Change image every 6 seconds
+
+  // Animation controllers for zoom effect
+  late AnimationController _zoomAnimationController;
+  late Animation<double> _scaleAnimation;
 
   int _selectedIndex = 0;
 
@@ -104,99 +107,43 @@ class _HomePageState extends State<WebHomePage> with TickerProviderStateMixin {
       _initializeNotifications();
     }
 
-    // Initialize videos
-    _initializeVideos();
+    // Initialize zoom animation controller
+    _zoomAnimationController = AnimationController(
+      duration: carouselDuration,
+      vsync: this,
+    );
+
+    // Create scale animation that smoothly goes from 1.0 to 1.15 and back
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.15,
+    ).animate(CurvedAnimation(
+      parent: _zoomAnimationController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Initialize image carousel
+    _startImageCarousel();
   }
 
-  Future<void> _initializeVideos() async {
-    try {
-      print('Initializing ${videoAssets.length} videos...');
+  void _startImageCarousel() {
+    // Start the zoom animation
+    _zoomAnimationController.repeat(reverse: true);
 
-      // Initialize all video controllers
-      for (int i = 0; i < videoAssets.length; i++) {
-        final videoPath = videoAssets[i];
-        print('Initializing video: $videoPath');
+    _carouselTimer = Timer.periodic(carouselDuration, (timer) {
+      if (_pageController.hasClients) {
+        _currentImageIndex = (_currentImageIndex + 1) % backgroundImages.length;
+        _pageController.animateToPage(
+          _currentImageIndex,
+          duration: const Duration(milliseconds: 1000),
+          curve: Curves.easeInOut,
+        );
 
-        final controller = VideoPlayerController.asset(videoPath);
-        await controller.initialize();
-
-        // Configure video settings
-        controller.setLooping(false); // We'll handle looping manually
-        controller.setVolume(0.0); // Mute videos
-        controller.setPlaybackSpeed(videoPlaybackSpeed); // Set custom speed
-
-        _videoControllers.add(controller);
-        print('Video $i initialized successfully');
+        // Restart zoom animation for new image
+        _zoomAnimationController.reset();
+        _zoomAnimationController.repeat(reverse: true);
       }
-
-      if (_videoControllers.isNotEmpty) {
-        setState(() {
-          _isVideoInitialized = true;
-        });
-        print('All videos initialized, starting seamless loop');
-        _startVideoLoop();
-      }
-    } catch (e) {
-      print('Error initializing videos: $e');
-    }
-  }
-
-  void _startVideoLoop() {
-    if (_videoControllers.isEmpty) return;
-
-    print('Starting seamless video loop with ${_videoControllers.length} videos');
-
-    _currentVideoIndex = 0;
-    _playCurrentVideo();
-  }
-
-  void _playCurrentVideo() {
-    if (_currentVideoIndex >= _videoControllers.length) return;
-
-    final controller = _videoControllers[_currentVideoIndex];
-
-    // Reset video to beginning
-    controller.seekTo(Duration.zero);
-
-    // Set playback speed
-    controller.setPlaybackSpeed(videoPlaybackSpeed);
-
-    // Start playing
-    controller.play();
-
-    print('Playing video $_currentVideoIndex');
-
-    // Listen for video completion
-    controller.addListener(_videoListener);
-  }
-
-  void _videoListener() {
-    final controller = _videoControllers[_currentVideoIndex];
-
-    // Check if video has finished playing
-    if (controller.value.position >= controller.value.duration &&
-        controller.value.duration > Duration.zero) {
-      print('Video $_currentVideoIndex finished, switching to next');
-      _switchToNextVideo();
-    }
-  }
-
-  void _switchToNextVideo() {
-    if (!mounted) return;
-
-    // Remove listener from current video
-    _videoControllers[_currentVideoIndex].removeListener(_videoListener);
-
-    // Move to next video (loop back to first after last video)
-    _currentVideoIndex = (_currentVideoIndex + 1) % _videoControllers.length;
-
-    print('Switching to video $_currentVideoIndex');
-
-    // Update UI immediately
-    setState(() {});
-
-    // Play next video immediately
-    _playCurrentVideo();
+    });
   }
 
   void _initializeNotifications() {
@@ -210,12 +157,9 @@ class _HomePageState extends State<WebHomePage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    // Dispose video controllers and remove listeners
-    for (var controller in _videoControllers) {
-      controller.removeListener(_videoListener);
-      controller.dispose();
-    }
-
+    _carouselTimer?.cancel();
+    _pageController.dispose();
+    _zoomAnimationController.dispose();
     super.dispose();
   }
 
@@ -319,25 +263,34 @@ class _HomePageState extends State<WebHomePage> with TickerProviderStateMixin {
         context, MaterialPageRoute(builder: (context) => const ProfileEdit()));
   }
 
-  Widget _buildVideoBackground() {
-    if (!_isVideoInitialized || _videoControllers.isEmpty) {
-      // Show loading or black screen while videos initialize
-      return Container(
-        color: Colors.black,
-        child: const Center(
-          child: CircularProgressIndicator(color: Colors.white),
-        ),
-      );
-    }
-
+  Widget _buildImageCarouselBackground() {
     return SizedBox.expand(
-      child: FittedBox(
-        fit: BoxFit.cover,
-        child: SizedBox(
-          width: _videoControllers[_currentVideoIndex].value.size.width,
-          height: _videoControllers[_currentVideoIndex].value.size.height,
-          child: VideoPlayer(_videoControllers[_currentVideoIndex]),
-        ),
+      child: PageView.builder(
+        controller: _pageController,
+        itemCount: backgroundImages.length,
+        onPageChanged: (index) {
+          setState(() {
+            _currentImageIndex = index;
+          });
+        },
+        itemBuilder: (context, index) {
+          return AnimatedBuilder(
+            animation: _scaleAnimation,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _scaleAnimation.value,
+                child: Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(backgroundImages[index]),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -348,12 +301,12 @@ class _HomePageState extends State<WebHomePage> with TickerProviderStateMixin {
 
     return Stack(
       children: [
-        // Video Background Only
-        _buildVideoBackground(),
+        // Image Carousel Background
+        _buildImageCarouselBackground(),
 
         // Dark overlay for better text readability
         Container(
-          color: Colors.black.withOpacity(0.3),
+          color: Colors.black.withOpacity(0.4),
         ),
 
         // Content overlay

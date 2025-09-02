@@ -48,6 +48,7 @@ dependencies:
   youtube_player_iframe: ^5.2.1
   encrypt: ^5.0.3
   video_player: ^2.9.5
+  connectivity_plus: ^6.1.5
 #  payu_checkoutpro_flutter: ^1.3.0
 
 dev_dependencies:

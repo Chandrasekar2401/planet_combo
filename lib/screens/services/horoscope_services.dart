@@ -379,11 +379,14 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
         child: Scaffold(
             appBar: GradientAppBar(
               leading: IconButton(onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const Dashboard()),
-                      (Route<dynamic> route) => false,
-                );
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                } else {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const Dashboard()),
+                  );
+                }
               }, icon: const Icon(Icons.chevron_left_rounded),),
               title: LocalizationController.getInstance().getTranslatedValue("Horoscope Services - ${appLoadController.loggedUserData.value.username}"),
               colors: const [Color(0xFFf2b20a), Color(0xFFf34509)], centerTitle: true,
