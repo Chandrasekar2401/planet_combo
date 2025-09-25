@@ -78,7 +78,7 @@ class HoroscopesList {
     this.senderEmail,
     this.requestId,
     this.amount
-});
+  });
   String? huserid;
   String? hid;
   String? hname;
@@ -149,8 +149,9 @@ class HoroscopesList {
   String? timezone;
   String? recttifiedTImeString;
   String? senderEmail;
-  int? requestId;
+  int? requestId;     // Keep as int? since it's used as int in your code
   double? amount;
+
   factory HoroscopesList.fromJson(Map<String, dynamic> json) => HoroscopesList(
     huserid: _parseString(json["huserid"] ?? json["HUSERID"]),
     hid: _parseString(json["hid"] ?? json["HID"]),
@@ -222,23 +223,57 @@ class HoroscopesList {
     timezone: _parseString(json["timezone"] ?? json["TIMEZONE"]),
     recttifiedTImeString: _parseString(json["recttifiedtimestring"] ?? json["RecttifiedTImeString"]),
     senderEmail: _parseString(json["senderemail"] ?? json["senderEmail"]),
-    requestId: json["requestId"] ?? 0,
-    amount: json["amount"] ?? 0,
+    requestId: _parseInt(json["requestId"]),        // Use _parseInt for integer fields
+    amount: _parseDouble(json["amount"]),        // Use _parseDouble for double fields
   );
 
-  // Helper methods to parse different types to String or double
+  // Enhanced helper methods to parse different types safely
   static String? _parseString(dynamic value) {
     if (value == null) return null;
     return value.toString();
   }
 
-  static double? _parseDouble(dynamic value) {
+  static int? _parseInt(dynamic value) {
     if (value == null) return null;
-    if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value);
-    return null;
+
+    // Handle different types that could come from JSON
+    if (value is int) return value;
+    if (value is double) return value.toInt();  // Convert double to int
+    if (value is num) return value.toInt();
+    if (value is String) {
+      if (value.isEmpty) return null;
+      return int.tryParse(value);
+    }
+
+    // If it's any other type, try to convert to string and then parse
+    try {
+      return int.tryParse(value.toString());
+    } catch (e) {
+      print('Error parsing int from value: $value, error: $e');
+      return null;
+    }
   }
 
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+
+    // Handle different types that could come from JSON
+    if (value is double) return value;
+    if (value is int) return value.toDouble();  // This fixes the main issue
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      if (value.isEmpty) return null;
+      return double.tryParse(value);
+    }
+
+    // If it's any other type, try to convert to string and then parse
+    try {
+      return double.tryParse(value.toString());
+    } catch (e) {
+      print('Error parsing double from value: $value, error: $e');
+      return null;
+    }
+  }
 
   Map<String, dynamic> toJson() => {
     "huserid": huserid,
@@ -311,7 +346,7 @@ class HoroscopesList {
     "timezone": timezone,
     "recttifiedtimestring": recttifiedTImeString,
     "senderemail": senderEmail,
-    "requestId":requestId,
+    "requestId": requestId,
     "amount": amount
   };
 }

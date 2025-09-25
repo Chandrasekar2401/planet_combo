@@ -78,6 +78,7 @@ flutter:
     - assets/svg/
     - assets/icon/
     - assets/videos/vid.mp4
+    - assets/videos/pot.mp4
     - lib/Globalization/languages/en.json
     - lib/Globalization/languages/ta.json
     - lib/Globalization/languages/hi.json

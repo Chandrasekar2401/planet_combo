@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:planetcombo/controllers/apiCalling_controllers.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
@@ -8,6 +9,7 @@ import 'package:planetcombo/api/api_callings.dart';
 import 'package:planetcombo/models/payment_records.dart';
 import 'package:planetcombo/models/get_request.dart';
 import 'package:planetcombo/models/pending_payment_list.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../api/api_endpoints.dart';
 
@@ -297,8 +299,12 @@ class ApplicationBaseController extends GetxController {
 
   Future<void> _getUserHoroscopeList() async {
     try {
-      horoscopeListError.value = '';
-      horoscopeListPageLoad.value = true;
+      // Use WidgetsBinding to ensure updates happen after build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        horoscopeListError.value = '';
+        horoscopeListPageLoad.value = true;
+      });
+
       var response = await APICallings.getHoroscope(
           userId: appLoadController.loggedUserData.value.userid!,
           token: appLoadController.loggedUserData.value.token!
@@ -308,26 +314,38 @@ class ApplicationBaseController extends GetxController {
         var jsonBody = json.decode(response);
         if (jsonBody['status'] == 'Success') {
           if (jsonBody['data'] == null) {
-            horoscopeList.value = [];
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              horoscopeList.value = [];
+            });
           } else {
-            horoscopeList.value = horoscopesListFromJson(response);
-            horoscopeList.value.sort((a, b) {
+            List<HoroscopesList> tempList = horoscopesListFromJson(response);
+            tempList.sort((a, b) {
               DateTime dateA = DateTime.parse(a.hcreationdate ?? "1970-01-01T00:00:00.00");
               DateTime dateB = DateTime.parse(b.hcreationdate ?? "1970-01-01T00:00:00.00");
               return dateB.compareTo(dateA);
             });
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              horoscopeList.value = tempList;
+            });
           }
         } else {
-          horoscopeList.value = [];
-          horoscopeListError.value = jsonBody['Message'] ?? 'Unknown error occurred';
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            horoscopeList.value = [];
+            horoscopeListError.value = jsonBody['Message'] ?? 'Unknown error occurred';
+          });
         }
       }
     } catch (e) {
       print("Error in _getUserHoroscopeList: $e");
-      horoscopeListError.value = e.toString();
-      horoscopeList.value = [];
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        horoscopeListError.value = e.toString();
+        horoscopeList.value = [];
+      });
     } finally {
-      horoscopeListPageLoad.value = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        horoscopeListPageLoad.value = false;
+      });
     }
   }
 

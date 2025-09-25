@@ -1274,19 +1274,24 @@ class PrimaryStraightIconInputText extends StatelessWidget {
   }
 }
 
-class ReusableDropdown extends StatelessWidget {
-  final List<String> options;
-  final String currentValue;
-  final Function(String?) onChanged;
+class ReusableDropdown<T> extends StatelessWidget {
+  final List<T> options;
+  final T? currentValue;
+  final ValueChanged<T?> onChanged;
 
-  ReusableDropdown({required this.options, required this.currentValue, required this.onChanged});
+  const ReusableDropdown({
+    Key? key,
+    required this.options,
+    required this.currentValue,
+    required this.onChanged,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 35,
       width: double.infinity,
-      child: DropdownButton<String>(
+      child: DropdownButton<T>(
         value: currentValue,
         onChanged: onChanged,
         iconEnabledColor: Colors.deepOrange,
@@ -1296,13 +1301,14 @@ class ReusableDropdown extends StatelessWidget {
           color: Colors.orange,
         ),
         items: options
-            .map<DropdownMenuItem<String>>((String value) => DropdownMenuItem<String>(
+            .map((T value) => DropdownMenuItem<T>(
           value: value,
-          child: Text(value,
-              style: GoogleFonts.lexend(
-                  fontSize: 14,
-                  color: Colors.black54
-              )
+          child: Text(
+            value.toString(),
+            style: GoogleFonts.lexend(
+              fontSize: 14,
+              color: Colors.black54,
+            ),
           ),
         ))
             .toList(),

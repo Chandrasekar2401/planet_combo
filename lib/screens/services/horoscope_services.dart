@@ -108,8 +108,16 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
   }
 
   Future<void> _getUserPredictions(String hid) async {
-    horoscopeServiceController.isLoading.value = true;
+    // Check if already loading to prevent multiple calls
+    if (horoscopeServiceController.isLoading.value) return;
+
+    // Use WidgetsBinding to ensure state updates happen after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      horoscopeServiceController.isLoading.value = true;
+    });
+
     CustomDialog.showLoading(context, 'Please wait');
+
     try {
       bool result = await horoscopeServiceController.getUserPredictions(hid)
           .timeout(const Duration(seconds: 30));
@@ -117,7 +125,11 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
 
       if (mounted) {
         CustomDialog.cancelLoading(context);
-        horoscopeServiceController.isLoading.value = false;
+
+        // Use WidgetsBinding for state updates
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          horoscopeServiceController.isLoading.value = false;
+        });
 
         if (result == true) { // Explicit check for true
           print('Navigating to Predictions');
@@ -139,7 +151,9 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
     } on TimeoutException catch (_) {
       if (mounted) {
         CustomDialog.cancelLoading(context);
-        horoscopeServiceController.isLoading.value = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          horoscopeServiceController.isLoading.value = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Error: Request timed out, please try again.'),
@@ -150,7 +164,9 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
     } catch (error) {
       if (mounted) {
         CustomDialog.cancelLoading(context);
-        horoscopeServiceController.isLoading.value = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          horoscopeServiceController.isLoading.value = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: ${error.toString()}'),
@@ -165,8 +181,6 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
     CustomDialog.showLoading(context, 'Please wait');
     var result = await APICallings.deleteHoroscope(userId: userId, hId: hid.trim(), token: appLoadController.loggedUserData!.value.token!);
     CustomDialog.cancelLoading(context);
-    var jsondata = jsonDecode(result!);
-    print('The recevied result is $jsondata');
     applicationBaseController.updateHoroscopeUiList();
   }
 

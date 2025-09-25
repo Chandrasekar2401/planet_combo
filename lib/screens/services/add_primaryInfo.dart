@@ -40,6 +40,14 @@ class _AddPrimaryState extends State<AddPrimary> {
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
 
+  String normalizeValue(String value){
+    if(value.endsWith('.0')){
+      return value.replaceAll('.0', '');
+    }else{
+      return value;
+    }
+
+  }
   void _selectWebDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -377,10 +385,15 @@ class _AddPrimaryState extends State<AddPrimary> {
                             ),
                             const SizedBox(height: 15),
                             commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Order Of birth (Are you the first or second or ...Child in the family)'), fontSize: 12, color: Colors.black87, textAlign: TextAlign.start),
-                            ReusableDropdown(options: const ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], currentValue: addHoroscopeController.birthOrder.value, onChanged: (value){
-                              print('selected value is $value');
-                              addHoroscopeController.birthOrder.value = value!;
-                            }),
+                            ReusableDropdown(
+                              options: const ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                              currentValue: addHoroscopeController.birthOrder.value.isEmpty
+                                  ? '1'
+                                  : normalizeValue(addHoroscopeController.birthOrder.value),
+                              onChanged: (value) {
+                                addHoroscopeController.birthOrder.value = value ?? '';
+                              },
+                            ),
                           ],
                         ),
                       ),
