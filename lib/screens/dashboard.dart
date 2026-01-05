@@ -650,7 +650,7 @@ class _DashboardState extends State<Dashboard>
                         Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(4),
-                            color: Colors.black.withOpacity(0.4),
+                            color: Colors.black.withOpacity(0.15),
                           ),
                         ),
                       _buildMenuContent(),

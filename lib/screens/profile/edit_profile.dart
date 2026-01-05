@@ -19,6 +19,8 @@ import 'package:planetcombo/screens/web/webLogin.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:planetcombo/service/ipAddressService.dart';
 
+import '../web/web_home.dart';
+
 class ProfileEdit extends StatefulWidget {
   const ProfileEdit({Key? key}) : super(key: key);
 
@@ -474,7 +476,7 @@ class _ProfileEditState extends State<ProfileEdit> {
               SharedPreferences prefs = await SharedPreferences.getInstance();
               prefs.remove('UserInfo');
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const SocialLogin()),
+                MaterialPageRoute(builder: (context) => WebHomePage()),
               );
             }
           },
