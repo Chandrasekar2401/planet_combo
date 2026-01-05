@@ -1,6 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:planetcombo/common/widgets.dart';
@@ -36,7 +34,8 @@ class Dashboard extends StatefulWidget {
   _DashboardState createState() => _DashboardState();
 }
 
-class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, WidgetsBindingObserver {
+class _DashboardState extends State<Dashboard>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   // Constants
   static const bool enableVideoBackground = true;
   static const double videoPlaybackSpeed = 0.8;
@@ -47,9 +46,12 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
   // Keys and Controllers
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final LocalAuthentication auth = LocalAuthentication();
-  final LocalizationController localizationController = Get.put(LocalizationController.getInstance(), permanent: true);
-  final AppLoadController appLoadController = Get.put(AppLoadController.getInstance(), permanent: true);
-  final AddHoroscopeController addHoroscopeController = Get.put(AddHoroscopeController.getInstance(), permanent: true);
+  final LocalizationController localizationController =
+  Get.put(LocalizationController.getInstance(), permanent: true);
+  final AppLoadController appLoadController =
+  Get.put(AppLoadController.getInstance(), permanent: true);
+  final AddHoroscopeController addHoroscopeController =
+  Get.put(AddHoroscopeController.getInstance(), permanent: true);
   final Constants constants = Constants();
 
   // State Variables
@@ -63,6 +65,9 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
   int _currentVideoIndex = 0;
   bool _isVideoInitialized = false;
 
+  bool get _isWeb => kIsWeb;
+  bool get _isMobile => !_isWeb;
+
   @override
   void initState() {
     super.initState();
@@ -70,13 +75,12 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
     _debugVideoSetup();
 
     // For mobile, start with audio enabled (unmuted)
-    if (!kIsWeb) {
+    if (!_isWeb) {
       _isMuted = false;
     }
 
     if (enableVideoBackground) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        // Give extra delay so refresh/direct landing works
         await Future.delayed(const Duration(milliseconds: 1200));
         if (mounted) {
           _determineVideoAssets();
@@ -87,7 +91,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
   }
 
   void _determineVideoAssets() {
-    if (kIsWeb) {
+    if (_isWeb) {
       // Web always uses landscape video
       videoAssets = ['assets/videos/vid.mp4'];
     } else {
@@ -114,10 +118,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
     super.didChangeAppLifecycleState(state);
 
     if (state == AppLifecycleState.resumed) {
-      // When app resumes, ensure video state is consistent
       _syncVideoState();
     } else if (state == AppLifecycleState.paused) {
-      // Pause videos when app goes to background
       _pauseAllVideos();
     }
   }
@@ -126,18 +128,14 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
     if (_videoControllers.isNotEmpty &&
         _currentVideoIndex < _videoControllers.length &&
         _videoControllers[_currentVideoIndex].value.isInitialized) {
-
       final controller = _videoControllers[_currentVideoIndex];
 
-      // Ensure volume matches mute state
       controller.setVolume(_isMuted ? 0.0 : videoVolume);
 
-      // Restart video if it's not playing
       if (!controller.value.isPlaying) {
         _playCurrentVideo();
       }
 
-      // Update UI to reflect current state
       if (mounted) {
         setState(() {});
       }
@@ -152,11 +150,10 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
     }
   }
 
-  // Debug method to help troubleshoot video issues
   void _debugVideoSetup() {
     print('=== VIDEO SETUP DEBUG ===');
     print('enableVideoBackground: $enableVideoBackground');
-    print('Platform: ${kIsWeb ? "Web" : "Mobile"}');
+    print('Platform: ${_isWeb ? "Web" : "Mobile"}');
     print('Initial mute state: $_isMuted');
     print('========================');
   }
@@ -189,9 +186,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
             controller.value.size.width > 0 &&
             controller.value.size.height > 0 &&
             controller.value.duration > Duration.zero) {
-
           controller.setLooping(false);
-          // Set initial volume based on platform and mute state
           controller.setVolume(_isMuted ? 0.0 : videoVolume);
           controller.setPlaybackSpeed(videoPlaybackSpeed);
 
@@ -206,7 +201,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
       }
     }
 
-    // Start video loop after all controllers are ready
     if (_videoControllers.isNotEmpty && mounted) {
       setState(() => _isVideoInitialized = true);
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -243,7 +237,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
       controller.addListener(_videoListener);
 
       controller.play();
-      print('Playing video $_currentVideoIndex with ${_isMuted ? "muted" : "unmuted"} audio');
+      print(
+          'Playing video $_currentVideoIndex with ${_isMuted ? "muted" : "unmuted"} audio');
     } catch (e) {
       print('Error playing video: $e');
       _switchToNextVideo();
@@ -281,7 +276,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
   void _switchToNextVideo() {
     if (!mounted || _videoControllers.isEmpty) return;
     try {
-      // Clean up current video
       if (_currentVideoIndex < _videoControllers.length) {
         _videoControllers[_currentVideoIndex].removeListener(_videoListener);
         _videoControllers[_currentVideoIndex].pause();
@@ -315,21 +309,20 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
     _videoControllers.clear();
   }
 
-  // Toggle mute/unmute (only for web)
   void _toggleMute() {
-    if (kIsWeb) {
+    if (_isWeb) {
       setState(() {
         _isMuted = !_isMuted;
       });
 
-      // Update volume for current video controller
       if (_videoControllers.isNotEmpty &&
           _currentVideoIndex < _videoControllers.length &&
           _videoControllers[_currentVideoIndex].value.isInitialized) {
-        _videoControllers[_currentVideoIndex].setVolume(_isMuted ? 0.0 : videoVolume);
+        _videoControllers[_currentVideoIndex]
+            .setVolume(_isMuted ? 0.0 : videoVolume);
 
-        // If video is not playing and we're unmuting, start playing
-        if (!_isMuted && !_videoControllers[_currentVideoIndex].value.isPlaying) {
+        if (!_isMuted &&
+            !_videoControllers[_currentVideoIndex].value.isPlaying) {
           _playCurrentVideo();
         }
       }
@@ -338,17 +331,16 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
     }
   }
 
-  // Handle orientation changes for mobile
   void _handleOrientationChange() {
-    if (!kIsWeb && mounted) {
+    if (!_isWeb && mounted) {
       final size = MediaQuery.of(context).size;
-      final newOrientation = size.height > size.width ? Orientation.portrait : Orientation.landscape;
+      final newOrientation =
+      size.height > size.width ? Orientation.portrait : Orientation.landscape;
 
       if (_currentOrientation != newOrientation) {
         _currentOrientation = newOrientation;
         print('Orientation changed to: $newOrientation');
 
-        // Reinitialize videos with correct assets for new orientation
         _determineVideoAssets();
         if (enableVideoBackground) {
           _initializeVideos();
@@ -357,12 +349,9 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
     }
   }
 
-  // Method to handle page focus/resume
   void _onPageResumed() {
-    // Check for orientation changes on mobile
     _handleOrientationChange();
 
-    // Ensure video state is consistent when returning to page
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _syncVideoState();
@@ -377,31 +366,42 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
     Navigator.of(context).pop();
 
     switch (index) {
-      case 0: break; // Dashboard
-      case 1: _navigateToArticles(); break;
-      case 2: _navigateToAboutUs(); break;
-      case 3: _navigateToContact(); break;
+      case 0:
+        break; // Dashboard
+      case 1:
+        _navigateToArticles();
+        break;
+      case 2:
+        _navigateToAboutUs();
+        break;
+      case 3:
+        _navigateToContact();
+        break;
     }
   }
 
   void _navigateToArticles() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => buildWebArticle()));
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => buildWebArticle()));
   }
 
   void _navigateToAboutUs() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => buildWebAboutUs()));
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => buildWebAboutUs()));
   }
 
   void _navigateToContact() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => buildWebContactUs()));
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => buildWebContactUs()));
   }
 
-  // Dialog Methods
   Future<void> _showLogoutDialog() async {
     return yesOrNoDialog(
       context: context,
-      dialogMessage: LocalizationController.getInstance().getTranslatedValue('Are you sure you want to logout?'),
-      cancelText: LocalizationController.getInstance().getTranslatedValue('No'),
+      dialogMessage: LocalizationController.getInstance()
+          .getTranslatedValue('Are you sure you want to logout?'),
+      cancelText:
+      LocalizationController.getInstance().getTranslatedValue('No'),
       okText: LocalizationController.getInstance().getTranslatedValue('Yes'),
       cancelAction: () => Navigator.pop(context),
       okAction: _performLogout,
@@ -419,9 +419,10 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
     );
   }
 
-  // Widget Builders
+  // PROFILE IMAGE
+
   Widget _buildProfileImage(String imageUrl) {
-    if (kIsWeb) {
+    if (_isWeb) {
       return _buildWebProfileImage(imageUrl);
     }
     return _buildMobileProfileImage(imageUrl);
@@ -440,7 +441,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
               'Access-Control-Allow-Methods': 'GET',
             }),
             fit: BoxFit.cover,
-            onError: (error, stackTrace) => print('Error loading image: $error'),
+            onError: (error, stackTrace) =>
+                print('Error loading image: $error'),
           ),
         ),
         child: Image.network(
@@ -467,19 +469,25 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
     return ClipOval(
       child: CachedNetworkImage(
         imageUrl: imageUrl,
-        width: 95,
-        height: 95,
+        width: 40,
+        height: 40,
         fit: BoxFit.cover,
-        placeholder: (context, url) => const CircularProgressIndicator(),
+        placeholder: (context, url) => const SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
         errorWidget: (context, url, error) => Container(
-          width: 95,
-          height: 95,
+          width: 40,
+          height: 40,
           color: Colors.grey[300],
-          child: const Icon(Icons.person, size: 40),
+          child: const Icon(Icons.person, size: 22),
         ),
       ),
     );
   }
+
+  // BACKGROUND VIDEO LAYER
 
   Widget _buildVideoBackground() {
     if (!enableVideoBackground ||
@@ -492,22 +500,21 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
     final controller = _videoControllers[_currentVideoIndex];
 
     if (controller.value.isInitialized) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(4),
-        child: SizedBox.expand(
-          child: FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: controller.value.size.width,
-              height: controller.value.size.height,
-              child: VideoPlayer(controller),
-            ),
+      return SizedBox.expand(
+        child: FittedBox(
+          fit: BoxFit.cover,
+          child: SizedBox(
+            width: controller.value.size.width,
+            height: controller.value.size.height,
+            child: VideoPlayer(controller),
           ),
         ),
       );
     }
     return const SizedBox.shrink();
   }
+
+  // OLD MENU GRID (WEB ONLY)
 
   Widget _buildMenuItem({
     required String iconPath,
@@ -521,14 +528,16 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
         width: MediaQuery.of(context).size.width * 0.4,
         height: 125,
         decoration: BoxDecoration(
-          border: showBorder ? Border(
+          border: showBorder
+              ? Border(
             bottom: BorderSide(
               color: enableVideoBackground
                   ? Colors.white.withOpacity(0.3)
                   : appLoadController.appPrimaryColor,
               width: 0.3,
             ),
-          ) : null,
+          )
+              : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -544,7 +553,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
             ),
             const SizedBox(height: 12),
             commonBoldText(
-              text: LocalizationController.getInstance().getTranslatedValue(text),
+              text: LocalizationController.getInstance()
+                  .getTranslatedValue(text),
               fontSize: 13,
               color: enableVideoBackground
                   ? Colors.white
@@ -585,7 +595,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
             commonBoldText(
               fontSize: 21,
               color: Colors.white,
-              text: LocalizationController.getInstance().getTranslatedValue("Welcome to Planet Combo"),
+              text: LocalizationController.getInstance()
+                  .getTranslatedValue("Welcome to Planet Combo"),
             ),
             const SizedBox(height: 5),
             Padding(
@@ -611,12 +622,11 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
       child: LayoutBuilder(
         builder: (context, constraints) {
           final screenWidth = MediaQuery.of(context).size.width;
-          final menuWidth = kIsWeb
-              ? (screenWidth * 0.85).clamp(800.0, 1600.0)
-              : screenWidth;
+          final menuWidth =
+          kIsWeb ? (screenWidth * 0.85).clamp(800.0, 1600.0) : screenWidth;
 
           return Center(
-            child: Container(
+            child: SizedBox(
               width: menuWidth,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 21),
@@ -672,22 +682,32 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
         _buildMenuItem(
           iconPath: 'assets/svg/horoscope.svg',
           text: "Horoscope Services",
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HoroscopeServices())),
+          onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const HoroscopeServices())),
         ),
         _buildMenuItem(
           iconPath: 'assets/svg/app.svg',
           text: "About Planetcombo",
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const FactsMyths())),
+          onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const FactsMyths())),
         ),
         _buildMenuItem(
           iconPath: 'assets/svg/Profile_Update.svg',
           text: "Profile",
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Profile())),
+          onTap: () =>
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const Profile())),
         ),
         _buildMenuItem(
           iconPath: 'assets/svg/support.svg',
           text: "Tech Support",
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LiveChat())),
+          onTap: () =>
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const LiveChat())),
           showBorder: false,
         ),
       ],
@@ -700,24 +720,27 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
         _buildMenuItem(
           iconPath: 'assets/svg/payment.svg',
           text: "Payment",
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentDashboard())),
+          onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const PaymentDashboard())),
         ),
         _buildMenuItem(
           iconPath: 'assets/svg/wallet.svg',
           text: "Pricing Plans",
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PricingPage())),
+          onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const PricingPage())),
         ),
         _buildMenuItem(
           iconPath: 'assets/svg/youtube.svg',
           text: "How to Use",
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const YouTubeVideosPage())),
+          onTap: () =>
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const YouTubeVideosPage())),
         ),
-        _buildMenuItem(
-          iconPath: 'assets/svg/Terms-conditions.svg',
-          text: "Terms and Conditions",
-          onTap: _handleTermsAndConditions,
-          showBorder: false,
-        ),
+        // Terms & Conditions removed from dashboard in both views
       ],
     );
   }
@@ -733,7 +756,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
   }
 
   void _handleTermsAndConditions() {
-    final link = ApplicationBaseController.getInstance().termsAndConditionsLink.value;
+    final link =
+        ApplicationBaseController.getInstance().termsAndConditionsLink.value;
     if (link.isEmpty) {
       showFailedToast('Error : Link Not found');
     } else {
@@ -745,12 +769,11 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenWidth = MediaQuery.of(context).size.width;
-        final logoutWidth = kIsWeb
-            ? (screenWidth * 0.85).clamp(800.0, 1600.0)
-            : screenWidth;
+        final logoutWidth =
+        kIsWeb ? (screenWidth * 0.85).clamp(800.0, 1600.0) : screenWidth;
 
         return Center(
-          child: Container(
+          child: SizedBox(
             width: logoutWidth,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 21),
@@ -788,9 +811,9 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
                               const SizedBox(width: 12),
                               Flexible(
                                 child: Text(
-                                  LocalizationController.getInstance().getTranslatedValue(
-                                      "Logout - (${appLoadController.loggedUserData.value.userid})"
-                                  ),
+                                  LocalizationController.getInstance()
+                                      .getTranslatedValue(
+                                      "Logout - (${appLoadController.loggedUserData.value.userid})"),
                                   style: TextStyle(
                                     color: appLoadController.appPrimaryColor,
                                     fontSize: 16,
@@ -861,7 +884,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
         ),
         const SizedBox(height: 4),
         commonText(
-          text: "ADDRESS: 7, KANNADASAN SALAI, T NAGAR THIYAGARAYA NAGAR CHENNAI",
+          text:
+          "ADDRESS: 7, KANNADASAN SALAI, T NAGAR THIYAGARAYA NAGAR CHENNAI",
           color: Colors.black,
           fontSize: 10,
         ),
@@ -876,7 +900,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
   }
 
   Widget _buildCopyrightSection() {
-    final isINR = appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr';
+    final isINR =
+        appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -884,8 +909,10 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
         commonBoldText(
           textAlign: TextAlign.right,
           text: isINR
-              ? LocalizationController.getInstance().getTranslatedValue("Domain Name : PlanetCombo.com")
-              : LocalizationController.getInstance().getTranslatedValue("© Planet Combo... All rights reserved"),
+              ? LocalizationController.getInstance()
+              .getTranslatedValue("Domain Name : PlanetCombo.com")
+              : LocalizationController.getInstance()
+              .getTranslatedValue("© Planet Combo... All rights reserved"),
           fontSize: 11,
           color: Colors.black,
         ),
@@ -893,8 +920,10 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
         commonText(
           textAlign: TextAlign.right,
           text: isINR
-              ? LocalizationController.getInstance().getTranslatedValue("Planetary calculations on horoscopes, Dasas and transits powered by True Astrology software")
-              : LocalizationController.getInstance().getTranslatedValue("Developed by Planetcombo Team"),
+              ? LocalizationController.getInstance().getTranslatedValue(
+              "Planetary calculations on horoscopes, Dasas and transits powered by True Astrology software")
+              : LocalizationController.getInstance()
+              .getTranslatedValue("Developed by Planetcombo Team"),
           fontSize: 10,
           color: Colors.black,
         ),
@@ -905,15 +934,370 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
           textAlign: TextAlign.right,
           text: isINR
               ? '© ${LocalizationController.getInstance().getTranslatedValue("V.Chandrasekar... All rights reserved")}'
-              : LocalizationController.getInstance().getTranslatedValue("Version : 1.0.0"),
+              : LocalizationController.getInstance()
+              .getTranslatedValue("Version : 1.0.0"),
         ),
       ],
     );
   }
 
+  // ---------- NEW MOBILE DASHBOARD LAYOUT ----------
+
+  Widget _buildMobileDashboardBody() {
+    final size = MediaQuery.of(context).size;
+    final primary = appLoadController.appPrimaryColor;
+    final username = appLoadController.loggedUserData.value.username ?? '';
+
+    // ~70% video, ~30% bottom panel
+    final double panelHeight = size.height * 0.35;
+
+    return Stack(
+      children: [
+        // Background video
+        Positioned.fill(
+          child: enableVideoBackground && _isVideoInitialized
+              ? _buildVideoBackground()
+              : Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFf2b20a), Color(0xFFf34509)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+        ),
+
+        // Dark overlay for readability
+        if (enableVideoBackground)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.45),
+            ),
+          ),
+
+        // Center welcome text (no button)
+        Align(
+          alignment: Alignment.center,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                commonText(
+                  text: LocalizationController.getInstance()
+                      .getTranslatedValue("Hi, $username"),
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.9),
+                ),
+                const SizedBox(height: 4),
+                commonBoldText(
+                  text: LocalizationController.getInstance()
+                      .getTranslatedValue("Welcome to Planet Combo"),
+                  fontSize: 22,
+                  color: Colors.white,
+                )
+              ],
+            ),
+          ),
+        ),
+
+        // Bottom white panel
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            height:panelHeight,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white24,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(7),
+                topRight: Radius.circular(7),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.max,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 12),
+
+                  // Horoscope Services full-width card
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const HoroscopeServices(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 62,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: primary.withOpacity(0.2)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Row(
+                          children: [
+                            SvgPicture.asset(
+                              'assets/svg/horoscope.svg',
+                              width: 28,
+                              height: 28,
+                              color: primary,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: commonBoldText(
+                                text:
+                                LocalizationController.getInstance()
+                                    .getTranslatedValue("Horoscope Services"),
+                                fontSize: 15,
+                              ),
+                            ),
+                            Container(
+                              padding:
+                              const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade600,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: commonBoldText(text:
+                                'NEW',
+                                color: Colors.white,
+                                fontSize: 9
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 8), // small gap between card and grid
+
+                  // Grid – now starts right under the card
+                  Flexible(
+                    fit: FlexFit.loose,
+                    child: GridView.count(
+                      padding: EdgeInsets.zero,              // <-- no extra padding
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: 1.3,
+                      shrinkWrap: true,                      // <-- use only required height
+                      physics: const BouncingScrollPhysics(),
+                      children: [
+                        _buildMobileMenuTile(
+                          title: "Payment",
+                          iconPath: 'assets/svg/payment.svg',
+                          isNew: false,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const PaymentDashboard(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildMobileMenuTile(
+                          title: "Pricing Plans",
+                          iconPath: 'assets/svg/wallet.svg',
+                          isNew: false,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const PricingPage(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildMobileMenuTile(
+                          title: "How to Use",
+                          iconPath: 'assets/svg/youtube.svg',
+                          isNew: true,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const YouTubeVideosPage(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildMobileMenuTile(
+                          title: "Profile",
+                          iconPath: 'assets/svg/Profile_Update.svg',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const Profile(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildMobileMenuTile(
+                          title: "Tech Support",
+                          iconPath: 'assets/svg/support.svg',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const LiveChat(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildMobileMenuTile(
+                          title: "About Us",
+                          iconPath: 'assets/svg/app.svg',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const FactsMyths(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileMenuTile({
+    required String title,
+    required String iconPath,
+    required VoidCallback onTap,
+    bool isNew = false,
+  }) {
+    final primary = appLoadController.appPrimaryColor;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: primary.withOpacity(0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SvgPicture.asset(
+                    iconPath,
+                    width: 26,
+                    height: 26,
+                    color: primary,
+                  ),
+                  const Spacer(),
+                  Text(
+                    LocalizationController.getInstance()
+                        .getTranslatedValue(title),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
+              ),
+            ),
+            if (isNew)
+              Positioned(
+                top: 6,
+                right: 6,
+                child: Container(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade600,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'NEW',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------- WEB BODY (UNCHANGED LAYOUT) ----------
+
+  Widget _buildWebDashboardBody() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          SizedBox(
+            width: MediaQuery.of(context).size.width,
+            height: 620,
+            child: Stack(
+              children: [
+                _buildMenuGrid(),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          _buildLogoutButton(),
+          _buildFooter(),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Call this when the page is built (when returning from drawer)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _onPageResumed();
     });
@@ -922,13 +1306,15 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
       canPop: false,
       child: Scaffold(
         key: _scaffoldKey,
+        extendBodyBehindAppBar: _isMobile,
         drawer: DashboardDrawer(
           onItemTap: _handleDrawerItemTap,
           selectedIndex: _selectedDrawerIndex,
           isLoggedIn: true,
           context: context,
         ),
-        appBar: GradientAppBar(
+        appBar: _isWeb
+            ? GradientAppBar(
           leading: Builder(
             builder: (context) => IconButton(
               icon: const Icon(Icons.menu, color: Colors.white),
@@ -936,8 +1322,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
             ),
           ),
           actions: [
-            // Mute/Unmute button - only show for web
-            if (enableVideoBackground && kIsWeb)
+            if (enableVideoBackground && _isWeb)
               IconButton(
                 icon: Icon(
                   _isMuted ? Icons.volume_off : Icons.volume_up,
@@ -948,14 +1333,18 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
                 tooltip: _isMuted ? 'Unmute' : 'Mute',
               ),
             GestureDetector(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Profile())),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const Profile())),
               child: SizedBox(
                 height: 40,
                 width: 40,
                 child: Padding(
                   padding: const EdgeInsets.all(5.0),
                   child: ClipOval(
-                    child: _buildProfileImage(appLoadController.loggedUserData.value.userphoto!),
+                    child: _buildProfileImage(
+                        appLoadController.loggedUserData.value.userphoto!),
                   ),
                 ),
               ),
@@ -964,9 +1353,11 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
               padding: const EdgeInsets.only(right: 10),
               child: Row(
                 children: [
-                  const Icon(Icons.payment_outlined, color: Colors.white, size: 16),
+                  const Icon(Icons.payment_outlined,
+                      color: Colors.white, size: 16),
                   commonBoldText(
-                    text: ' - ${appLoadController.loggedUserData.value.ucurrency ?? ""}',
+                    text:
+                    ' - ${appLoadController.loggedUserData.value.ucurrency ?? ""}',
                     color: Colors.white,
                     fontSize: 12,
                   ),
@@ -975,29 +1366,35 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin, Wi
             ),
           ],
           title: LocalizationController.getInstance().getTranslatedValue(
-              "Welcome !  ${appLoadController.loggedUserData.value.username}"
-          ),
+              "Welcome !  ${appLoadController.loggedUserData.value.username}"),
           colors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
           centerTitle: true,
-        ),
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: 620,
-                child: Stack(
-                  children: [
-                    _buildMenuGrid(),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              _buildLogoutButton(),
-              _buildFooter(),
-            ],
+        )
+            : AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white),
+              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+            ),
           ),
+          actions: [
+            GestureDetector(
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const Profile())),
+              child: Padding(
+                padding: const EdgeInsets.only(right: 12.0),
+                child: _buildProfileImage(
+                    appLoadController.loggedUserData.value.userphoto!),
+              ),
+            ),
+          ],
         ),
+        body:
+        _isWeb ? _buildWebDashboardBody() : _buildMobileDashboardBody(),
       ),
     );
   }
