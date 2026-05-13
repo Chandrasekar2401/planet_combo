@@ -10,6 +10,7 @@ import 'package:get/get.dart';
 import 'package:planetcombo/screens/predictions/view_comments.dart';
 
 import 'package:planetcombo/models/preictions_list.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class PredictionsHistory extends StatefulWidget {
   const PredictionsHistory({super.key});
@@ -60,7 +61,7 @@ class _PredictionsHistoryState extends State<PredictionsHistory> {
                 try{
                   CustomDialog.showLoading(context, 'Please wait');
                   var result = await horoscopeServiceController.updateComment(hid, reqId, seqNo, pReqFlag, _commentController.text, prHComments);
-                  print('the result from update comments');
+                  AppLogger.d('the result from update comments');
                   if(result != null){
                     var result2 = await horoscopeServiceController.getUserPredictionsList(hid, reqId);
                     _commentController.clear();
@@ -151,7 +152,7 @@ class _PredictionsHistoryState extends State<PredictionsHistory> {
                                   value: true,
                                   groupValue: horoscopeServiceController.predictions[index].prFeedFlag == 'T' ? true : null,
                                   onChanged: (value) {
-                                    print('value from the true side is $value');
+                                    AppLogger.d('value from the true side is $value');
                                     if (value == true) {
                                       horoscopeServiceController.predictions[index].prFeedFlag = 'T';
                                       _showCommentDialog(
@@ -175,7 +176,7 @@ class _PredictionsHistoryState extends State<PredictionsHistory> {
                                   groupValue: horoscopeServiceController.predictions[index].prFeedFlag == 'F' ? false : null,
                                   onChanged: (value) {
                                     // Handle radio button state change
-                                    print('value from the false side is $value');
+                                    AppLogger.d('value from the false side is $value');
                                     if (value == false) {
                                       horoscopeServiceController.predictions[index].prFeedFlag = 'F';
                                       _showCommentDialog(
@@ -217,7 +218,7 @@ class _PredictionsHistoryState extends State<PredictionsHistory> {
                               );
                             }, child: commonBoldText(text: 'Comment', fontSize: 12, color: Colors.black54,textAlign: TextAlign.right)),
                             TextButton(onPressed: (){
-                              print(horoscopeServiceController.predictions[index].prHComments!);
+                              AppLogger.d(horoscopeServiceController.predictions[index].prHComments!);
                               Navigator.push(
                                   context, MaterialPageRoute(builder: (context) => ViewComments(comments:horoscopeServiceController.predictions[index].prHComments!)));
                             }, child: commonBoldText(text: 'View Comments', fontSize: 12, color: Colors.black54,textAlign: TextAlign.right)),

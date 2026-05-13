@@ -13,6 +13,7 @@ import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:planetcombo/screens/dashboard.dart';
 
 import 'package:planetcombo/screens/services/add_relatives.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class AddWhatsappInfo extends StatefulWidget {
   const AddWhatsappInfo({Key? key}) : super(key: key);
@@ -81,10 +82,10 @@ class _AddWhatsappInfoState extends State<AddWhatsappInfo> {
                         minTime: DateTime(1920),
                         maxTime: DateTime.now(),
                         onChanged: (date) {
-                          print('change $date');
+                          AppLogger.d('change $date');
                         },
                         onConfirm: (date) {
-                          print('onConfirmed date $date');
+                          AppLogger.d('onConfirmed date $date');
                           setState(() {
                             selectedDate = date;
                           });

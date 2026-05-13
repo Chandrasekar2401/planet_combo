@@ -16,6 +16,7 @@ import 'package:intl/intl.dart';
 
 import '../../controllers/payment_controller.dart';
 import '../services/horoscope_services.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class DailyPredictions extends StatefulWidget {
   final HoroscopesList horoscope;
@@ -97,7 +98,7 @@ class _DailyPredictionsState extends State<DailyPredictions> {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('the location result from the data ${data['results']}');
+        AppLogger.d('the location result from the data ${data['results']}');
         if (data['results'] != null && data['results'].isNotEmpty) {
           final String placeName = data['results'][0]['formatted_address'];
           _placeNames[key] = placeName;
@@ -107,7 +108,7 @@ class _DailyPredictionsState extends State<DailyPredictions> {
       }
       return 'Error: ${response.statusCode}';
     } catch (e) {
-      print('Error fetching location: $e');
+      AppLogger.d('Error fetching location: $e');
       return 'Error fetching location';
     }
   }
@@ -548,7 +549,7 @@ class _DailyPredictionsState extends State<DailyPredictions> {
                             textColor: Colors.white,
                             buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
                             onPressed: (Offset buttonOffset) async {
-                              print(formatDateWithTimezone(selectedDate!, applicationBaseController.getTimeZone.value));
+                              AppLogger.d(formatDateWithTimezone(selectedDate!, applicationBaseController.getTimeZone.value));
                               CustomDialog.showLoading(context, 'Please wait');
                               String reqStartDate = formatDateWithTimezone(selectedDate!, applicationBaseController.getTimeZone.value);
                               String reqEndDate = formatDateWithTimezone(endDate!, applicationBaseController.getTimeZone.value);
@@ -559,7 +560,7 @@ class _DailyPredictionsState extends State<DailyPredictions> {
                                   reqDate: reqEndDate,
                                   rqCat: horoscopeRequestController.selectedRequest.value.toString(),
                                   token: appLoadController.loggedUserData!.value.token!);
-                              print(response);
+                              AppLogger.d(response);
                               if (response != null) {
                                 var jsonData = json.decode(response);
                                 if (jsonData['status'] == 'Success') {
@@ -574,7 +575,7 @@ class _DailyPredictionsState extends State<DailyPredictions> {
                                         endDate: formatDateWithTimezone(endDate!, applicationBaseController.getTimeZone.value),
                                         timestamp: DateTime.now().toString());
                                     CustomDialog.cancelLoading(context);
-                                    print(result);
+                                    AppLogger.d(result);
                                     if (result != null) {
                                       var chargeData = json.decode(result);
                                       if (chargeData['status'] == 'Success') {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/predictions_controller.dart';
 import 'package:get/get.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class PredictionDetailsPage extends StatefulWidget {
   String title;
@@ -27,11 +28,11 @@ class _PredictionDetailsPageState extends State<PredictionDetailsPage> {
       if (doubleValue % 1 == 0) {
         return doubleValue.toInt();
       } else {
-        print("Error: '$input' is not a whole number.");
+        AppLogger.d("Error: '$input' is not a whole number.");
         return null;
       }
     } catch (e) {
-      print("Error: Unable to parse '$input'. ${e.toString()}");
+      AppLogger.d("Error: Unable to parse '$input'. ${e.toString()}");
       return null;
     }
   }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:planetcombo/common/app_logger.dart';
 
 class PredictionResponse {
   final String status;
@@ -104,7 +105,7 @@ class PredictionData {
       List<dynamic> jsonList = json.decode(jsonString);
       return jsonList.map((json) => PredictionDetail.fromJson(json)).toList();
     } catch (e) {
-      print("Error parsing prDetails: $e");
+      AppLogger.d("Error parsing prDetails: $e");
       return [];
     }
   }

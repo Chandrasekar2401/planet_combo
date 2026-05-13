@@ -17,6 +17,7 @@ import 'package:planetcombo/screens/predictions/list_dates.dart';
 import 'package:planetcombo/controllers/predictions_controller.dart';
 
 import '../services/horoscope_services.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class Predictions extends StatefulWidget {
   const Predictions({Key? key}) : super(key: key);
@@ -38,7 +39,7 @@ class _PredictionsState extends State<Predictions> {
   final RxString selectedFilter = "3".obs; // Default to Life Guidance Questions
 
   Future<void> _getUserPredictionsList(String hid, String requestId) async {
-    print('passing request id $requestId');
+    AppLogger.d('passing request id $requestId');
     horoscopeServiceController.isLoading.value = true;
     CustomDialog.showLoading(context, 'Please wait');
     try {
@@ -50,7 +51,7 @@ class _PredictionsState extends State<Predictions> {
         List<dynamic> data = result['data'];
         horoscopeServiceController.predictions.value =
             data.map((item) => PredictionData.fromJson(item)).toList();
-        print(
+        AppLogger.d(
             'the length of the predictions data ${horoscopeServiceController.predictions.length}');
       }
     } on TimeoutException catch (_) {

@@ -12,8 +12,10 @@ import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:get/get.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:planetcombo/screens/dashboard.dart';
+import 'package:planetcombo/screens/services/horoscope_services.dart';
 
 import '../../api/api_endpoints.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 
 class AddRelativesInfo extends StatefulWidget {
@@ -461,10 +463,10 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
                           minTime: DateTime(1920),
                           maxTime: DateTime.now(),
                           onChanged: (date) {
-                            print('change $date');
+                            AppLogger.d('change $date');
                           },
                           onConfirm: (date) {
-                            print('onConfirmed date $date');
+                            AppLogger.d('onConfirmed date $date');
                             setState(() {
                               selectedDate = date;
                             });
@@ -645,7 +647,7 @@ class _AddRelativesInfoState extends State<AddRelativesInfo> {
                       title: LocalizationController.getInstance().getTranslatedValue("Cancel"),buttonHeight: 45, textColor: Colors.white, buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset){
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (context) => Dashboard()),
+                      MaterialPageRoute(builder: (context) => const HoroscopeServices()),
                           (Route<dynamic> route) => false,
                     );
                   }),

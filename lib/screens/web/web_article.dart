@@ -10,6 +10,7 @@ import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/screens/web/web_aboutus.dart';
 import 'package:planetcombo/screens/web/web_contactUS.dart';
 import 'package:planetcombo/screens/web/web_home.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 Widget buildWebArticle() {
   return const WebArticlePage();
@@ -39,7 +40,7 @@ class _WebArticlePageState extends State<WebArticlePage> {
 
     switch (index) {
       case 0: // Home/Dashboard
-      print('the value of logged user ${appLoadController.userValue.value}');
+      AppLogger.d('the value of logged user ${appLoadController.userValue.value}');
         if (appLoadController.userValue.value) {
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Dashboard()));
         } else {
@@ -73,12 +74,26 @@ class _WebArticlePageState extends State<WebArticlePage> {
         constraints: BoxConstraints(
           minHeight: MediaQuery.of(context).size.height,
         ),
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/web/article_bg.jpg'),
-            fit: BoxFit.cover,
-          ),
-        ),
+        // Mobile uses a lightweight gradient; web keeps the photographic
+        // background. The 1920x1280 JPG decodes to ~39 MB and was
+        // OOM-killing the app on Android after a few seconds.
+        decoration: kIsWeb
+            ? const BoxDecoration(
+                image: DecorationImage(
+                  image: ResizeImage(
+                    AssetImage('assets/images/web/article_bg.jpg'),
+                    width: 1280,
+                  ),
+                  fit: BoxFit.cover,
+                ),
+              )
+            : const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF1a1a2e), Color(0xFF16213e)],
+                ),
+              ),
         child: Stack(
           children: [
             SingleChildScrollView(

@@ -5,6 +5,7 @@ import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:get/get.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class Comment {
   final String commentText;
@@ -40,12 +41,12 @@ class _ViewCommentsState extends State<ViewComments> {
   List<Comment> processComments() {
     try {
       List<String> s = widget.comments.split("!");
-      print(s);
+      AppLogger.d(s);
       for (String item in s) {
         if (item.isNotEmpty) {// Replace with actual name translation logic
           try {
             List<String> parts = item.split("^");
-            print(parts);
+            AppLogger.d(parts);
             var commentText = parts[0].trim();
             // var dateTime = DateTime.parse(parts[1].trim());
             var email = parts[2].trim();
@@ -62,9 +63,9 @@ class _ViewCommentsState extends State<ViewComments> {
             if(comment.commentText != ''){
               historyCommentToDisplay.add(comment);
             }
-            print(historyCommentToDisplay.length);
+            AppLogger.d(historyCommentToDisplay.length);
           } catch (e) {
-            print(e);
+            AppLogger.d(e);
           }
         }
       }

@@ -6,6 +6,7 @@ import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:planetcombo/controllers/profile_controller.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:get/get.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class Profile extends StatefulWidget {
   const Profile({Key? key}) : super(key: key);
@@ -26,7 +27,7 @@ class _ProfileState extends State<Profile> {
     String decodedUrl = Uri.decodeFull(encodedUrl);
 
     // Check if the decoded URL is different from the input
-    print('the value of decoded value from the url $decodedUrl');
+    AppLogger.d('the value of decoded value from the url $decodedUrl');
     if (decodedUrl != encodedUrl) {
       // If it's different, recursively decode again
       return decodeUrlRecursively(decodedUrl);
@@ -65,7 +66,7 @@ class _ProfileState extends State<Profile> {
               ),
               fit: BoxFit.cover,
               onError: (error, stackTrace) {
-                print('Error loading image: $error');
+                AppLogger.d('Error loading image: $error');
               },
             ),
           ),
@@ -86,7 +87,7 @@ class _ProfileState extends State<Profile> {
               );
             },
             errorBuilder: (context, error, stackTrace) {
-              print('Web image error: $error');
+              AppLogger.d('Web image error: $error');
               return Container(
                 width: 100,
                 height: 100,

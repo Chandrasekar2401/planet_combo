@@ -12,6 +12,7 @@ import 'package:get/get.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/screens/services/add_childInfo.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class AddMarriageInfo extends StatefulWidget {
   const AddMarriageInfo({Key? key}) : super(key: key);
@@ -149,10 +150,10 @@ class _AddMarriageInfoState extends State<AddMarriageInfo> {
                           minTime: DateTime(addTwelveYears(addHoroscopeController.addHoroscopeBirthSelectedDate!.value)),
                           maxTime: DateTime.now(),
                           onChanged: (date) {
-                            print('change $date');
+                            AppLogger.d('change $date');
                           },
                           onConfirm: (date) {
-                            print('onConfirmed date $date');
+                            AppLogger.d('onConfirmed date $date');
                             setState(() {
                               selectedMarriageDate = date;
                             });

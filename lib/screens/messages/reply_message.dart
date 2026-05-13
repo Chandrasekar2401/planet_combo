@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/models/messages_list.dart';
 import 'package:planetcombo/screens/dashboard.dart';
@@ -20,7 +21,25 @@ class _ReplyMessagesState extends State<ReplyMessages> {
   final MessageController messageController =
   Get.put(MessageController.getInstance(), permanent: true);
 
-  TextEditingController userMessage = TextEditingController();
+  // Use late + initState so the controller is created exactly once
+  // per State instance. (As a field-initializer it was also created
+  // once, but late + initState keeps lifecycle visible alongside dispose.)
+  late final TextEditingController userMessage;
+  late final FocusNode _messageFocus;
+
+  @override
+  void initState() {
+    super.initState();
+    userMessage = TextEditingController();
+    _messageFocus = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    userMessage.dispose();
+    _messageFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,11 +61,37 @@ class _ReplyMessagesState extends State<ReplyMessages> {
               const SizedBox(height: 20),
               commonBoldText(text: 'Message'),
               const SizedBox(height: 20),
-              PrimaryInputText(hintText: 'Type Your message',maxLines: 6,
-                  autoFocus: true,
-                  controller: userMessage, onValidate: (v){
-                return null;
-              }),
+              // Use TextField directly (not PrimaryInputText) so we can
+              // pin textInputAction to newline. With maxLines > 1 the
+              // Android keyboard "tick" / done action was being treated
+              // as a submit that, combined with autofocus and the
+              // initialValue:null path in TextFormField, wiped the text.
+              TextField(
+                controller: userMessage,
+                focusNode: _messageFocus,
+                maxLines: 6,
+                minLines: 6,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                style: GoogleFonts.lexend(color: Colors.black),
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.all(16),
+                  labelText: LocalizationController.getInstance()
+                      .getTranslatedValue('Type Your message'),
+                  labelStyle: GoogleFonts.lexend(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black54,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Colors.black54),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -65,8 +110,13 @@ class _ReplyMessagesState extends State<ReplyMessages> {
                   Expanded(
                     child: GradientButton(
                         title: LocalizationController.getInstance().getTranslatedValue("Send"),buttonHeight: 45, textColor: Colors.white, buttonColors: [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset){
-                      if(userMessage.text.isNotEmpty){
-                        messageController.updateMessage(context, widget.messageInfo.msghid.toString(), widget.messageInfo.msguserid, widget.messageInfo.msgmessageid, userMessage.text, widget.messageInfo.msgstatus, widget.messageInfo.msgunread);
+                      // Close the keyboard first so the IME flushes any
+                      // pending composition into the controller before
+                      // we read its text.
+                      _messageFocus.unfocus();
+                      final text = userMessage.text.trim();
+                      if(text.isNotEmpty){
+                        messageController.updateMessage(context, widget.messageInfo.msghid.toString(), widget.messageInfo.msguserid, widget.messageInfo.msgmessageid, text, widget.messageInfo.msgstatus, widget.messageInfo.msgunread);
                       }else{
                         showFailedToast("Please add reply message");
                       }

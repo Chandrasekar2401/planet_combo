@@ -15,16 +15,14 @@ class LiveChat extends StatefulWidget {
 }
 
 class _LiveChatState extends State<LiveChat> {
-  // Firebase Configuration
-  static const _firebaseConfig = FirebaseOptions(
-    apiKey: "AIzaSyCXAw8BQBx4OPMOWyNaI4bv7gh5GUXa0lQ",
-    authDomain: "flutterplanetcombo-ff367.firebaseapp.com",
-    databaseURL: "https://flutterplanetcombo-ff367-default-rtdb.firebaseio.com",
-    projectId: "flutterplanetcombo-ff367",
-    storageBucket: "flutterplanetcombo-ff367.appspot.com",
-    messagingSenderId: "488939796804",
-    appId: "1:488939796804:web:5c94e0a3b5f03ca2abbf11",
-  );
+  // Realtime Database URL. The Android entry in firebase_options.dart
+  // doesn't carry a databaseURL, so we pass it explicitly when grabbing
+  // the database instance. Same URL works for every platform since the
+  // RTDB lives in one project.
+  static const _databaseUrl =
+      'https://flutterplanetcombo-ff367-default-rtdb.firebaseio.com';
+
+  static const _tag = '[LiveChat]';
 
   // Controllers
   final _appLoadController = Get.find<AppLoadController>();
@@ -41,6 +39,7 @@ class _LiveChatState extends State<LiveChat> {
   int _messageCount = 0;
   bool _isLoading = false;
   bool _isInitialized = false;
+  bool _initFailed = false;
   bool _showResponseNotification = false;
 
   // Cached user data
@@ -52,55 +51,93 @@ class _LiveChatState extends State<LiveChat> {
     super.initState();
     _userEmail = _appLoadController.loggedUserData.value.userid ?? '';
     _userProfile = _appLoadController.loggedUserData.value.userphoto ?? '';
+    debugPrint('$_tag initState userEmail="$_userEmail"');
     _initializeFirebase();
   }
 
   Future<void> _initializeFirebase() async {
     try {
-      await Firebase.initializeApp(options: _firebaseConfig);
-      _database = FirebaseDatabase.instance.ref();
+      debugPrint('$_tag _initializeFirebase: start');
+
+      // Firebase is already initialized in main.dart for every platform.
+      // Calling Firebase.initializeApp again with a different option set
+      // throws [core/duplicate-app] and used to leave the page stuck on
+      // an infinite loader. Just use the already-initialized default app.
+      if (Firebase.apps.isEmpty) {
+        debugPrint('$_tag _initializeFirebase: no apps, initializing default');
+        await Firebase.initializeApp();
+      } else {
+        debugPrint(
+            '$_tag _initializeFirebase: reusing existing app "${Firebase.apps.first.name}"');
+      }
+
+      // Grab the RTDB by URL so platforms whose FirebaseOptions don't
+      // include a databaseURL (e.g. Android in firebase_options.dart)
+      // still know where to read/write.
+      _database = FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL: _databaseUrl,
+      ).ref();
+      debugPrint('$_tag _initializeFirebase: database ref acquired');
+
       await _initializeUser();
+
+      if (!mounted) return;
       setState(() => _isInitialized = true);
-    } catch (e) {
-      _handleError('Firebase initialization error', e);
+      debugPrint('$_tag _initializeFirebase: done');
+    } catch (e, st) {
+      debugPrint('$_tag _initializeFirebase FAILED: $e\n$st');
+      _handleInitFailure('Firebase initialization error', e);
     }
   }
 
   Future<void> _initializeUser() async {
     try {
+      debugPrint('$_tag _initializeUser: start');
       if (_userEmail.isEmpty) throw Exception('User email not found');
       await _findOrCreateUser(_userEmail);
-    } catch (e) {
-      _handleError('User initialization error', e);
+      debugPrint('$_tag _initializeUser: done (userKey=$_userKey)');
+    } catch (e, st) {
+      debugPrint('$_tag _initializeUser FAILED: $e\n$st');
+      rethrow; // let _initializeFirebase surface the error
     }
   }
 
   Future<void> _findOrCreateUser(String email) async {
-    try {
-      final usersRef = _database.child('UsersList');
-      final event = await usersRef.once();
+    debugPrint('$_tag _findOrCreateUser: looking up "$email"');
+    final usersRef = _database.child('UsersList');
 
-      if (event.snapshot.value != null) {
-        final usersData = event.snapshot.value as Map;
-        final existingUser = usersData.entries.firstWhere(
-              (entry) => (entry.value as Map)['userEmail'] == email,
-          orElse: () => MapEntry('', {}),
-        );
+    // Timeout so a misconfigured DB / dead network shows an error
+    // instead of spinning forever.
+    final event = await usersRef
+        .once()
+        .timeout(const Duration(seconds: 15), onTimeout: () {
+      throw TimeoutException(
+          'Timed out reading UsersList from $_databaseUrl after 15s');
+    });
+    debugPrint(
+        '$_tag _findOrCreateUser: snapshot received (exists=${event.snapshot.value != null})');
 
-        if (existingUser.key.isNotEmpty) {
-          _userKey = existingUser.key;
-          _messageCount = (existingUser.value as Map)['message'] ?? 0;
-        } else {
-          await _createNewUser(email);
-        }
+    if (event.snapshot.value != null) {
+      final usersData = event.snapshot.value as Map;
+      final existingUser = usersData.entries.firstWhere(
+            (entry) => (entry.value as Map)['userEmail'] == email,
+        orElse: () => MapEntry('', {}),
+      );
+
+      if (existingUser.key.isNotEmpty) {
+        _userKey = existingUser.key;
+        _messageCount = (existingUser.value as Map)['message'] ?? 0;
+        debugPrint(
+            '$_tag _findOrCreateUser: found existing user key=$_userKey count=$_messageCount');
       } else {
         await _createNewUser(email);
       }
-
-      _startMessageListener();
-    } catch (e) {
-      _handleError('Error finding/creating user', e);
+    } else {
+      await _createNewUser(email);
     }
+
+    _startMessageListener();
   }
 
   Future<void> _createNewUser(String email) async {
@@ -204,10 +241,32 @@ class _LiveChatState extends State<LiveChat> {
   // Removed the _showNotification() method as we no longer need timer-based hiding
 
   void _handleError(String context, dynamic error) {
-    debugPrint('$context: $error');
+    debugPrint('$_tag $context: $error');
     if (mounted) {
       setState(() => _error = 'An error occurred. Please try again.');
     }
+  }
+
+  // Used for failures during the initial load. Unblocks the build so the
+  // user sees an error + retry instead of an unending CircularProgressIndicator.
+  void _handleInitFailure(String context, dynamic error) {
+    debugPrint('$_tag $context: $error');
+    if (!mounted) return;
+    setState(() {
+      _initFailed = true;
+      _isInitialized = true; // unblock the build
+      _error = 'Could not connect to chat. ${error.toString()}';
+    });
+  }
+
+  void _retryInit() {
+    debugPrint('$_tag _retryInit');
+    setState(() {
+      _initFailed = false;
+      _isInitialized = false;
+      _error = null;
+    });
+    _initializeFirebase();
   }
 
   void _scrollToBottom() {
@@ -334,8 +393,55 @@ class _LiveChatState extends State<LiveChat> {
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        appBar: GradientAppBar(
+          leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.chevron_left_rounded),
+          ),
+          title: LocalizationController.getInstance()
+              .getTranslatedValue("Chat"),
+          colors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
+          centerTitle: true,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_initFailed) {
+      return Scaffold(
+        appBar: GradientAppBar(
+          leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.chevron_left_rounded),
+          ),
+          title: LocalizationController.getInstance()
+              .getTranslatedValue("Chat"),
+          colors: const [Color(0xFFf2b20a), Color(0xFFf34509)],
+          centerTitle: true,
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline,
+                    size: 48, color: Colors.redAccent),
+                const SizedBox(height: 12),
+                Text(
+                  _error ?? 'Could not load chat.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _retryInit,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     }
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:planetcombo/common/app_logger.dart';
 
 List<HoroscopesList> horoscopesListFromJson(String str) => List<HoroscopesList>.from(json.decode(str)['data'].map((x) => HoroscopesList.fromJson(x)));
 
@@ -249,7 +250,7 @@ class HoroscopesList {
     try {
       return int.tryParse(value.toString());
     } catch (e) {
-      print('Error parsing int from value: $value, error: $e');
+      AppLogger.d('Error parsing int from value: $value, error: $e');
       return null;
     }
   }
@@ -270,7 +271,7 @@ class HoroscopesList {
     try {
       return double.tryParse(value.toString());
     } catch (e) {
-      print('Error parsing double from value: $value, error: $e');
+      AppLogger.d('Error parsing double from value: $value, error: $e');
       return null;
     }
   }

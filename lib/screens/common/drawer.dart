@@ -79,40 +79,54 @@ class DashboardDrawer extends StatelessWidget {
               ),
             ),
 
-            // Menu Items
+            // Menu Items — scrollable so the drawer doesn't overflow on
+            // shorter screens; logout (when present) stays pinned at the
+            // bottom of the available area.
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 child: Column(
                   children: [
-                    _createDrawerItem(
-                      icon: Icons.dashboard_outlined,
-                      text: isLoggedIn ? 'Dashboard' : 'Home',
-                      onTap: () => onItemTap(0),
-                      isSelected: selectedIndex == 0,
-                    ),
-                    _createDrawerItem(
-                      svgIcon: 'assets/svg/article.svg',
-                      text: 'Articles',
-                      onTap: () => onItemTap(1),
-                      isSelected: selectedIndex == 1,
-                    ),
-                    _createDrawerItem(
-                      svgIcon: 'assets/svg/about1.svg',
-                      text: 'About us',
-                      onTap: () => onItemTap(2),
-                      isSelected: selectedIndex == 2,
-                    ),
-                    _createDrawerItem(
-                      svgIcon: 'assets/svg/contact1.svg',
-                      text: 'Contact',
-                      onTap: () => onItemTap(3),
-                      isSelected: selectedIndex == 3,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            _createDrawerItem(
+                              icon: Icons.dashboard_outlined,
+                              text: isLoggedIn ? 'Dashboard' : 'Home',
+                              onTap: () => onItemTap(0),
+                              isSelected: selectedIndex == 0,
+                            ),
+                            _createDrawerItem(
+                              svgIcon: 'assets/svg/article.svg',
+                              text: 'Articles',
+                              onTap: () => onItemTap(1),
+                              isSelected: selectedIndex == 1,
+                            ),
+                            _createDrawerItem(
+                              svgIcon: 'assets/svg/about1.svg',
+                              text: 'About us',
+                              onTap: () => onItemTap(2),
+                              isSelected: selectedIndex == 2,
+                            ),
+                            _createDrawerItem(
+                              svgIcon: 'assets/svg/contact1.svg',
+                              text: 'Contact',
+                              onTap: () => onItemTap(3),
+                              isSelected: selectedIndex == 3,
+                            ),
+                            _createDrawerItem(
+                              icon: Icons.description_outlined,
+                              text: 'Terms & Conditions',
+                              onTap: () => onItemTap(4),
+                              isSelected: selectedIndex == 4,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
 
-                    const Spacer(),
-
-                    // Logout section with divider
+                    // Logout section with divider, pinned to bottom
                     if (isLoggedIn) ...[
                       Container(
                         height: 1,

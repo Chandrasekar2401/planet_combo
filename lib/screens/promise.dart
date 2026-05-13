@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:planetcombo/api/api_callings.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:get/get.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 
 class Promises extends StatefulWidget {
@@ -52,7 +53,7 @@ class _PromisesState extends State<Promises> {
   }
 
   void getPromise() {
-    print('Start');
+    AppLogger.d('Start');
     Timer(Duration(milliseconds: 3), () {
       getPromises(widget.horoscope.huserid!, widget.horoscope.hid!);
     });

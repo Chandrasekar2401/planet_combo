@@ -9,6 +9,7 @@ import 'package:planetcombo/screens/predictions/special_prediction_response.dart
 import 'package:planetcombo/models/get_special_predictions.dart';
 import 'package:planetcombo/models/prediction_details.dart';
 import 'package:planetcombo/models/date_list.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class PredictionsController extends GetxController {
   static PredictionsController? _instance;
@@ -42,7 +43,7 @@ class PredictionsController extends GetxController {
         datesList.value = jsonBody.map((item) => DateItem.fromJson(item)).toList();
       }
     }catch(error){
-      print(error);
+      AppLogger.d(error);
       return error;
     }
   }
@@ -68,7 +69,7 @@ class PredictionsController extends GetxController {
       var jsonBody = json.decode(response!.body);
       return response.body;
     }catch(error){
-      print(error);
+      AppLogger.d(error);
       return error;
     }
   }
@@ -90,11 +91,11 @@ class PredictionsController extends GetxController {
         } else if (jsonBody['message'] == "Predictions Listing") {
           requestInfo.value = SpecialPredictionList.fromJson(jsonBody);
           specialRequestHistory.value = requestInfo.value.data!;
-          print('the response data from the api is ${jsonBody['data']}');
+          AppLogger.d('the response data from the api is ${jsonBody['data']}');
           if (specialRequestHistory.isNotEmpty) {
             initialAnswer.value = specialRequestHistory[0].prdetails ?? "";
             var predictionId = specialRequestHistory[0].predictionId;
-            print('the predictionId is $predictionId');
+            AppLogger.d('the predictionId is $predictionId');
             if (predictionId != null) {
               Navigator.push(
                   context,
@@ -115,7 +116,7 @@ class PredictionsController extends GetxController {
         CustomDialog.showAlert(context, jsonBody['message'], false, 14);
       }
     } catch (error) {
-      print('Error in getSpecialPredictions: $error');
+      AppLogger.d('Error in getSpecialPredictions: $error');
       CustomDialog.cancelLoading(context);
       CustomDialog.showAlert(context, 'Please try after sometime', false, 14);
       return error;
@@ -125,7 +126,7 @@ class PredictionsController extends GetxController {
   addSpecialRequestReply(int predictionId, message) async{
     try{
       var response = await APICallings.replySpecialPrediction(predictionId: predictionId, message: message, token: appLoadController.loggedUserData.value.token!);
-      print('where the response is ');
+      AppLogger.d('where the response is ');
       return response;
     }catch(error){
       return error;
@@ -135,8 +136,8 @@ class PredictionsController extends GetxController {
   getSpecialRequestMessages(int predictionId) async{
     try{
       var response = await APICallings.getSpecialPredictionMessages(predictionId, appLoadController.loggedUserData.value.token!);
-      print('where the response is ');
-      print(response!.body);
+      AppLogger.d('where the response is ');
+      AppLogger.d(response!.body);
       if(response.statusCode == 200){
         return response.body;
       }else{
@@ -164,7 +165,7 @@ class PredictionsController extends GetxController {
       if (response != null) {
         final List<dynamic> jsonList = json.decode(response);
         final List<PredictionDetailItem> items = jsonList.map((json) => PredictionDetailItem.fromJson(json)).toList();
-        print('Fetched items: ${items.length}');
+        AppLogger.d('Fetched items: ${items.length}');
         isLoading(false);
         if (items.isNotEmpty) {
           predictionItems.value = items;
@@ -173,7 +174,7 @@ class PredictionsController extends GetxController {
         }
       }
     } catch (e) {
-      print('Error fetching prediction details: $e');
+      AppLogger.d('Error fetching prediction details: $e');
     } finally {
       isLoading(false);
     }

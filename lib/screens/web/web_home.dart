@@ -27,6 +27,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../controllers/localization_controller.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class WebHomePage extends StatefulWidget {
   @override
@@ -214,7 +215,7 @@ class _HomePageState extends State<WebHomePage> with TickerProviderStateMixin {
       }
     } catch (e) {
       _dismissLoading();
-      print("Error signing in: $e");
+      AppLogger.d("Error signing in: $e");
       CustomDialog.showAlert(context, 'An error occurred during sign-in. Please try again.', false, 16);
     }
   }

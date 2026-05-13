@@ -5,6 +5,7 @@ import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/api/api_callings.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/controllers/applicationbase_controller.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class MessageController extends GetxController {
   static MessageController? _instance;
@@ -25,7 +26,7 @@ class MessageController extends GetxController {
     try{
       CustomDialog.showLoading(context, 'Adding Message');
       var response = await APICallings.addMessage(messageId: msgId, messageUserId: msgUserId, userMessage: userMessage, messageStatus: messageStatus, messageRead: messageRead, token: appLoadController.loggedUserData.value.token!);
-      print(response!.body);
+      AppLogger.d(response!.body);
       CustomDialog.cancelLoading(context);
       var jsonBody = json.decode(response.body);
       if(jsonBody['status'] == 'Success'){
@@ -39,7 +40,7 @@ class MessageController extends GetxController {
         });
       }
     }catch(error){
-      print(error);
+      AppLogger.d(error);
       CustomDialog.cancelLoading(context);
       CustomDialog.showAlert(context, 'Please try after sometime', false, 14);
       return error;
@@ -51,7 +52,7 @@ class MessageController extends GetxController {
     try{
       CustomDialog.showLoading(context, 'Updating');
       var response = await APICallings.updateMessage(messageId: msgId, messageUserId: msgUserId, messageMessageId: msgMsgId, userMessage: userMessage, messageStatus: messageStatus, messageRead: messageRead, token: appLoadController.loggedUserData.value.token!);
-      print(response!.body);
+      AppLogger.d(response!.body);
       CustomDialog.cancelLoading(context);
       var jsonBody = json.decode(response.body);
       if(jsonBody['status'] == 'Success'){
@@ -61,7 +62,7 @@ class MessageController extends GetxController {
         });
       }
     }catch(error){
-      print(error);
+      AppLogger.d(error);
       CustomDialog.cancelLoading(context);
       CustomDialog.showAlert(context, 'Please try after sometime', false, 14);
       return error;
@@ -73,8 +74,8 @@ class MessageController extends GetxController {
     try{
       CustomDialog.showLoading(context, 'Updating');
       var response = await APICallings.deleteMessage(msgId.toString(), hid.toString(), userId, appLoadController.loggedUserData.value.token!);
-      print('where the response is ');
-      print(response!.body);
+      AppLogger.d('where the response is ');
+      AppLogger.d(response!.body);
       CustomDialog.cancelLoading(context);
       var jsonBody = json.decode(response.body);
       if(jsonBody['status'] == 'Success'){
@@ -85,7 +86,7 @@ class MessageController extends GetxController {
         CustomDialog.showAlert(context, jsonBody['message'], false, 14);
       }
     }catch(error){
-      print(error);
+      AppLogger.d(error);
       CustomDialog.cancelLoading(context);
       CustomDialog.showAlert(context, 'Please try after sometime', false, 14);
       return error;

@@ -3,6 +3,7 @@ import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart'; // Add geocoding dependency in pubspec.yaml
+import 'package:planetcombo/common/app_logger.dart';
 
 class FindPlace extends StatefulWidget {
   const FindPlace({Key? key}) : super(key: key);
@@ -153,10 +154,10 @@ class _FindPlaceState extends State<FindPlace> {
         _updateMarker(position);
         _mapController?.animateCamera(CameraUpdate.newLatLngZoom(position, 15));
       } else {
-        print('Location not found');
+        AppLogger.d('Location not found');
       }
     } catch (e) {
-      print('Error finding location: $e');
+      AppLogger.d('Error finding location: $e');
     }
   }
 
@@ -177,7 +178,7 @@ class _FindPlaceState extends State<FindPlace> {
           });
         }
       } catch (e) {
-        print('Error retrieving address: $e');
+        AppLogger.d('Error retrieving address: $e');
       }
     }
   }

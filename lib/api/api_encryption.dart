@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:encrypt/encrypt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class EncryptionService {
   // Strong 32-character key with mixed characters
@@ -29,7 +30,7 @@ class EncryptionService {
       final encrypted = _encrypter.encrypt(jsonString, iv: _iv);
       return encrypted.base64;
     } catch (e) {
-      print('Encryption error: $e');
+      AppLogger.d('Encryption error: $e');
       return json.encode(data);
     }
   }
@@ -41,7 +42,7 @@ class EncryptionService {
       final encrypted = Encrypted.fromBase64(encryptedData);
       return _encrypter.decrypt(encrypted, iv: _iv);
     } catch (e) {
-      print('Decryption error: $e');
+      AppLogger.d('Decryption error: $e');
       return encryptedData;
     }
   }
@@ -54,7 +55,7 @@ class EncryptionService {
       // Make the encrypted string URL-safe
       return Uri.encodeComponent(encrypted.base64);
     } catch (e) {
-      print('URL param encryption error: $e');
+      AppLogger.d('URL param encryption error: $e');
       return param;
     }
   }
@@ -68,7 +69,7 @@ class EncryptionService {
       final decoded = json.decode(decrypted);
       return decoded["test"] == testString;
     } catch (e) {
-      print('Encryption test failed: $e');
+      AppLogger.d('Encryption test failed: $e');
       return false;
     }
   }

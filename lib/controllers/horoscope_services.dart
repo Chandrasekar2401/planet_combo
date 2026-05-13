@@ -5,6 +5,7 @@ import 'package:planetcombo/api/api_callings.dart';
 
 import 'package:planetcombo/models/get_request.dart';
 import 'package:planetcombo/models/preictions_list.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 
 class HoroscopeServiceController extends GetxController {
@@ -34,11 +35,11 @@ class HoroscopeServiceController extends GetxController {
           hid: hid,
           token: appLoadController.loggedUserData.value.token!
       );
-      print('API Response: $response'); // Debug log
+      AppLogger.d('API Response: $response'); // Debug log
 
       if (response != null) {
         var jsonBody = json.decode(response);
-        print('JSON Body: $jsonBody'); // Debug log
+        AppLogger.d('JSON Body: $jsonBody'); // Debug log
 
         if (jsonBody['status'] == 'Success') {
           requestInfo.value = RequestList.fromJson(jsonBody);
@@ -51,23 +52,23 @@ class HoroscopeServiceController extends GetxController {
               return dateB.compareTo(dateA);
             });
             requestHistory.value = requestInfo.value.data ?? [];
-            print('Data processed successfully, returning true'); // Debug log
+            AppLogger.d('Data processed successfully, returning true'); // Debug log
             return true;
           }
           // If we have success status but no data
-          print('No data found in response'); // Debug log
+          AppLogger.d('No data found in response'); // Debug log
           return false;
         } else {
-          print('API returned non-success status'); // Debug log
+          AppLogger.d('API returned non-success status'); // Debug log
           throw jsonBody['message'] ?? 'Unknown error occurred';
         }
       } else {
-        print('Response is null'); // Debug log
+        AppLogger.d('Response is null'); // Debug log
         throw 'Server unreachable';
       }
 
     } catch (error) {
-      print('API Error: $error');
+      AppLogger.d('API Error: $error');
       requestHistory.value = [];
       throw error.toString();
     }
@@ -91,29 +92,29 @@ class HoroscopeServiceController extends GetxController {
           requestId: requestId,
           token: appLoadController.loggedUserData.value.token!
       );
-      print('the response of token ${appLoadController.loggedUserData.value.token!}');
-      print(response);
+      AppLogger.d('the response of token ${appLoadController.loggedUserData.value.token!}');
+      AppLogger.d(response);
       var jsonBody = json.decode(response!);
       if (response != null && jsonBody['data'] != null) {
         if (jsonBody['data'] is List) {
           // If Data is already a list
           List<dynamic> data = jsonBody['data'];
           predictions.value = data.map((item) => PredictionData.fromJson(item)).toList();
-          print('predictions legth of the data ${predictions.value[0].prDetails![0].description}');
+          AppLogger.d('predictions legth of the data ${predictions.value[0].prDetails![0].description}');
         } else if (jsonBody['data'] is Map<String, dynamic>) {
           // If Data is a single item
           PredictionData singlePrediction = PredictionData.fromJson(jsonBody['data']);
           predictions.value = [singlePrediction];
-          print('the prediction value of map length is ${predictions.value.length}');
+          AppLogger.d('the prediction value of map length is ${predictions.value.length}');
         } else {
-          print('Unexpected data type for response["Data"]');
+          AppLogger.d('Unexpected data type for response["Data"]');
           predictions.value = [];
         }
       } else {
         predictions.value = [];
       }
     } catch (error) {
-      print(error);
+      AppLogger.d(error);
       predictions.value = [];
     }
   }
@@ -132,7 +133,7 @@ class HoroscopeServiceController extends GetxController {
       var response = APICallings.updatePredictions(updatePrediction: updatePredictions, token: appLoadController.loggedUserData.value.token!);
       return response;
     }catch(error){
-      print(error);
+      AppLogger.d(error);
     }
   }
 }

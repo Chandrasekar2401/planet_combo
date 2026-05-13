@@ -30,6 +30,7 @@ import 'package:planetcombo/screens/messages/message_list.dart';
 
 import '../messages/view_history_direct.dart';
 import '../payments/pricing.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class HoroscopeServices extends StatefulWidget {
   const HoroscopeServices({super.key});
@@ -121,7 +122,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
     try {
       bool result = await horoscopeServiceController.getUserPredictions(hid)
           .timeout(const Duration(seconds: 30));
-      print('API Result: $result'); // Debug log
+      AppLogger.d('API Result: $result'); // Debug log
 
       if (mounted) {
         CustomDialog.cancelLoading(context);
@@ -132,7 +133,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
         });
 
         if (result == true) { // Explicit check for true
-          print('Navigating to Predictions');
+          AppLogger.d('Navigating to Predictions');
           await Navigator.push( // Added await here
             context,
             MaterialPageRoute(
@@ -194,7 +195,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
   void viewHoroscope(String userId, String hid, bool paid) async{
     CustomDialog.showLoading(context, 'Please wait');
     var result = await APICallings.viewHoroscopeChart(userId: userId, hId: hid.trim(), token: appLoadController.loggedUserData!.value.token!);
-    print('the value of result is $result');
+    AppLogger.d('the value of result is $result');
     CustomDialog.cancelLoading(context);
     if(result == null){
       CustomDialog.showAlert(context, 'Error 404 : Please try later', false, 14);
@@ -231,7 +232,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
           token: appLoadController.loggedUserData!.value.token!
       );
 
-      print('The value of result is $result');
+      AppLogger.d('The value of result is $result');
 
       CustomDialog.cancelLoading(context);
 
@@ -327,8 +328,8 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
       );
 
       if (pickedImage != null) {
-        print('Image selected: ${pickedImage.path}');
-        print('Platform: ${kIsWeb ? "Web" : "Mobile"}');
+        AppLogger.d('Image selected: ${pickedImage.path}');
+        AppLogger.d('Platform: ${kIsWeb ? "Web" : "Mobile"}');
 
         // Set the image for both web and mobile
         addHoroscopeController.updateHoroscopeImage?.value = pickedImage;
@@ -337,7 +338,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
         await addHoroscopeController.updateHoroscopeImageOnly(hid);
       }
     } catch (e) {
-      print('Error picking image: $e');
+      AppLogger.d('Error picking image: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -703,7 +704,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                       ),
                                                       fit: BoxFit.cover,
                                                       onError: (error, stackTrace) {
-                                                        print('Error loading image: $error');
+                                                        AppLogger.d('Error loading image: $error');
                                                       },
                                                     ),
                                                   ),
@@ -724,7 +725,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                       );
                                                     },
                                                     errorBuilder: (context, error, stackTrace) {
-                                                      print('Web image error: $error');
+                                                      AppLogger.d('Web image error: $error');
                                                       return Container(
                                                         width: 55,
                                                         height: 55,
@@ -985,10 +986,10 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                         var request = await horoscopeRequestController
                                                             .getCurrentLocation(
                                                             context);
-                                                        print(
+                                                        AppLogger.d(
                                                             'the received value of request $request');
                                                         if (request == true) {
-                                                          print(
+                                                          AppLogger.d(
                                                               'the true value is occured');
                                                           final RenderBox overlay = Overlay
                                                               .of(context)!.context
@@ -1282,7 +1283,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                           }
                                                           break;
                                                         case 3:
-                                                          print(
+                                                          AppLogger.d(
                                                               'the value of hpdf ${applicationBaseController
                                                                   .horoscopeList[index]
                                                                   .hpdf!}');
@@ -1292,7 +1293,7 @@ class _HoroscopeServicesState extends State<HoroscopeServices> {
                                                                   .hpdf!);
                                                           break;
                                                         case 4:
-                                                          print(
+                                                          AppLogger.d(
                                                               'selected value is 4');
                                                           yesOrNoDialog(
                                                             context: context,

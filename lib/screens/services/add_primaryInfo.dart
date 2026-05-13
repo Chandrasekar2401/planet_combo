@@ -16,6 +16,7 @@ import 'package:planetcombo/screens/services/add_travelInfo.dart';
 import 'package:planetcombo/screens/dashboard.dart';
 
 import '../../common/place_autocomple_mobile.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 
 class AddPrimary extends StatefulWidget {
@@ -60,6 +61,7 @@ class _AddPrimaryState extends State<AddPrimary> {
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
+        addHoroscopeController.horoscopeBirthDateAlert.value = false;
       });
     }
   }
@@ -74,8 +76,46 @@ class _AddPrimaryState extends State<AddPrimary> {
     if (picked != null && picked != selectedTime) {
       setState(() {
         selectedTime = picked;
+        addHoroscopeController.horoscopeBirthTimeAlert.value = false;
       });
     }
+  }
+
+  bool get _hasBirthDate =>
+      selectedDate != null ||
+          addHoroscopeController.addHoroscopeBirthSelectedDate != null;
+
+  bool get _hasBirthTime =>
+      selectedTime != null ||
+          addHoroscopeController.addHoroscopeBirthSelectedTime != null;
+
+  // Keeps the original commonBoldText look — just swaps the colour
+  // between red (when its alert flag is on) and black87 (filled).
+  Widget _mandatoryLabel({required String text, required bool alert}) {
+    return commonBoldText(
+      text: LocalizationController.getInstance().getTranslatedValue(text),
+      fontSize: 12,
+      color: alert ? Colors.red : Colors.black87,
+      textAlign: TextAlign.start,
+    );
+  }
+
+  // Re-evaluates every "required" field and toggles its alert flag.
+  // Returns true if every required field is filled.
+  bool _runMandatoryValidation() {
+    final c = addHoroscopeController;
+    c.horoscopeNameAlert.value = c.horoscopeName.text.trim().isEmpty;
+    c.horoscopeBirthDateAlert.value = !_hasBirthDate;
+    c.horoscopeBirthTimeAlert.value = !_hasBirthTime;
+    c.horoscopeBirthStateAlert.value =
+        c.placeStateCountryOfBirth.text.trim().isEmpty;
+    c.horoscopeBirthLandmarkAlert.value =
+        c.landmarkOfBirth.text.trim().isEmpty;
+    return !(c.horoscopeNameAlert.value ||
+        c.horoscopeBirthDateAlert.value ||
+        c.horoscopeBirthTimeAlert.value ||
+        c.horoscopeBirthStateAlert.value ||
+        c.horoscopeBirthLandmarkAlert.value);
   }
 
   // Function to check if the user is below 12 years old
@@ -135,7 +175,10 @@ class _AddPrimaryState extends State<AddPrimary> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Name or Nickname'), fontSize: 12, color: addHoroscopeController.horoscopeNameAlert.value == true ? Colors.red : Colors.black87, textAlign: TextAlign.start),
+                            _mandatoryLabel(
+                              text: 'Name or Nickname',
+                              alert: addHoroscopeController.horoscopeNameAlert.value,
+                            ),
                             PrimaryStraightInputText(
                               allowOnlyLetters: true,
                               onValidate: (v) {
@@ -164,11 +207,14 @@ class _AddPrimaryState extends State<AddPrimary> {
                               LocalizationController.getInstance().getTranslatedValue('Female'),
                               LocalizationController.getInstance().getTranslatedValue('Transgender')
                             ], currentValue: addHoroscopeController.addHoroscopeGender.value, onChanged: (value){
-                              print('selected value is $value');
+                              AppLogger.d('selected value is $value');
                               addHoroscopeController.addHoroscopeGender.value = value!;
                             }),
                             SizedBox(height: 5),
-                            commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Birth Date'), fontSize: 12, color: addHoroscopeController.horoscopeBirthDateAlert.value == true ? Colors.red : Colors.black87, textAlign: TextAlign.start),
+                            _mandatoryLabel(
+                              text: 'Birth Date',
+                              alert: addHoroscopeController.horoscopeBirthDateAlert.value,
+                            ),
                             SizedBox(height: 5),
                             InkWell(
                               onTap: () {
@@ -182,15 +228,14 @@ class _AddPrimaryState extends State<AddPrimary> {
                                     minTime: DateTime(1920),
                                     maxTime: DateTime.now(),
                                     onChanged: (date) {
-                                      print('change $date');
+                                      AppLogger.d('change $date');
                                     },
                                     onConfirm: (date) {
-                                      print('onConfirmed date $date');
+                                      AppLogger.d('onConfirmed date $date');
                                       setState(() {
                                         selectedDate = date;
+                                        addHoroscopeController.horoscopeBirthDateAlert.value = false;
                                       });
-                                      // addHoroscopeController.addHoroscopeBirthSelectedDate!.value = date;
-                                      addHoroscopeController.horoscopeBirthDateAlert.value = false;
                                     },
                                     currentTime: DateTime.now(),
                                     locale: LocaleType.en,
@@ -201,7 +246,9 @@ class _AddPrimaryState extends State<AddPrimary> {
                                 decoration: BoxDecoration(
                                   border: Border(
                                       bottom: BorderSide(
-                                          color: appLoadController.appMidColor,
+                                          color: addHoroscopeController.horoscopeBirthDateAlert.value
+                                              ? Colors.red
+                                              : appLoadController.appMidColor,
                                           width: 1
                                       )
                                   ),
@@ -216,25 +263,41 @@ class _AddPrimaryState extends State<AddPrimary> {
                                             ' ${selectedDate == null ? DateFormat('MMMM dd, yyyy').format(addHoroscopeController.addHoroscopeBirthSelectedDate!.value) : DateFormat('MMMM dd, yyyy').format(selectedDate!)}',
                                         style: GoogleFonts.lexend(
                                           fontSize: 14,
-                                          color: Colors.black54,
+                                          color: addHoroscopeController.horoscopeBirthDateAlert.value
+                                              ? Colors.red
+                                              : Colors.black54,
                                         )
                                     ),
                                     Padding(
                                       padding: const EdgeInsets.all(4.0),
-                                      child: Icon(Icons.calendar_today, size: 18, color: appLoadController.appMidColor),
+                                      child: Icon(
+                                        Icons.calendar_today,
+                                        size: 18,
+                                        color: addHoroscopeController.horoscopeBirthDateAlert.value
+                                            ? Colors.red
+                                            : appLoadController.appMidColor,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
                             ),
                             SizedBox(height: 10),
-                            commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('Time of Birth'), fontSize: 12, color:addHoroscopeController.horoscopeBirthTimeAlert.value == true ? Colors.red : Colors.black87, textAlign: TextAlign.start),
+                            _mandatoryLabel(
+                              text: 'Time of Birth',
+                              alert: addHoroscopeController.horoscopeBirthTimeAlert.value,
+                            ),
                             SizedBox(height: 5),
                             InkWell(
                               onTap: () {
                                 if(kIsWeb){
                                   _selectWebTime(context);
                                 }else{
+                                  // Seed a default so tapping OK without
+                                  // scrolling still captures a time.
+                                  final initial = DateTime.now();
+                                  TimeOfDay pendingTime =
+                                      TimeOfDay.fromDateTime(initial);
                                   showModalBottomSheet(
                                     context: context,
                                     builder: (BuildContext builder) {
@@ -247,12 +310,10 @@ class _AddPrimaryState extends State<AddPrimary> {
                                                 Expanded(
                                                   child: CupertinoDatePicker(
                                                     mode: CupertinoDatePickerMode.time,
-                                                    initialDateTime: DateTime.now(),
+                                                    initialDateTime: initial,
                                                     onDateTimeChanged: (DateTime dateTime) {
-                                                      setState(() {
-                                                        selectedTime = TimeOfDay.fromDateTime(dateTime);
-                                                        addHoroscopeController.horoscopeBirthTimeAlert.value = false;
-                                                      });
+                                                      pendingTime =
+                                                          TimeOfDay.fromDateTime(dateTime);
                                                     },
                                                   ),
                                                 ),
@@ -270,6 +331,12 @@ class _AddPrimaryState extends State<AddPrimary> {
                                                       TextButton(
                                                         onPressed: () {
                                                           Navigator.pop(context);
+                                                          setState(() {
+                                                            selectedTime = pendingTime;
+                                                            addHoroscopeController
+                                                                .horoscopeBirthTimeAlert
+                                                                .value = false;
+                                                          });
                                                         },
                                                         child: Text('OK'),
                                                       ),
@@ -289,7 +356,9 @@ class _AddPrimaryState extends State<AddPrimary> {
                                 decoration: BoxDecoration(
                                     border: Border(
                                         bottom: BorderSide(
-                                            color: appLoadController.appMidColor,
+                                            color: addHoroscopeController.horoscopeBirthTimeAlert.value
+                                                ? Colors.red
+                                                : appLoadController.appMidColor,
                                             width: 1
                                         )
                                     )
@@ -303,26 +372,37 @@ class _AddPrimaryState extends State<AddPrimary> {
                                             : '${LocalizationController.getInstance().getTranslatedValue('Selected Time')} : ${selectedTime == null ? DateFormat('h:mm a').format(DateTime(2021, 1, 1, addHoroscopeController.addHoroscopeBirthSelectedTime!.value.hour, addHoroscopeController.addHoroscopeBirthSelectedTime!.value.minute)) : DateFormat('h:mm a').format(DateTime(2021, 1, 1, selectedTime!.hour, selectedTime!.minute))}',
                                         style: GoogleFonts.lexend(
                                             fontSize: 14,
-                                            color: Colors.black54
+                                            color: addHoroscopeController.horoscopeBirthTimeAlert.value
+                                                ? Colors.red
+                                                : Colors.black54
                                         )
                                     ),
                                     Padding(
                                       padding: const EdgeInsets.all(4.0),
-                                      child: Icon(Icons.access_time, size: 18, color: appLoadController.appMidColor),
+                                      child: Icon(
+                                        Icons.access_time,
+                                        size: 18,
+                                        color: addHoroscopeController.horoscopeBirthTimeAlert.value
+                                            ? Colors.red
+                                            : appLoadController.appMidColor,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
                             ),
                             SizedBox(height: 10),
-                            commonBoldText(text: LocalizationController.getInstance().getTranslatedValue('City of Birth, Country of Birth'), fontSize: 12, color: addHoroscopeController.horoscopeBirthStateAlert.value == true ? Colors.red : Colors.black87, textAlign: TextAlign.start),
+                            _mandatoryLabel(
+                              text: 'City of Birth, Country of Birth',
+                              alert: addHoroscopeController.horoscopeBirthStateAlert.value,
+                            ),
                             kIsWeb ?
                             PlaceAutocompleteWebInput(
                               hintText: LocalizationController.getInstance().getTranslatedValue('City of Birth, Country of Birth'),
                               controller: addHoroscopeController.placeStateCountryOfBirth,
                               borderColor: appLoadController.appMidColor,
                               onChange: (v) {
-                                print('onChange callback with value: $v');
+                                AppLogger.d('onChange callback with value: $v');
                                 if (v == null || v.isEmpty) {
                                   addHoroscopeController.horoscopeBirthStateAlert.value = true;
                                 } else {
@@ -344,7 +424,7 @@ class _AddPrimaryState extends State<AddPrimary> {
                               controller: addHoroscopeController.placeStateCountryOfBirth,
                               borderColor: appLoadController.appMidColor,
                               onChange: (v) {
-                                print('onChange callback with value: $v');
+                                AppLogger.d('onChange callback with value: $v');
                                 if (v == null || v.isEmpty) {
                                   addHoroscopeController.horoscopeBirthStateAlert.value = true;
                                 } else {
@@ -362,7 +442,10 @@ class _AddPrimaryState extends State<AddPrimary> {
                               },
                             ),
                             const SizedBox(height: 15),
-                            commonBoldText(text:  LocalizationController.getInstance().getTranslatedValue('Nearest landmark for place of birth (example:hospital Name etc..)'), fontSize: 12, color: addHoroscopeController.horoscopeBirthLandmarkAlert.value == true ? Colors.red :  Colors.black87, textAlign: TextAlign.start),
+                            _mandatoryLabel(
+                              text: 'Nearest landmark for place of birth (example:hospital Name etc..)',
+                              alert: addHoroscopeController.horoscopeBirthLandmarkAlert.value,
+                            ),
                             PrimaryStraightInputText(hintText:
                             LocalizationController.getInstance().getTranslatedValue('Landmark'),
                               controller: addHoroscopeController.landmarkOfBirth,
@@ -403,111 +486,48 @@ class _AddPrimaryState extends State<AddPrimary> {
                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                       child: GradientButton(
                           title: LocalizationController.getInstance().getTranslatedValue("Next"),buttonHeight: 45, textColor: Colors.white, buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset){
-                        if(addHoroscopeController.hid.value == ''){
-                          if(selectedDate == null && addHoroscopeController.addHoroscopeBirthSelectedDate == null){
-                            addHoroscopeController.horoscopeBirthDateAlert.value = true;
-                          }else{
-                            addHoroscopeController.addHoroscopeBirthSelectedDate = DateTime.now().obs;
-                            if(selectedDate == null){
-
-                            }else{
-                              addHoroscopeController.addHoroscopeBirthSelectedDate!.value = selectedDate!;
-                            }
-                          }
-                          if(selectedTime == null && addHoroscopeController.addHoroscopeBirthSelectedTime == null){
-                            addHoroscopeController.horoscopeBirthTimeAlert.value = true;
-                          }else{
-                            addHoroscopeController.addHoroscopeBirthSelectedTime = TimeOfDay.now().obs;
-                            if(selectedTime == null){
-
-                            }else{
-                              addHoroscopeController.addHoroscopeBirthSelectedTime!.value = selectedTime!;
-                            }
-                          }
-                          if(formKey.currentState!
-                              .validate()){
-                            print('validate for time $selectedTime');
-                            if(addHoroscopeController.horoscopeName.text != '' && (selectedDate != null || addHoroscopeController.addHoroscopeBirthSelectedDate != null) && (selectedTime != null || addHoroscopeController.addHoroscopeBirthSelectedDate != null)
-                                && addHoroscopeController.placeStateCountryOfBirth.text != '' && addHoroscopeController.landmarkOfBirth.text != '' && selectedTime != null){
-
-                              // Get the actual birth date to check
-                              DateTime actualBirthDate;
-                              if (selectedDate != null) {
-                                actualBirthDate = selectedDate!;
-                              } else if (addHoroscopeController.addHoroscopeBirthSelectedDate != null) {
-                                actualBirthDate = addHoroscopeController.addHoroscopeBirthSelectedDate!.value;
-                              } else {
-                                // Handle the case where no date is selected
-                                showFailedToast('Please select a birth date');
-                                return;
-                              }
-
-                              // Check if the user is below 12 years
-                              if (isBelow12Years(actualBirthDate)) {
-                                // Navigate to AddTravelInfo if user is below 12 years
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const AddTravelInfo())
-                                );
-                              } else {
-                                // Navigate to AddMarriageInfo if user is 12 or older
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const AddMarriageInfo())
-                                );
-                              }
-                            }else{
-                              showFailedToast('Please fill the mandatory fields');
-                            }
-                          }
+                        // Mirror freshly-picked date/time into the
+                        // controller's persistent observables so the next
+                        // page can read them.
+                        if (selectedDate != null) {
+                          addHoroscopeController.addHoroscopeBirthSelectedDate ??=
+                              DateTime.now().obs;
+                          addHoroscopeController
+                              .addHoroscopeBirthSelectedDate!.value = selectedDate!;
                         }
-                        else{
-                          addHoroscopeController.horoscopeBirthDateAlert.value = false;
-                          addHoroscopeController.horoscopeBirthTimeAlert.value = false;
-                          if(selectedDate != null){
-                            addHoroscopeController.addHoroscopeBirthSelectedDate = DateTime.now().obs;
-                            addHoroscopeController.addHoroscopeBirthSelectedDate!.value = selectedDate!;
-                          }
-                          if(selectedTime != null){
-                            addHoroscopeController.addHoroscopeBirthSelectedTime = TimeOfDay.now().obs;
-                            addHoroscopeController.addHoroscopeBirthSelectedTime!.value = selectedTime!;
-                          }
-                          if(formKey.currentState!
-                              .validate()){
-                            print('validate true ${addHoroscopeController.horoscopeName.text}');
-                            if(addHoroscopeController.horoscopeName.text != '' && (selectedDate != null || addHoroscopeController.addHoroscopeBirthSelectedDate != null) && (selectedTime != null || addHoroscopeController.addHoroscopeBirthSelectedDate != null)
-                                && addHoroscopeController.placeStateCountryOfBirth.text != '' && addHoroscopeController.landmarkOfBirth.text != ''){
+                        if (selectedTime != null) {
+                          addHoroscopeController.addHoroscopeBirthSelectedTime ??=
+                              TimeOfDay.now().obs;
+                          addHoroscopeController
+                              .addHoroscopeBirthSelectedTime!.value = selectedTime!;
+                        }
 
-                              // Get the actual birth date to check
-                              DateTime actualBirthDate;
-                              if (selectedDate != null) {
-                                actualBirthDate = selectedDate!;
-                              } else if (addHoroscopeController.addHoroscopeBirthSelectedDate != null) {
-                                actualBirthDate = addHoroscopeController.addHoroscopeBirthSelectedDate!.value;
-                              } else {
-                                // Handle the case where no date is selected
-                                showFailedToast('Please select a birth date');
-                                return;
-                              }
+                        // Always re-check every required field — this is
+                        // what flips labels back from red to black once
+                        // the user has fixed them, and what surfaces any
+                        // still-missing fields in red on submit.
+                        final allFilled = _runMandatoryValidation();
+                        final formOk = formKey.currentState?.validate() ?? false;
 
-                              // Check if the user is below 12 years
-                              if (isBelow12Years(actualBirthDate)) {
-                                // Navigate to AddTravelInfo if user is below 12 years
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const AddTravelInfo())
-                                );
-                              } else {
-                                // Navigate to AddMarriageInfo if user is 12 or older
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const AddMarriageInfo())
-                                );
-                              }
-                            }else{
-                              showFailedToast('Please fill the mandatory fields');
-                            }
-                          }
+                        if (!allFilled || !formOk) {
+                          showFailedToast('Please fill the mandatory fields');
+                          return;
+                        }
+
+                        final actualBirthDate = selectedDate ??
+                            addHoroscopeController
+                                .addHoroscopeBirthSelectedDate!.value;
+
+                        if (isBelow12Years(actualBirthDate)) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const AddTravelInfo()),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const AddMarriageInfo()),
+                          );
                         }
                       }) ,
                     ),

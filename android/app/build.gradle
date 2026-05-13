@@ -17,6 +17,13 @@ android {
 
     kotlinOptions {
         jvmTarget = '17'
+        // Silence "binary version of its metadata is 2.1.0, expected 1.9.0"
+        // warnings emitted because some plugins (firebase, fluttertoast, rive,
+        // shared_preferences, webview_flutter, kotlin-stdlib 2.1.20) ship
+        // Kotlin 2.1 metadata while AGP 8.2.2 embeds an older Kotlin compiler.
+        // Cosmetic only — remove once AGP is upgraded to a version bundling
+        // Kotlin 2.x.
+        freeCompilerArgs += ["-Xskip-metadata-version-check"]
     }
 
     defaultConfig {

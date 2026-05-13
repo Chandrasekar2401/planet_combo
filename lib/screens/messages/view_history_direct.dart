@@ -9,6 +9,7 @@ import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:get/get.dart';
 import 'package:planetcombo/controllers/message_controller.dart';
 import 'package:planetcombo/controllers/applicationbase_controller.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class ViewHistoryDirect extends StatefulWidget {
   final String horoscopeId;
@@ -86,7 +87,7 @@ class _ViewHistoryDirectState extends State<ViewHistoryDirect> with WidgetsBindi
         currentMessageId = null;
       }
     } catch (e) {
-      print('Error loading messages: $e');
+      AppLogger.d('Error loading messages: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -367,22 +368,42 @@ class _ViewHistoryDirectState extends State<ViewHistoryDirect> with WidgetsBindi
   }
 }
 
-class ReplyBottomSheetDirect extends StatelessWidget {
+class ReplyBottomSheetDirect extends StatefulWidget {
   final String horoscopeId;
   final String horoscopeName;
   final String messageId;
   final VoidCallback onMessageSent;
-  final TextEditingController userMessage = TextEditingController();
-  final MessageController messageController = Get.find<MessageController>();
-  final AppLoadController appLoadController = Get.find<AppLoadController>();
 
-  ReplyBottomSheetDirect({
+  const ReplyBottomSheetDirect({
     super.key,
     required this.horoscopeId,
     required this.horoscopeName,
     required this.messageId,
     required this.onMessageSent,
   });
+
+  @override
+  State<ReplyBottomSheetDirect> createState() => _ReplyBottomSheetDirectState();
+}
+
+class _ReplyBottomSheetDirectState extends State<ReplyBottomSheetDirect> {
+  // Stored on the State (not the widget) so the controller survives the
+  // widget rebuilds triggered when the Android soft keyboard opens/closes
+  // and forces showModalBottomSheet to re-run its builder.
+  final TextEditingController userMessage = TextEditingController();
+  final MessageController messageController = Get.find<MessageController>();
+  final AppLoadController appLoadController = Get.find<AppLoadController>();
+
+  String get horoscopeId => widget.horoscopeId;
+  String get horoscopeName => widget.horoscopeName;
+  String get messageId => widget.messageId;
+  VoidCallback get onMessageSent => widget.onMessageSent;
+
+  @override
+  void dispose() {
+    userMessage.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -477,20 +498,40 @@ class ReplyBottomSheetDirect extends StatelessWidget {
   }
 }
 
-class CreateMessageBottomSheet extends StatelessWidget {
+class CreateMessageBottomSheet extends StatefulWidget {
   final String horoscopeId;
   final String horoscopeName;
   final VoidCallback onMessageCreated;
-  final TextEditingController userMessage = TextEditingController();
-  final MessageController messageController = Get.find<MessageController>();
-  final AppLoadController appLoadController = Get.find<AppLoadController>();
 
-  CreateMessageBottomSheet({
+  const CreateMessageBottomSheet({
     super.key,
     required this.horoscopeId,
     required this.horoscopeName,
     required this.onMessageCreated,
   });
+
+  @override
+  State<CreateMessageBottomSheet> createState() =>
+      _CreateMessageBottomSheetState();
+}
+
+class _CreateMessageBottomSheetState extends State<CreateMessageBottomSheet> {
+  // Stored on the State (not the widget) so the controller survives the
+  // widget rebuilds triggered when the Android soft keyboard opens/closes
+  // and forces showModalBottomSheet to re-run its builder.
+  final TextEditingController userMessage = TextEditingController();
+  final MessageController messageController = Get.find<MessageController>();
+  final AppLoadController appLoadController = Get.find<AppLoadController>();
+
+  String get horoscopeId => widget.horoscopeId;
+  String get horoscopeName => widget.horoscopeName;
+  VoidCallback get onMessageCreated => widget.onMessageCreated;
+
+  @override
+  void dispose() {
+    userMessage.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

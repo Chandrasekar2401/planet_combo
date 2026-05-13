@@ -12,6 +12,7 @@ import 'package:planetcombo/models/pending_payment_list.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../api/api_endpoints.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class ApplicationBaseController extends GetxController {
   static ApplicationBaseController? _instance;
@@ -132,22 +133,22 @@ class ApplicationBaseController extends GetxController {
   _getUserMessages() async{
     try{
       var response = await APICallings.getUserMessages(userId: appLoadController.loggedUserData.value.userid!, token: appLoadController.loggedUserData.value.token!);
-      print('the response is ');
-      print(response);
+      AppLogger.d('the response is ');
+      AppLogger.d(response);
       if(response != null){
         var jsonBody = json.decode(response);
         if (jsonBody['status'] == 'Success') {
-          print('iam launching here $response');
+          AppLogger.d('iam launching here $response');
              messagesInfo.value = messagesListFromJson(response);
              messagesHistory.value = messagesInfo.value.data!;
-          print('the recevied value of messages is ${messagesHistory.length}');
+          AppLogger.d('the recevied value of messages is ${messagesHistory.length}');
         }
       }
     }catch(error){
-      print('Get all user messages error section reached');
-      print(error);
+      AppLogger.d('Get all user messages error section reached');
+      AppLogger.d(error);
         messagesHistory.value = [];
-        print('the length of the message history is ${messagesHistory.length}');
+        AppLogger.d('the length of the message history is ${messagesHistory.length}');
     }
   }
 
@@ -174,7 +175,7 @@ class ApplicationBaseController extends GetxController {
         }
       }
     } catch (e) {
-      print('Error getting horoscope messages: $e');
+      AppLogger.d('Error getting horoscope messages: $e');
       messagesHistory.value = [];
     }
   }
@@ -191,20 +192,20 @@ class ApplicationBaseController extends GetxController {
       // Combine month and year
       String formattedDate = month + year;
       var response = await APICallings.getWalletBalance(userId: appLoadController.loggedUserData.value.userid!, token: appLoadController.loggedUserData.value.token!, statementSEQ: formattedDate);
-      print('the response of the wallet balance is');
-      print(response);
+      AppLogger.d('the response of the wallet balance is');
+      AppLogger.d(response);
       if(response != null){
         var jsonBody = json.decode(response);
         if (jsonBody['Status'] == 'Success') {
-          print('the received user balance is $userAccountBalance');
+          AppLogger.d('the received user balance is $userAccountBalance');
           userAccountBalance.value = jsonBody['CloseCurrentBalance']['ACCOUNTBAL'];
-          print('the received user balance is $userAccountBalance');
+          AppLogger.d('the received user balance is $userAccountBalance');
           // termsAndConditionsLink.value = jsonBody['Data'];
         }
       }
     }catch(error){
-      print('terms and conditions have api reach error');
-      print(error);
+      AppLogger.d('terms and conditions have api reach error');
+      AppLogger.d(error);
     }
   }
 
@@ -213,7 +214,7 @@ class ApplicationBaseController extends GetxController {
   }
 
   void _getTermsAndConditions(){
-    print('the value of Ucurrency for terms and conditions ${appLoadController.loggedUserData.value.ucurrency}');
+    AppLogger.d('the value of Ucurrency for terms and conditions ${appLoadController.loggedUserData.value.ucurrency}');
     if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'){
       termsAndConditionsLink.value = '${APIEndPoints.baseUrl}api/File/INR%2FTerms%20and%20Conditions_Launch.pdf';
     }else if(appLoadController.loggedUserData.value.ucurrency.toString() == 'aed'){
@@ -234,8 +235,8 @@ class ApplicationBaseController extends GetxController {
           userId: appLoadController.loggedUserData.value.userid!,
           token: appLoadController.loggedUserData.value.token!
       );
-      print('The response of the invoice list:');
-      print(response);
+      AppLogger.d('The response of the invoice list:');
+      AppLogger.d(response);
       if (response != null) {
         var jsonBody = json.decode(response);
         if (jsonBody is List) {
@@ -251,15 +252,15 @@ class ApplicationBaseController extends GetxController {
         paymentHistory.clear();
       }
     } catch (error) {
-      print('Payment history API request error:');
-      print(error);
+      AppLogger.d('Payment history API request error:');
+      AppLogger.d(error);
       invoiceListApiError.value = error.toString();
       paymentHistory.clear();
     }
   }
 
-  getUserPendingPayments(){
-    _getUserPendingPayments();
+  Future<void> getUserPendingPayments() {
+    return _getUserPendingPayments();
   }
 
   Future<void> _getUserPendingPayments() async {
@@ -289,7 +290,7 @@ class ApplicationBaseController extends GetxController {
         pendingPaymentsList.value = [];
       }
     } catch (error) {
-      print("Error in _getUserPendingPayments: $error");
+      AppLogger.d("Error in _getUserPendingPayments: $error");
       pendingPaymentsError.value = error.toString();
       pendingPaymentsList.value = [];
     } finally {
@@ -337,7 +338,7 @@ class ApplicationBaseController extends GetxController {
         }
       }
     } catch (e) {
-      print("Error in _getUserHoroscopeList: $e");
+      AppLogger.d("Error in _getUserHoroscopeList: $e");
       WidgetsBinding.instance.addPostFrameCallback((_) {
         horoscopeListError.value = e.toString();
         horoscopeList.value = [];

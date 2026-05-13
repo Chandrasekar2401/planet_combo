@@ -16,6 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../controllers/horoscope_services.dart';
 import '../predictions/predictions.dart';
 import '../services/horoscope_services.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class PaymentProgressPage extends StatefulWidget {
   final String paymentType;
@@ -129,7 +130,7 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
         }
       }
     } catch (e) {
-      print('Failed to check payment status: $e');
+      AppLogger.d('Failed to check payment status: $e');
     }
   }
 
@@ -157,14 +158,14 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
     try {
       bool result = await horoscopeServiceController.getUserPredictions(hid)
           .timeout(const Duration(seconds: 30));
-      print('API Result: $result'); // Debug log
+      AppLogger.d('API Result: $result'); // Debug log
 
       if (mounted) {
         CustomDialog.cancelLoading(context);
         horoscopeServiceController.isLoading.value = false;
 
         if (result == true) {
-          print('Navigating to Predictions');
+          AppLogger.d('Navigating to Predictions');
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => const Predictions()),
@@ -206,8 +207,34 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
 
   void _showFailedToast() {
     CustomDialog.okActionAlert(context, 'Payment failed please try again', 'OK', false, 14, (){
-      Navigator.pop(context); // Go back to previous screen instead of dashboard
+      _returnToDashboard();
     });
+  }
+
+  void _returnToDashboard() {
+    // For horoscope payments the record is already saved on the backend.
+    // Whether the user cancelled, the payment failed, or it timed out,
+    // land them on the updated services list so they can see (and edit /
+    // pay later for) the new record instead of popping back to the add /
+    // review flow.
+    if (widget.paymentType == 'horoscope') {
+      applicationBaseController.updateHoroscopeUiList();
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HoroscopeServices()),
+        (Route<dynamic> route) => false,
+      );
+      return;
+    }
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      // Stack was wiped (e.g. by pushAndRemoveUntil upstream). Land on
+      // Dashboard instead of an empty stack / white screen / app exit.
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const Dashboard()),
+        (Route<dynamic> route) => false,
+      );
+    }
   }
 
   void _showTimeoutDialog() {
@@ -223,7 +250,7 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
               child: const Text('Return'),
               onPressed: () {
                 Navigator.of(context).pop(); // Close dialog
-                Navigator.of(context).pop(); // Go back to previous screen
+                _returnToDashboard();
               },
             ),
             TextButton(
@@ -274,8 +301,8 @@ class _PaymentProgressPageState extends State<PaymentProgressPage> with SingleTi
             TextButton(
               child: Text('Yes'),
               onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop(); // Go back to previous screen
+                Navigator.of(context).pop(); // Close dialog
+                _returnToDashboard();
               },
             ),
           ],

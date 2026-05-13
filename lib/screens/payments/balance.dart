@@ -5,6 +5,7 @@ import 'package:planetcombo/controllers/applicationbase_controller.dart';
 import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:get/get.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 enum PaymentOption { upi, paypal }
 
@@ -187,7 +188,7 @@ class _BalanceState extends State<Balance> {
         ),
         child: GestureDetector(
           onTap: (){
-            print('button clicked');
+            AppLogger.d('button clicked');
           },
           child: Center(child: commonBoldText(text: 'Topup Wallet', color: Colors.white70)),
         ),

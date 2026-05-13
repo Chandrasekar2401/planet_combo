@@ -6,6 +6,7 @@ import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:planetcombo/controllers/predictions_controller.dart';
 import 'package:intl/intl.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class ApiMessage {
   final int id;
@@ -114,10 +115,10 @@ class SpecialPredictionController extends GetxController {
         messages.assignAll(newMessages);
         messages.sort((a, b) => a.creationDate.compareTo(b.creationDate)); // Sort messages by date, oldest first
       } else {
-        print('No messages received');
+        AppLogger.d('No messages received');
       }
     } catch (e) {
-      print('Error fetching messages: $e');
+      AppLogger.d('Error fetching messages: $e');
       // Handle error (e.g., show a snackbar)
     }
   }
@@ -128,11 +129,11 @@ class SpecialPredictionController extends GetxController {
       if (success == 200) {
         await getMessages(); // Refresh messages after successful send
       } else {
-        print('Failed to send message');
+        AppLogger.d('Failed to send message');
         // Handle failure (e.g., show a snackbar)
       }
     } catch (e) {
-      print('Error sending message: $e');
+      AppLogger.d('Error sending message: $e');
       // Handle error (e.g., show a snackbar)
     }
   }
@@ -288,7 +289,7 @@ class _SpecialPredictionResponseState extends State<SpecialPredictionResponse> w
                       final extractedDateTime = DateFormat('MMMM dd, yyyy hh:mm:ss a').parse(message.extractedDate!);
                       dateToUse = extractedDateTime;
                     } catch (e) {
-                      print('Error parsing extracted date: $e');
+                      AppLogger.d('Error parsing extracted date: $e');
                       // Fall back to creationDate if parsing fails
                     }
                   }

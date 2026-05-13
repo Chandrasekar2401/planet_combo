@@ -6,6 +6,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:planetcombo/common/app_logger.dart';
 
 // String appMode = 'Light';
 String appMode = 'Dark';
@@ -666,7 +667,7 @@ class HoroscopeServicesExample extends StatelessWidget {
                   title: "Plans",
                   textColor: Colors.white,
                   buttonColors: [Colors.grey.shade600, Colors.grey.shade700],
-                  onPressed: (offset) => print("Plans pressed"),
+                  onPressed: (offset) => AppLogger.d("Plans pressed"),
                   isDisabled: !buttonsEnabled[0],
                 ),
               ),
@@ -676,7 +677,7 @@ class HoroscopeServicesExample extends StatelessWidget {
                   title: "Predictions",
                   textColor: Colors.white,
                   buttonColors: [Colors.orange, Colors.deepOrange],
-                  onPressed: (offset) => print("Predictions pressed"),
+                  onPressed: (offset) => AppLogger.d("Predictions pressed"),
                   isDisabled: !buttonsEnabled[1],
                 ),
               ),
@@ -686,7 +687,7 @@ class HoroscopeServicesExample extends StatelessWidget {
                   title: "Horoscope",
                   textColor: Colors.white,
                   buttonColors: [Colors.grey.shade600, Colors.grey.shade700],
-                  onPressed: (offset) => print("Horoscope pressed"),
+                  onPressed: (offset) => AppLogger.d("Horoscope pressed"),
                   isDisabled: !buttonsEnabled[2],
                 ),
               ),
@@ -1014,13 +1015,41 @@ class PrimaryInputText extends StatelessWidget {
   final bool? obscureText;
   final String? value;
   final bool? autoFocus;
-  const PrimaryInputText({super.key,this.obscureText,this.value, required this.hintText,this.readOnly, this.controller, required this.onValidate,this.isEnabled = true, this.textInputType = TextInputType.text, this.maxLines=1,this.maxLength, this.onChange, this.suffixImage, this.focusNode, this.autoFocus});
+  // On Android, Gboard etc. hold typed characters as "composing" text until
+  // an explicit commit event. If the user dismisses the keyboard via the
+  // back button (no commit), that composing text is dropped and never
+  // reaches the controller. Setting both flags to false makes the IME
+  // commit each keystroke immediately, fixing the vanishing-text bug.
+  final bool autocorrect;
+  final bool enableSuggestions;
+  const PrimaryInputText({
+    super.key,
+    this.obscureText,
+    this.value,
+    required this.hintText,
+    this.readOnly,
+    this.controller,
+    required this.onValidate,
+    this.isEnabled = true,
+    this.textInputType = TextInputType.text,
+    this.maxLines = 1,
+    this.maxLength,
+    this.onChange,
+    this.suffixImage,
+    this.focusNode,
+    this.autoFocus,
+    this.autocorrect = true,
+    this.enableSuggestions = true,
+  });
 
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      initialValue: value,
+      // Avoid passing both initialValue and a controller (Flutter asserts on
+      // that combo); fall back to initialValue only when no controller is
+      // attached.
+      initialValue: controller == null ? value : null,
       readOnly: readOnly ?? false,
       style: GoogleFonts.lexend(color: Colors.black),
       controller: controller,
@@ -1032,6 +1061,8 @@ class PrimaryInputText extends StatelessWidget {
       maxLength: maxLength,
       enabled: isEnabled,
       onChanged: onChange,
+      autocorrect: autocorrect,
+      enableSuggestions: enableSuggestions,
       keyboardType: textInputType,
       decoration: InputDecoration(
         contentPadding: const EdgeInsets.all(16),

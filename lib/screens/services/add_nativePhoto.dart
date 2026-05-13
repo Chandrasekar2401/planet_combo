@@ -16,6 +16,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 import 'package:planetcombo/api/api_endpoints.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class AddNativePhoto extends StatefulWidget {
   const AddNativePhoto({Key? key}) : super(key: key);
@@ -118,7 +119,7 @@ class _AddNativePhotoState extends State<AddNativePhoto> {
         }
       }
     } catch (e) {
-      print('Error picking image: $e');
+      AppLogger.d('Error picking image: $e');
       // Show error message to user
     }
   }

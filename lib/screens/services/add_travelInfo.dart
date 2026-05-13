@@ -14,6 +14,7 @@ import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:planetcombo/screens/dashboard.dart';
 
 import 'package:planetcombo/screens/services/add_relatives.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class AddTravelInfo extends StatefulWidget {
   const AddTravelInfo({Key? key}) : super(key: key);
@@ -134,10 +135,10 @@ class _AddTravelInfoState extends State<AddTravelInfo> {
                           minTime: DateTime(getYear(addHoroscopeController.addHoroscopeBirthSelectedDate!.value)),
                           maxTime: DateTime.now(),
                           onChanged: (date) {
-                            print('change $date');
+                            AppLogger.d('change $date');
                           },
                           onConfirm: (date) {
-                            print('onConfirmed date $date');
+                            AppLogger.d('onConfirmed date $date');
                             setState(() {
                               selectedDate = date;
                             });

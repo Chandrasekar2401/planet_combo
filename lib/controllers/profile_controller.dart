@@ -9,6 +9,7 @@ import 'package:planetcombo/controllers/applicationbase_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:planetcombo/screens/social_login.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 
 class ProfileController extends GetxController {
@@ -33,8 +34,8 @@ class ProfileController extends GetxController {
     try{
       CustomDialog.showLoading(context, 'Deleting');
       var response = await APICallings.deleteProfile(userId, appLoadController.loggedUserData.value.token!);
-      print('where the response is ');
-      print(response!.body);
+      AppLogger.d('where the response is ');
+      AppLogger.d(response!.body);
       CustomDialog.cancelLoading(context);
       var jsonBody = json.decode(response.body);
       if(jsonBody['Status'] == 'Success'){
@@ -51,7 +52,7 @@ class ProfileController extends GetxController {
         CustomDialog.showAlert(context, jsonBody['Message'], false, 14);
       }
     }catch(error){
-      print(error);
+      AppLogger.d(error);
       CustomDialog.cancelLoading(context);
       CustomDialog.showAlert(context, 'Please try after sometime', false, 14);
       return error;

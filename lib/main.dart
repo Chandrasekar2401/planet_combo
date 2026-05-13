@@ -4,6 +4,8 @@ import 'package:planetcombo/controllers/applicationbase_controller.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:planetcombo/common/app_logger.dart';
+import 'package:planetcombo/common/keyboard_scroll_wrapper.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/routes/app_routes.dart';
 import 'package:planetcombo/screens/authentication.dart';
@@ -22,10 +24,17 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  print('Handling a background message: ${message.messageId}');
+  AppLogger.i('Handling a background message: ${message.messageId}',
+      tag: 'FCM');
 }
 
 bool userValue = false;
+
+/// Observes route changes app-wide. The Dashboard subscribes so it can
+/// pause its background video when the user navigates to another screen
+/// and resume when they come back.
+final RouteObserver<PageRoute<dynamic>> appRouteObserver =
+    RouteObserver<PageRoute<dynamic>>();
 
 Future<void> initializeApp() async {
   try {
@@ -51,17 +60,20 @@ Future<void> initializeApp() async {
             measurementId: "G-MLW4X9WR7H"
         ),
       ).then((_) {
-        print('Firebase Web initialized successfully');
+        AppLogger.i('Firebase Web initialized successfully', tag: 'Firebase');
       }).catchError((error) {
-        print('Error initializing Firebase Web: $error');
+        AppLogger.e('Error initializing Firebase Web',
+            tag: 'Firebase', error: error);
       });
     } else {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       ).then((_) {
-        print('Firebase Mobile initialized successfully');
+        AppLogger.i('Firebase Mobile initialized successfully',
+            tag: 'Firebase');
       }).catchError((error) {
-        print('Error initializing Firebase Mobile: $error');
+        AppLogger.e('Error initializing Firebase Mobile',
+            tag: 'Firebase', error: error);
       });
 
       // Mobile specific Firebase Messaging setup
@@ -80,28 +92,32 @@ Future<void> initializeApp() async {
 
         FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-        print('User granted permission: ${settings.authorizationStatus}');
+        AppLogger.i('User granted permission: ${settings.authorizationStatus}',
+            tag: 'FCM');
 
         final fcmToken = await FirebaseMessaging.instance.getToken();
-        print('FCM Token: $fcmToken');
+        AppLogger.d('FCM Token: $fcmToken', tag: 'FCM');
 
         if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-          print('Notification permission granted');
+          AppLogger.i('Notification permission granted', tag: 'FCM');
 
           // Handle foreground messages
           FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-            print('Received a message in the foreground!');
-            print('Message data: ${message.data}');
+            AppLogger.i('Received a message in the foreground', tag: 'FCM');
+            AppLogger.d('Message data: ${message.data}', tag: 'FCM');
             if (message.notification != null) {
-              print('Message contains a notification: ${message.notification}');
+              AppLogger.d(
+                  'Message contains a notification: ${message.notification}',
+                  tag: 'FCM');
             }
           });
         } else {
-          print('Notification permission denied');
+          AppLogger.w('Notification permission denied', tag: 'FCM');
           showFailedToast('Notifications have been blocked. Please enable them to receive notifications.');
         }
-      } catch (e) {
-        print('Error setting up Firebase Messaging: $e');
+      } catch (e, st) {
+        AppLogger.e('Error setting up Firebase Messaging',
+            tag: 'FCM', error: e, stackTrace: st);
       }
     }
 
@@ -123,11 +139,13 @@ Future<void> initializeApp() async {
         userValue = true;
         appLoadController.userValue.value = true;
       }
-    } catch (e) {
-      print('Error handling user authentication state: $e');
+    } catch (e, st) {
+      AppLogger.e('Error handling user authentication state',
+          tag: 'Init', error: e, stackTrace: st);
     }
-  } catch (e) {
-    print('Error in initializeApp: $e');
+  } catch (e, st) {
+    AppLogger.e('Error in initializeApp',
+        tag: 'Init', error: e, stackTrace: st);
     // You might want to rethrow the error or handle it appropriately
   }
 }
@@ -141,6 +159,8 @@ class MyApp extends StatelessWidget {
   MyApp({super.key});
 
   final AppLoadController appLoadController = Get.put(AppLoadController.getInstance(), permanent: true);
+
+  final TransitionBuilder _easyLoadingBuilder = EasyLoading.init();
 
   Widget getInitScreen() {
     if (!kIsWeb) {
@@ -175,6 +195,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       onGenerateRoute: _appRouter.onGenerateRoute,
+      navigatorObservers: [appRouteObserver],
       home: FutureBuilder(
         future: initializeApp(),
         builder: (context, snapshot) {
@@ -189,7 +210,10 @@ class MyApp extends StatelessWidget {
           return const AnimatedLoadingScreen();
         },
       ),
-      builder: EasyLoading.init(),
+      builder: (context, child) {
+        final loaded = _easyLoadingBuilder(context, child);
+        return kIsWeb ? KeyboardScrollWrapper(child: loaded) : loaded;
+      },
     );
   }
 }

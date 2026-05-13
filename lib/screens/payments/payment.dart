@@ -5,6 +5,7 @@ import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/controllers/payment_controller.dart';
 import 'package:get/get.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class Pay extends StatefulWidget {
   const Pay({Key? key}) : super(key: key);
@@ -119,7 +120,7 @@ class _PayState extends State<Pay> {
                       SizedBox(width: 20),
                       Expanded(child: GradientButton(
                           title: LocalizationController.getInstance().getTranslatedValue("Send"),buttonHeight: 45, textColor: Colors.white, buttonColors: const [Color(0xFFf2b20a), Color(0xFFf34509)], onPressed: (Offset buttonOffset){
-                        print(emailController.text);
+                        AppLogger.d(emailController.text);
                         // paymentController.addOfflineMoney(appLoadController.loggedUserData.value.userid!, emailController.text, amountController.text, appLoadController.loggedUserData.value.token!, context);
                       }))
                     ],

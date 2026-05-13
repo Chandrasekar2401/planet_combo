@@ -9,6 +9,7 @@ import 'package:planetcombo/controllers/localization_controller.dart';
 import 'package:get/get.dart';
 import 'package:planetcombo/controllers/message_controller.dart';
 import 'package:planetcombo/controllers/applicationbase_controller.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class ViewHistory extends StatefulWidget {
   final int messageHid;
@@ -67,7 +68,7 @@ class _ViewHistoryState extends State<ViewHistory> with WidgetsBindingObserver {
   void startPeriodicRefresh() {
     _refreshTimer?.cancel();
     _refreshTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
-      print('Refreshing messages...');
+      AppLogger.d('Refreshing messages...');
       await applicationBaseController.getUserMessages();
       loadMessageHistory();
     });
@@ -266,12 +267,31 @@ class _ViewHistoryState extends State<ViewHistory> with WidgetsBindingObserver {
   }
 }
 
-class ReplyBottomSheet extends StatelessWidget {
+class ReplyBottomSheet extends StatefulWidget {
   final MessageHistory messageHistory;
+
+  const ReplyBottomSheet({super.key, required this.messageHistory});
+
+  @override
+  State<ReplyBottomSheet> createState() => _ReplyBottomSheetState();
+}
+
+class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
+  // Stored on the State (not the widget) so the controller survives the
+  // widget rebuilds triggered when the Android soft keyboard opens/closes
+  // and forces showModalBottomSheet to re-run its builder. Putting it on
+  // a StatelessWidget caused the typed text to vanish whenever the IME
+  // hid (e.g. pressing the keyboard's tick/Done button).
   final TextEditingController userMessage = TextEditingController();
   final MessageController messageController = Get.find<MessageController>();
 
-  ReplyBottomSheet({super.key, required this.messageHistory});
+  MessageHistory get messageHistory => widget.messageHistory;
+
+  @override
+  void dispose() {
+    userMessage.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

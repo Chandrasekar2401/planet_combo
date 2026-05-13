@@ -54,5 +54,17 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Allow url_launcher to resolve UPI deep links so GPay / PhonePe /
+             Paytm / BHIM appear in the chooser when PayU emits upi:// URLs.
+             Required on Android 11+ (targetSdk >= 30) due to package
+             visibility restrictions. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="upi"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
     </queries>
 </manifest>

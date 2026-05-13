@@ -20,6 +20,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:planetcombo/service/ipAddressService.dart';
 
 import '../web/web_home.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class ProfileEdit extends StatefulWidget {
   const ProfileEdit({Key? key}) : super(key: key);
@@ -73,14 +74,14 @@ class _ProfileEditState extends State<ProfileEdit> {
           isLoadingIP = false;
         });
 
-        print('User IP Address: $ipAddress');
+        AppLogger.d('User IP Address: $ipAddress');
       } catch (e) {
         setState(() {
           userIPAddress = 'Unknown';
           appLoadController.loggedUserData.value.ipAddress = 'Unknown';
           isLoadingIP = false;
         });
-        print('Error getting IP address: $e');
+        AppLogger.d('Error getting IP address: $e');
       }
     }
   }
@@ -675,7 +676,7 @@ class _ProfileEditState extends State<ProfileEdit> {
               ),
               fit: BoxFit.cover,
               onError: (error, stackTrace) {
-                print('Error loading image: $error');
+                AppLogger.d('Error loading image: $error');
               },
             ),
           ),
@@ -696,7 +697,7 @@ class _ProfileEditState extends State<ProfileEdit> {
               );
             },
             errorBuilder: (context, error, stackTrace) {
-              print('Web image error: $error');
+              AppLogger.d('Web image error: $error');
               return Container(
                 width: 95,
                 height: 95,
@@ -920,8 +921,8 @@ class _ProfileEditState extends State<ProfileEdit> {
             CustomDialog.showAlert(context, 'IP address detection failed. Please check your internet connection and try again.', false, 14);
           } else if (isChecked && isPaymentInfoChecked) {
             var response = await addHoroscopeController.addNewProfileWithoutImage(context);
-            print('the response from the api new profile is');
-            print(response.toString());
+            AppLogger.d('the response from the api new profile is');
+            AppLogger.d(response.toString());
             var string2json = json.decode(response);
             if ((string2json['status'] == 'Success' && string2json['data'] == null)) {
               CustomDialog.showAlert(context, string2json['message'] + ' Please contact admin for more info', false, 14);
@@ -937,7 +938,7 @@ class _ProfileEditState extends State<ProfileEdit> {
           }
         } else {
           var response = await addHoroscopeController.updateProfile(context, username.text);
-          print('the response received after the profile Update $response');
+          AppLogger.d('the response received after the profile Update $response');
           if (response != null) {
             var responseData = json.decode(response);
             SharedPreferences pref = await SharedPreferences.getInstance();

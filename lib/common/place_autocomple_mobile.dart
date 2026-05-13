@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:planetcombo/common/app_logger.dart';
 
 class PlaceAutocompleteMobileInput extends StatefulWidget {
   final TextEditingController controller;
@@ -56,14 +57,14 @@ class _PlaceAutocompleteMobileInputState extends State<PlaceAutocompleteMobileIn
   }
 
   void _handleSelection(Map<String, String> place) {
-    print('_handleSelection called');
+    AppLogger.d('_handleSelection called');
     final selectedValue = place['description'] ?? '';
-    print('Selected value: $selectedValue');
+    AppLogger.d('Selected value: $selectedValue');
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Update the controller text
       widget.controller.text = selectedValue;
-      print('Controller text updated to: ${widget.controller.text}');
+      AppLogger.d('Controller text updated to: ${widget.controller.text}');
 
       // Trigger onChange callback
       if (widget.onChange != null) {
@@ -106,7 +107,7 @@ class _PlaceAutocompleteMobileInputState extends State<PlaceAutocompleteMobileIn
                   return GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
-                      print('GestureDetector onTap called');
+                      AppLogger.d('GestureDetector onTap called');
                       _handleSelection(place);
                     },
                     child: Container(
@@ -164,7 +165,7 @@ class _PlaceAutocompleteMobileInputState extends State<PlaceAutocompleteMobileIn
         }
       }
     } catch (e) {
-      print('Error fetching place suggestions: $e');
+      AppLogger.d('Error fetching place suggestions: $e');
       setState(() {
         _placesList = [];
       });
@@ -200,7 +201,7 @@ class _PlaceAutocompleteMobileInputState extends State<PlaceAutocompleteMobileIn
           ),
         ),
         onChanged: (value) {
-          print('onChanged: $value');
+          AppLogger.d('onChanged: $value');
           if (widget.onChange != null) {
             widget.onChange!(value);
           }

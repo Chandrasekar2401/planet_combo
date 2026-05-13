@@ -9,6 +9,7 @@ import 'package:planetcombo/screens/messages/reply_message.dart';
 import 'package:planetcombo/screens/messages/view_history.dart';
 import 'package:planetcombo/controllers/applicationbase_controller.dart';
 import 'package:planetcombo/controllers/message_controller.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class MessagesList extends StatefulWidget {
   String horoscopeId;
@@ -122,7 +123,7 @@ class _MessagesListState extends State<MessagesList> {
       floatingActionButton: GradientFloatingActionButton(
         onPressed: () {
           // Add your message code here
-          print('Message');
+          AppLogger.d('Message');
           Navigator.push(
               context, MaterialPageRoute(builder: (context) => AddMessages(messageId: widget.horoscopeId)));
         },

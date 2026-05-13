@@ -14,6 +14,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:planetcombo/models/horoscope_list.dart';
 import 'package:planetcombo/models/planet_transit.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class PlanetTransit extends StatefulWidget {
   final HoroscopesList horoscope;
@@ -71,7 +72,7 @@ class _PlanetTransitState extends State<PlanetTransit> {
     CustomDialog.showLoading(context, 'Please wait');
     var result = await APICallings.getPlanetTransit(planet: planet, token: appLoadController.loggedUserData!.value.token!);
     CustomDialog.cancelLoading(context);
-    print(result);
+    AppLogger.d(result);
     if(result != null){
       var jsonData = json.decode(result);
       if(jsonData['Status'] == 'Success'){
@@ -223,7 +224,7 @@ class _PlanetTransitState extends State<PlanetTransit> {
       floatingActionButton: GradientFloatingActionButton(
           onPressed: () {
             // Add your message code here
-            print('Message');
+            AppLogger.d('Message');
             // Navigator.push(
             //     context, MaterialPageRoute(builder: (context) => const AddMessages()));
           },

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze *)",
+      "Bash(flutter build *)",
+      "PowerShell(Move-Item *)",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $f = \"C:\\\\Users\\\\purus\\\\StudioProjects\\\\planet_combo\\\\assets\\\\images\\\\web\\\\article_bg.jpg\"; $img = [System.Drawing.Image]::FromFile\\($f\\); \"Dimensions: $\\($img.Width\\) x $\\($img.Height\\) px\"; $img.Dispose\\(\\))",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; foreach \\($f in @\\(\"article1.jpg\",\"article2.jpg\",\"article3.jpg\",\"bg1.jpg\",\"bg2.jpg\",\"bg3.jpg\"\\)\\) { $p = \"C:\\\\Users\\\\purus\\\\StudioProjects\\\\planet_combo\\\\assets\\\\images\\\\web\\\\$f\"; $i = [System.Drawing.Image]::FromFile\\($p\\); \"$f : $\\($i.Width\\) x $\\($i.Height\\)\"; $i.Dispose\\(\\) }; Get-Content C:\\\\Users\\\\purus\\\\StudioProjects\\\\planet_combo\\\\android\\\\app\\\\src\\\\main\\\\AndroidManifest.xml | Select-String -Pattern \"MAPS_API|google_maps|com.google.android.geo\")",
+      "PowerShell(flutter analyze *)",
+      "PowerShell(flutter clean *)",
+      "PowerShell(flutter pub *)"
+    ]
+  }
+}

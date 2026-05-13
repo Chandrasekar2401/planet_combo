@@ -6,6 +6,7 @@ import 'package:planetcombo/api/api_endpoints.dart';
 import 'package:planetcombo/controllers/applicationbase_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:planetcombo/api/api_encryption.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class APIResponse {
   final bool success;
@@ -30,7 +31,7 @@ class APICallings {
     try {
       // Test encryption before using
       if (!EncryptionService.testEncryption()) {
-        print('Warning: Encryption system is not working properly!');
+        AppLogger.d('Warning: Encryption system is not working properly!');
       }
 
       Map<String, dynamic> registerObject = {
@@ -57,7 +58,7 @@ class APICallings {
         requestBody = registerObject;
       }
 
-      print('Sending encrypted request...');
+      AppLogger.d('Sending encrypted request...');
       var response = await http.post(
         url,
         body: json.encode(requestBody),
@@ -72,7 +73,7 @@ class APICallings {
         }
 
         var jsonResponse = json.decode(responseBody);
-        print('Response from social login: $jsonResponse');
+        AppLogger.d('Response from social login: $jsonResponse');
 
         if (jsonResponse['status'] == 'Success') {
           if (jsonResponse['message'] == 'No Data found') {
@@ -87,7 +88,7 @@ class APICallings {
       }
       return 'false';
     } catch (error) {
-      print('Error in social login: $error');
+      AppLogger.d('Error in social login: $error');
       return 'false';
     }
   }
@@ -106,12 +107,12 @@ class APICallings {
           },
           body: registerObject
       );
-      print(response.statusCode);
+      AppLogger.d(response.statusCode);
       if(response.statusCode == 403){
         return '403 Error';
       }else if(response.statusCode == 200){
         var jsonResponse = json.decode(response.body);
-        print(jsonResponse);
+        AppLogger.d(jsonResponse);
         if(jsonResponse['data'] == null){
           return null;
         }else{
@@ -121,8 +122,8 @@ class APICallings {
         return 'Something went wrong';
       }
     }catch(error){
-      print('catch error is');
-      print(error);
+      AppLogger.d('catch error is');
+      AppLogger.d(error);
       return 'Something went wrong';
     }
   }
@@ -134,8 +135,8 @@ class APICallings {
     try {
       Map<String, dynamic> updateObject = updateHoroscope;
       var url = Uri.parse(APIEndPoints.updateHoroscope);
-      print('URL : $url');
-      print("Body: ${json.encode(updateHoroscope)}");
+      AppLogger.d('URL : $url');
+      AppLogger.d("Body: ${json.encode(updateHoroscope)}");
       var response = await http.post(
           url,
           headers: {
@@ -144,10 +145,10 @@ class APICallings {
           },
           body: updateObject
       );
-      print('Response Status Code: ${response.statusCode}');
+      AppLogger.d('Response Status Code: ${response.statusCode}');
       if (response.statusCode == 200) {
         var jsonResponse = json.decode(response.body);
-        print('Response Body: $jsonResponse');
+        AppLogger.d('Response Body: $jsonResponse');
         if (jsonResponse['status'] == 'Success') {
           return APIResponse(success: true, data: response.body);
         } else {
@@ -166,8 +167,8 @@ class APICallings {
       {required Map<String, dynamic> updateProfile,  required String token}) async {
     Map<String, dynamic> registerObject = updateProfile;
     var url = Uri.parse(APIEndPoints.updateProfile);
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
     try{
       var response = await http.post(
           url,
@@ -177,13 +178,13 @@ class APICallings {
           },
           body: registerObject
       );
-      print('the response are crossed 4');
-      print(response.statusCode);
+      AppLogger.d('the response are crossed 4');
+      AppLogger.d(response.statusCode);
       if(response.statusCode == 403){
         return '403 Error';
       }else if(response.statusCode == 200){
         var jsonResponse = json.decode(response.body);
-        print(jsonResponse);
+        AppLogger.d(jsonResponse);
         if(jsonResponse['status'] == 'Success'){
           return response.body;
         }else{
@@ -205,8 +206,8 @@ class APICallings {
       {required Map<String, dynamic> updateProfile,required String userId,required String hid,  required String token}) async {
     Map<String, dynamic> registerObject = updateProfile;
     var url = Uri.parse('${APIEndPoints.updateHoroscopeImage}/$userId/$hid');
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
     try{
       var response = await http.post(
           url,
@@ -216,13 +217,13 @@ class APICallings {
           },
           body: registerObject
       );
-      print('the response are crossed 4');
-      print(response.statusCode);
+      AppLogger.d('the response are crossed 4');
+      AppLogger.d(response.statusCode);
       if(response.statusCode == 403){
         return '403 Error';
       }else if(response.statusCode == 200){
         var jsonResponse = json.decode(response.body);
-        print(jsonResponse);
+        AppLogger.d(jsonResponse);
         if(jsonResponse['status'] == 'Success'){
           return response.body;
         }else{
@@ -244,8 +245,8 @@ class APICallings {
       {required Map<String, dynamic> addProfile}) async {
     Map<String, dynamic> registerObject = addProfile;
     var url = Uri.parse(APIEndPoints.addProfile);
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
     try{
       var response = await http.post(
           url,
@@ -254,13 +255,13 @@ class APICallings {
           },
           body: registerObject
       );
-      print('the response are crossed 5');
-      print(response.body);
+      AppLogger.d('the response are crossed 5');
+      AppLogger.d(response.body);
       if(response.statusCode == 403){
         return '403 Error';
       }else if(response.statusCode == 200){
         var jsonResponse = json.decode(response.body);
-        print(jsonResponse);
+        AppLogger.d(jsonResponse);
         if(jsonResponse['status'] == 'Success'){
           SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setString('UserInfo', json.encode(jsonResponse['data']));
@@ -276,7 +277,7 @@ class APICallings {
         return 'ERROR CODE :${response.statusCode}';
       }
     }catch(error){
-      print(error);
+      AppLogger.d(error);
       return 'Server down';
     }
   }
@@ -293,7 +294,7 @@ class APICallings {
         url,
         headers: headers,
       );
-      print("Get Vendor Profile URL : $url");
+      AppLogger.d("Get Vendor Profile URL : $url");
 
       if (response.statusCode == 200) {
         return response.body;
@@ -324,7 +325,7 @@ class APICallings {
         url,
         headers: headers,
       );
-      print("Get Vendor Profile URL : $url");
+      AppLogger.d("Get Vendor Profile URL : $url");
 
       if (response.statusCode == 200) {
         return response.body;
@@ -374,12 +375,12 @@ class APICallings {
       // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
     };
     var url = Uri.parse(APIEndPoints.checkRequest+userId+'&HID='+hId.replaceAll(' ', '')+'&RSQDATE='+rsqDate+'&REQDATE='+reqDate+'&RQCAT='+rqCat);
-    print("Get Vendor promise URL : $url");
+    AppLogger.d("Get Vendor promise URL : $url");
     var response = await http.get(
       url,
       headers: headers,
     );
-    print('the recevied response code ${response.statusCode}');
+    AppLogger.d('the recevied response code ${response.statusCode}');
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -396,12 +397,12 @@ class APICallings {
       // "Authorization": "Bearer ${currentUserData.value.result!.accessToken}"
     };
     var url = Uri.parse(APIEndPoints.getDailyCharge+rqCat+'&Currency='+currency);
-    print("Get Daily Charge URL : $url");
+    AppLogger.d("Get Daily Charge URL : $url");
     var response = await http.get(
       url,
       headers: headers,
     );
-    print('the recevied response code ${response.statusCode}');
+    AppLogger.d('the recevied response code ${response.statusCode}');
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -428,9 +429,9 @@ class APICallings {
       "COMPLETEDATETIME": ''
     };
     var url = Uri.parse(APIEndPoints.addDailyRequest);
-    print('passing token $token');
-    print('URL : $url');
-    print("Body: ${json.encode(addingObject)}");
+    AppLogger.d('passing token $token');
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(addingObject)}");
     var response = await http.post(
       url,
       body: jsonEncode(addingObject),
@@ -440,8 +441,8 @@ class APICallings {
         "token": token
       },
     );
-    print('the response are crossed 1');
-    print(response.statusCode);
+    AppLogger.d('the response are crossed 1');
+    AppLogger.d(response.statusCode);
     if(response.statusCode == 403){
       return '403 Server error';
     }else if(response.statusCode == 200){
@@ -459,8 +460,8 @@ class APICallings {
   }) async {
     try {
       var url = Uri.parse(APIEndPoints.updatePrediction);
-      print('URL : $url');
-      print("Body: ${json.encode(updatePrediction)}");
+      AppLogger.d('URL : $url');
+      AppLogger.d("Body: ${json.encode(updatePrediction)}");
       var response = await http.post(
         url,
         headers: {
@@ -469,10 +470,10 @@ class APICallings {
         },
         body: json.encode(updatePrediction),
       );
-      print('Response Status Code: ${response.statusCode}');
+      AppLogger.d('Response Status Code: ${response.statusCode}');
       if (response.statusCode == 200) {
         var jsonResponse = json.decode(response.body);
-        print('Response Body: $jsonResponse');
+        AppLogger.d('Response Body: $jsonResponse');
         if (jsonResponse['Status'] == 'Success') {
           return APIResponse(success: true, data: response.body);
         } else {
@@ -502,8 +503,8 @@ class APICallings {
       "COMPLETEDATETIME": ''
     };
     var url = Uri.parse(APIEndPoints.addSpecialRequest);
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
     var response = await http.post(
       url,
       body: jsonEncode(registerObject),
@@ -513,8 +514,8 @@ class APICallings {
         "token": token
       },
     );
-    print('the response are crossed 1');
-    print(response.statusCode);
+    AppLogger.d('the response are crossed 1');
+    AppLogger.d(response.statusCode);
     if(response.statusCode == 403){
       return '403 Server error';
     }else if(response.statusCode == 200){
@@ -537,7 +538,7 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Terms and conditions Url is: $url");
+    AppLogger.d("Terms and conditions Url is: $url");
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -566,15 +567,15 @@ class APICallings {
         headers: headers,
       );
 
-      print("Get Messages for Horoscope URL: $url");
+      AppLogger.d("Get Messages for Horoscope URL: $url");
       if (response.statusCode == 200) {
         return response.body;
       } else {
-        print('API Error: ${response.statusCode} - ${response.body}');
+        AppLogger.d('API Error: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
-      print('Network Error: $e');
+      AppLogger.d('Network Error: $e');
       return null;
     }
   }
@@ -592,7 +593,7 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Terms and conditions Url is: $url");
+    AppLogger.d("Terms and conditions Url is: $url");
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -614,7 +615,7 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Terms and conditions Url is: $url");
+    AppLogger.d("Terms and conditions Url is: $url");
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -635,7 +636,7 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Terms and conditions Url is: $url");
+    AppLogger.d("Terms and conditions Url is: $url");
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -657,7 +658,7 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Invoice List api link: ${response.statusCode}");
+    AppLogger.d("Invoice List api link: ${response.statusCode}");
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -679,7 +680,7 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Terms and conditions Url is: $url");
+    AppLogger.d("Terms and conditions Url is: $url");
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -700,7 +701,7 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Vendor Profile URL : $url");
+    AppLogger.d("Get Vendor Profile URL : $url");
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -722,7 +723,7 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Vendor Profile URL : $url");
+    AppLogger.d("Get Vendor Profile URL : $url");
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -742,7 +743,7 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Vendor Profile URL : $url");
+    AppLogger.d("Get Vendor Profile URL : $url");
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -752,7 +753,7 @@ class APICallings {
 
   ///view Chart
   static Future<String?> viewHoroscopeChart({required String userId,required String hId, required String token}) async {
-    print('the url is');
+    AppLogger.d('the url is');
     Map<String, String> headers = {
       "Content-Type": "application/json",
       "Accept": "application/json",
@@ -764,7 +765,7 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Vendor Profile URL : $url");
+    AppLogger.d("Get Vendor Profile URL : $url");
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -782,8 +783,8 @@ class APICallings {
       "UserId": userId,
     };
     var url = Uri.parse(APIEndPoints.emailChart);
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     try {
       var response = await http.post(
@@ -795,7 +796,7 @@ class APICallings {
           "token": token
         },
       ).timeout(const Duration(seconds: 10));
-      print('Response status code: ${response.statusCode}');
+      AppLogger.d('Response status code: ${response.statusCode}');
       switch (response.statusCode) {
         case 200:
           return response.body;
@@ -833,8 +834,8 @@ class APICallings {
     };
     var url = Uri.parse(APIEndPoints.updateMembership);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -867,8 +868,8 @@ class APICallings {
     };
     var url = Uri.parse(APIEndPoints.updateVendorProfile);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -904,8 +905,8 @@ class APICallings {
 
     var url = Uri.parse(APIEndPoints.vendorRegister);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -937,8 +938,8 @@ class APICallings {
 
     var url = Uri.parse(APIEndPoints.vendorAddCoupon);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -964,8 +965,8 @@ class APICallings {
     };
     var url = Uri.parse(APIEndPoints.addMessage);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -989,8 +990,8 @@ class APICallings {
       "flag": flag,
     };
     var url = Uri.parse('${APIEndPoints.updateFlag}$userId/$hid/$reqId/$flagId?flag=$flag');
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
     var response = await http.post(
       url,
       body: jsonEncode(registerObject),
@@ -1017,8 +1018,8 @@ class APICallings {
     };
     var url = Uri.parse(APIEndPoints.updateMessage);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1046,9 +1047,9 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Delete Message URL : $url");
-    print(response.statusCode);
-    print(response.body);
+    AppLogger.d("Get Delete Message URL : $url");
+    AppLogger.d(response.statusCode);
+    AppLogger.d(response.body);
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
       return response;
@@ -1070,9 +1071,9 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Delete Message URL : $url");
-    print(response.statusCode);
-    print(response.body);
+    AppLogger.d("Get Delete Message URL : $url");
+    AppLogger.d(response.statusCode);
+    AppLogger.d(response.body);
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
       return response;
@@ -1095,9 +1096,9 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Delete Message URL : $url");
-    print(response.statusCode);
-    print(response.body);
+    AppLogger.d("Get Delete Message URL : $url");
+    AppLogger.d(response.statusCode);
+    AppLogger.d(response.body);
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
       return response;
@@ -1119,9 +1120,9 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Delete Message URL : $url");
-    print(response.statusCode);
-    print(response.body);
+    AppLogger.d("Get Delete Message URL : $url");
+    AppLogger.d(response.statusCode);
+    AppLogger.d(response.body);
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
       return response;
@@ -1144,8 +1145,8 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Delete Message URL : $url");
-    print(response.statusCode);
+    AppLogger.d("Get Delete Message URL : $url");
+    AppLogger.d(response.statusCode);
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
       return response;
@@ -1170,9 +1171,9 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Delete Message URL : $url");
-    print(response.statusCode);
-    print(response.body);
+    AppLogger.d("Get Delete Message URL : $url");
+    AppLogger.d(response.statusCode);
+    AppLogger.d(response.body);
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
       return response;
@@ -1191,8 +1192,8 @@ class APICallings {
     };
     var url = Uri.parse(APIEndPoints.replyPredictionMessage);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1220,8 +1221,8 @@ class APICallings {
     };
     var url = Uri.parse(APIEndPoints.addOfflineMoney);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1248,8 +1249,8 @@ class APICallings {
     };
     var url = Uri.parse(APIEndPoints.payByPaypal);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1275,8 +1276,8 @@ class APICallings {
     };
     var url = Uri.parse(APIEndPoints.payByUpi);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1302,8 +1303,8 @@ class APICallings {
     };
     var url = Uri.parse(APIEndPoints.payByStripe);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1331,8 +1332,8 @@ class APICallings {
 
     var url = Uri.parse(APIEndPoints.vendorAddSocialMedia);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1355,8 +1356,8 @@ class APICallings {
 
     var url = Uri.parse(APIEndPoints.showAdsVendorsList);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1379,8 +1380,8 @@ class APICallings {
 
     var url = Uri.parse(APIEndPoints.showVendorsList);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1405,8 +1406,8 @@ class APICallings {
 
     var url = Uri.parse(APIEndPoints.vendorUpdateSocialMedia);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1434,8 +1435,8 @@ class APICallings {
 
     var url = Uri.parse(APIEndPoints.vendorAddPromotion);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1466,8 +1467,8 @@ class APICallings {
 
     var url = Uri.parse(APIEndPoints.vendorUpdatePromotion);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1490,8 +1491,8 @@ class APICallings {
 
     var url = Uri.parse(APIEndPoints.viewShopCount);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1515,8 +1516,8 @@ class APICallings {
 
     var url = Uri.parse(APIEndPoints.viewPromotionCount);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1542,7 +1543,7 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Vendor Profile URL : $url");
+    AppLogger.d("Get Vendor Profile URL : $url");
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
       return response.body;
@@ -1562,12 +1563,12 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Vendor Profile URL : $url");
+    AppLogger.d("Get Vendor Profile URL : $url");
     var jsonResponse = json.decode(response.body);
     if (response.statusCode == 200) {
       return response.body;
     } else {
-      print("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
+      AppLogger.d("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
       return null;
     }
   }
@@ -1583,12 +1584,12 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Vendor Profile URL : $url");
+    AppLogger.d("Get Vendor Profile URL : $url");
     var jsonResponse = json.decode(response.body);
     if (response.statusCode == 200) {
       return response.body;
     } else {
-      print("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
+      AppLogger.d("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
       return null;
     }
   }
@@ -1604,12 +1605,12 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Vendor Advertisement URL : $url");
+    AppLogger.d("Get Vendor Advertisement URL : $url");
     var jsonResponse = json.decode(response.body);
     if (response.statusCode == 200) {
       return response.body;
     } else {
-      print("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
+      AppLogger.d("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
       return null;
     }
   }
@@ -1625,12 +1626,12 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Vendor Profile URL : $url");
+    AppLogger.d("Get Vendor Profile URL : $url");
     var jsonResponse = json.decode(response.body);
     if (response.statusCode == 200) {
       return response.body;
     } else {
-      print("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
+      AppLogger.d("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
       return null;
     }
   }
@@ -1646,12 +1647,12 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Vendor Social Media URL : $url");
+    AppLogger.d("Get Vendor Social Media URL : $url");
     var jsonResponse = json.decode(response.body);
     if (response.statusCode == 200) {
       return response.body;
     } else {
-      print("ApiCallings() : Social Media Error() : Error : ${response.body}");
+      AppLogger.d("ApiCallings() : Social Media Error() : Error : ${response.body}");
       return null;
     }
   }
@@ -1665,8 +1666,8 @@ class APICallings {
     };
     var url = Uri.parse(APIEndPoints.vendorByLocation);
 
-    print('URL : $url');
-    print("Body: ${json.encode(registerObject)}");
+    AppLogger.d('URL : $url');
+    AppLogger.d("Body: ${json.encode(registerObject)}");
 
     var response = await http.post(
       url,
@@ -1690,12 +1691,12 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Vendor Profile URL : $url");
+    AppLogger.d("Get Vendor Profile URL : $url");
     var jsonResponse = json.decode(response.body);
     if (response.statusCode == 200) {
       return response.body;
     } else {
-      print("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
+      AppLogger.d("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
       return null;
     }
   }
@@ -1711,12 +1712,12 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Vendor Profile URL : $url");
+    AppLogger.d("Get Vendor Profile URL : $url");
     var jsonResponse = json.decode(response.body);
     if (response.statusCode == 200) {
       return response.body;
     } else {
-      print("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
+      AppLogger.d("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
       return null;
     }
   }
@@ -1732,12 +1733,12 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Vendor Profile URL : $url");
+    AppLogger.d("Get Vendor Profile URL : $url");
     var jsonResponse = json.decode(response.body);
     if (response.statusCode == 200) {
       return response.body;
     } else {
-      print("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
+      AppLogger.d("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
       return null;
     }
   }
@@ -1753,12 +1754,12 @@ class APICallings {
       url,
       headers: headers,
     );
-    print("Get Vendor Profile URL : $url");
+    AppLogger.d("Get Vendor Profile URL : $url");
     var jsonResponse = json.decode(response.body);
     if (response.statusCode == 200) {
       return response.body;
     } else {
-      print("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
+      AppLogger.d("ApiCallings() : orangeMoneyCheckRegisterMerchant() : Error : " + response.body);
       return null;
     }
   }

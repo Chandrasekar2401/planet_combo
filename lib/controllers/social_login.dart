@@ -18,7 +18,7 @@ class SocialLoginController extends GetxController {
 
   // static Future<void> initialize(BuildContext context) async {
   //   if (kIsWeb && !_fbIsInitialized) {
-  //     print('Initializing Facebook SDK...');
+  //     AppLogger.d('Initializing Facebook SDK...');
   //     try {
   //       await FacebookAuth.instance.webAndDesktopInitialize(
   //         appId: "YOUR_FACEBOOK_APP_ID", // Replace with your actual App ID
@@ -26,12 +26,12 @@ class SocialLoginController extends GetxController {
   //         xfbml: true,
   //         version: "v15.0",
   //       );
-  //       print('Facebook SDK initialized successfully');
+  //       AppLogger.d('Facebook SDK initialized successfully');
   //       _fbIsInitialized = true;
   //     } catch (e) {
-  //       print('Facebook SDK initialization failed: $e');
+  //       AppLogger.d('Facebook SDK initialization failed: $e');
   //     }
-  //     print('Facebook SDK initialization process completed');
+  //     AppLogger.d('Facebook SDK initialization process completed');
   //   }
   // }
 
@@ -40,14 +40,14 @@ class SocialLoginController extends GetxController {
   //     CustomDialog.showLoading(context, 'Please wait');
   //
   //     await initialize(context);
-  //     print('Attempting Facebook login...');
+  //     AppLogger.d('Attempting Facebook login...');
   //
   //     final LoginResult result = await FacebookAuth.instance.login()
   //         .timeout(Duration(seconds: 15), onTimeout: () {
   //       throw TimeoutException('Facebook login timed out');
   //     });
   //
-  //     print('Login result: ${result.status}, Message: ${result.message}');
+  //     AppLogger.d('Login result: ${result.status}, Message: ${result.message}');
   //
   //     if (result.status == LoginStatus.success) {
   //       final AccessToken? accessToken = result.accessToken;
@@ -57,8 +57,8 @@ class SocialLoginController extends GetxController {
   //       final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
   //       final User user = userCredential.user!;
   //
-  //       print('Facebook login successful. User: ${user.displayName}');
-  //       print('User data: $userData');
+  //       AppLogger.d('Facebook login successful. User: ${user.displayName}');
+  //       AppLogger.d('User data: $userData');
   //
   //       CustomDialog.cancelLoading(context);
   //       // Navigate to your app's main screen or perform other actions
@@ -66,7 +66,7 @@ class SocialLoginController extends GetxController {
   //       throw Exception('Facebook login failed. Status: ${result.status}');
   //     }
   //   } catch (e) {
-  //     print('Exception during Facebook login: $e');
+  //     AppLogger.d('Exception during Facebook login: $e');
   //     CustomDialog.cancelLoading(context);
   //
   //     String errorMessage = 'Facebook login failed';

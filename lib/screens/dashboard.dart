@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:planetcombo/common/animated_image_carousel.dart';
 import 'package:planetcombo/common/widgets.dart';
 import 'package:planetcombo/controllers/add_horoscope_controller.dart';
 import 'package:planetcombo/controllers/applicationbase_controller.dart';
@@ -10,6 +11,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:planetcombo/controllers/appLoad_controller.dart';
 import 'package:planetcombo/screens/payments/payment_dashboard.dart';
 import 'package:planetcombo/screens/payments/pricing.dart';
+import 'package:planetcombo/screens/policy.dart';
 import 'package:planetcombo/screens/profile/profile.dart';
 import 'package:planetcombo/screens/services/horoscope_services.dart';
 import 'package:planetcombo/screens/static/facts_myths.dart';
@@ -23,9 +25,11 @@ import 'package:local_auth/local_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:planetcombo/youtube_listing.dart';
 import 'package:planetcombo/common/constant.dart';
+import 'package:planetcombo/main.dart' show appRouteObserver;
 import 'package:planetcombo/screens/common/drawer.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:async';
+import 'package:planetcombo/common/app_logger.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -35,9 +39,11 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard>
-    with TickerProviderStateMixin, WidgetsBindingObserver {
+    with TickerProviderStateMixin, WidgetsBindingObserver, RouteAware {
   // Constants
-  static const bool enableVideoBackground = true;
+  static const bool enableVideoBackground = false;
+  // Mobile-only: when true, show the animated image carousel instead of video.
+  static const bool imageWallpaper = true;
   static const double videoPlaybackSpeed = 0.8;
   static const double videoVolume = 0.3;
   static const double profileImageSize = 32;
@@ -79,7 +85,7 @@ class _DashboardState extends State<Dashboard>
       _isMuted = false;
     }
 
-    if (enableVideoBackground) {
+    if (enableVideoBackground && !(_isMobile && imageWallpaper)) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await Future.delayed(const Duration(milliseconds: 1200));
         if (mounted) {
@@ -99,18 +105,13 @@ class _DashboardState extends State<Dashboard>
       final size = MediaQuery.of(context).size;
       final isPortrait = size.height > size.width;
 
-      if (isPortrait) {
-        // Portrait mode - use portrait video
-        videoAssets = ['assets/videos/pot.mp4'];
-        print('Mobile Portrait mode detected - using pot.mp4');
-      } else {
-        // Landscape mode (including tablets) - use landscape video
-        videoAssets = ['assets/videos/vid.mp4'];
-        print('Mobile Landscape mode detected - using vid.mp4');
-      }
+      // pot.mp4 was removed; mobile falls back to vid.mp4 for both
+      // orientations. Unreachable while imageWallpaper is true.
+      videoAssets = ['assets/videos/vid.mp4'];
+      AppLogger.d('Mobile ${isPortrait ? "Portrait" : "Landscape"} - using vid.mp4');
     }
 
-    print('Video assets determined: $videoAssets');
+    AppLogger.d('Video assets determined: $videoAssets');
   }
 
   @override
@@ -151,24 +152,69 @@ class _DashboardState extends State<Dashboard>
   }
 
   void _debugVideoSetup() {
-    print('=== VIDEO SETUP DEBUG ===');
-    print('enableVideoBackground: $enableVideoBackground');
-    print('Platform: ${_isWeb ? "Web" : "Mobile"}');
-    print('Initial mute state: $_isMuted');
-    print('========================');
+    AppLogger.d('=== VIDEO SETUP DEBUG ===');
+    AppLogger.d('enableVideoBackground: $enableVideoBackground');
+    AppLogger.d('Platform: ${_isWeb ? "Web" : "Mobile"}');
+    AppLogger.d('Initial mute state: $_isMuted');
+    AppLogger.d('========================');
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      appRouteObserver.subscribe(this, route);
+    }
   }
 
   @override
   void dispose() {
+    appRouteObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     _disposeVideoControllers();
     super.dispose();
   }
 
+  // ---- RouteAware: pause/resume background video on navigation ----
+
+  // Another route was pushed on top of the Dashboard — we're no longer
+  // visible, so stop the video audio entirely.
+  @override
+  void didPushNext() {
+    _pauseAllVideos();
+  }
+
+  // We came back to the Dashboard from another route — resume playback
+  // (audio respects the current mute state) and reset the drawer's
+  // selected highlight to "Dashboard" so the next open shows the right
+  // active item (otherwise it'd still show whichever entry the user
+  // tapped to leave — e.g. Terms & Conditions).
+  @override
+  void didPopNext() {
+    _resumeCurrentVideo();
+    if (_selectedDrawerIndex != 0) {
+      setState(() => _selectedDrawerIndex = 0);
+    }
+  }
+
+  void _resumeCurrentVideo() {
+    if (_videoControllers.isEmpty ||
+        _currentVideoIndex >= _videoControllers.length) {
+      return;
+    }
+    final controller = _videoControllers[_currentVideoIndex];
+    if (!controller.value.isInitialized) return;
+    controller.setVolume(_isMuted ? 0.0 : videoVolume);
+    if (!controller.value.isPlaying) {
+      controller.play();
+    }
+  }
+
   Future<void> _initializeVideos() async {
     if (!mounted) return;
 
-    print('Initializing ${videoAssets.length} videos...');
+    AppLogger.d('Initializing ${videoAssets.length} videos...');
     _disposeVideoControllers();
 
     for (int i = 0; i < videoAssets.length; i++) {
@@ -191,12 +237,12 @@ class _DashboardState extends State<Dashboard>
           controller.setPlaybackSpeed(videoPlaybackSpeed);
 
           _videoControllers.add(controller);
-          print('Video $i initialized successfully');
+          AppLogger.d('Video $i initialized successfully');
         } else {
           controller.dispose();
         }
       } catch (e) {
-        print('Error initializing video $i: $e');
+        AppLogger.d('Error initializing video $i: $e');
         controller.dispose();
       }
     }
@@ -212,7 +258,7 @@ class _DashboardState extends State<Dashboard>
   void _startVideoLoop() {
     if (_videoControllers.isEmpty || !mounted) return;
 
-    print('Starting video loop with ${_videoControllers.length} videos');
+    AppLogger.d('Starting video loop with ${_videoControllers.length} videos');
     _currentVideoIndex = 0;
     _playCurrentVideo();
   }
@@ -237,10 +283,10 @@ class _DashboardState extends State<Dashboard>
       controller.addListener(_videoListener);
 
       controller.play();
-      print(
+      AppLogger.d(
           'Playing video $_currentVideoIndex with ${_isMuted ? "muted" : "unmuted"} audio');
     } catch (e) {
-      print('Error playing video: $e');
+      AppLogger.d('Error playing video: $e');
       _switchToNextVideo();
     }
   }
@@ -251,24 +297,24 @@ class _DashboardState extends State<Dashboard>
     final controller = _videoControllers[_currentVideoIndex];
 
     if (!controller.value.isInitialized) {
-      print('Controller became uninitialized during playback');
+      AppLogger.d('Controller became uninitialized during playback');
       return;
     }
 
     try {
       if (controller.value.hasError) {
-        print('Video playback error: ${controller.value.errorDescription}');
+        AppLogger.d('Video playback error: ${controller.value.errorDescription}');
         _switchToNextVideo();
         return;
       }
 
       if (controller.value.position >= controller.value.duration &&
           controller.value.duration > Duration.zero) {
-        print('Video finished, switching to next');
+        AppLogger.d('Video finished, switching to next');
         _switchToNextVideo();
       }
     } catch (e) {
-      print('Error in video listener: $e');
+      AppLogger.d('Error in video listener: $e');
       _switchToNextVideo();
     }
   }
@@ -282,7 +328,7 @@ class _DashboardState extends State<Dashboard>
       }
 
       _currentVideoIndex = (_currentVideoIndex + 1) % _videoControllers.length;
-      print('Switching to video $_currentVideoIndex');
+      AppLogger.d('Switching to video $_currentVideoIndex');
 
       if (mounted) {
         setState(() {});
@@ -291,44 +337,42 @@ class _DashboardState extends State<Dashboard>
         });
       }
     } catch (e) {
-      print('Error switching video: $e');
+      AppLogger.d('Error switching video: $e');
     }
   }
 
   void _disposeVideoControllers() {
-    print('Disposing ${_videoControllers.length} video controllers');
+    AppLogger.d('Disposing ${_videoControllers.length} video controllers');
     for (var controller in _videoControllers) {
       try {
         controller.removeListener(_videoListener);
         controller.pause();
         controller.dispose();
       } catch (e) {
-        print('Error disposing controller: $e');
+        AppLogger.d('Error disposing controller: $e');
       }
     }
     _videoControllers.clear();
   }
 
   void _toggleMute() {
-    if (_isWeb) {
-      setState(() {
-        _isMuted = !_isMuted;
-      });
+    setState(() {
+      _isMuted = !_isMuted;
+    });
 
-      if (_videoControllers.isNotEmpty &&
-          _currentVideoIndex < _videoControllers.length &&
-          _videoControllers[_currentVideoIndex].value.isInitialized) {
-        _videoControllers[_currentVideoIndex]
-            .setVolume(_isMuted ? 0.0 : videoVolume);
+    if (_videoControllers.isNotEmpty &&
+        _currentVideoIndex < _videoControllers.length &&
+        _videoControllers[_currentVideoIndex].value.isInitialized) {
+      _videoControllers[_currentVideoIndex]
+          .setVolume(_isMuted ? 0.0 : videoVolume);
 
-        if (!_isMuted &&
-            !_videoControllers[_currentVideoIndex].value.isPlaying) {
-          _playCurrentVideo();
-        }
+      if (!_isMuted &&
+          !_videoControllers[_currentVideoIndex].value.isPlaying) {
+        _playCurrentVideo();
       }
-
-      print('Audio ${_isMuted ? "muted" : "unmuted"}');
     }
+
+    AppLogger.d('Audio ${_isMuted ? "muted" : "unmuted"}');
   }
 
   void _handleOrientationChange() {
@@ -339,7 +383,7 @@ class _DashboardState extends State<Dashboard>
 
       if (_currentOrientation != newOrientation) {
         _currentOrientation = newOrientation;
-        print('Orientation changed to: $newOrientation');
+        AppLogger.d('Orientation changed to: $newOrientation');
 
         _determineVideoAssets();
         if (enableVideoBackground) {
@@ -361,6 +405,7 @@ class _DashboardState extends State<Dashboard>
 
   // Navigation Methods
   void _handleDrawerItemTap(int index) {
+
     appLoadController.userValue.value = true;
     setState(() => _selectedDrawerIndex = index);
     Navigator.of(context).pop();
@@ -376,6 +421,9 @@ class _DashboardState extends State<Dashboard>
         break;
       case 3:
         _navigateToContact();
+        break;
+      case 4:
+        _navigateToTermsAndConditions();
         break;
     }
   }
@@ -393,6 +441,13 @@ class _DashboardState extends State<Dashboard>
   void _navigateToContact() {
     Navigator.push(
         context, MaterialPageRoute(builder: (context) => buildWebContactUs()));
+  }
+
+  void _navigateToTermsAndConditions() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TermsConditions()),
+    );
   }
 
   Future<void> _showLogoutDialog() async {
@@ -442,7 +497,7 @@ class _DashboardState extends State<Dashboard>
             }),
             fit: BoxFit.cover,
             onError: (error, stackTrace) =>
-                print('Error loading image: $error'),
+                AppLogger.d('Error loading image: $error'),
           ),
         ),
         child: Image.network(
@@ -703,11 +758,12 @@ class _DashboardState extends State<Dashboard>
                   MaterialPageRoute(builder: (_) => const Profile())),
         ),
         _buildMenuItem(
-          iconPath: 'assets/svg/support.svg',
-          text: "Tech Support",
-          onTap: () =>
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const LiveChat())),
+          iconPath: 'assets/svg/payment.svg',
+          text: "Payment",
+          onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const PaymentDashboard())),
           showBorder: false,
         ),
       ],
@@ -718,12 +774,9 @@ class _DashboardState extends State<Dashboard>
     return Column(
       children: [
         _buildMenuItem(
-          iconPath: 'assets/svg/payment.svg',
-          text: "Payment",
-          onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => const PaymentDashboard())),
+          iconPath: 'assets/svg/today.svg',
+          text: "Today Predictions",
+          onTap: _showTodayPredictionsComingSoon,
         ),
         _buildMenuItem(
           iconPath: 'assets/svg/wallet.svg',
@@ -740,15 +793,27 @@ class _DashboardState extends State<Dashboard>
               Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const YouTubeVideosPage())),
         ),
-        // Terms & Conditions removed from dashboard in both views
+        _buildMenuItem(
+          iconPath: 'assets/svg/support.svg',
+          text: "Tech Support",
+          onTap: () =>
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const LiveChat())),
+          showBorder: false,
+        ),
       ],
     );
+  }
+
+  // Placeholder until the real Today Predictions screen is implemented.
+  void _showTodayPredictionsComingSoon() {
+    showFailedToast('Today Predictions - coming soon');
   }
 
   Widget _buildMenuDivider() {
     return Container(
       width: 0.5,
-      height: 390,
+      height: 500,
       color: enableVideoBackground
           ? Colors.white.withOpacity(0.5)
           : appLoadController.appPrimaryColor,
@@ -944,70 +1009,72 @@ class _DashboardState extends State<Dashboard>
   // ---------- NEW MOBILE DASHBOARD LAYOUT ----------
 
   Widget _buildMobileDashboardBody() {
-    final size = MediaQuery.of(context).size;
     final primary = appLoadController.appPrimaryColor;
     final username = appLoadController.loggedUserData.value.username ?? '';
 
-    // ~70% video, ~30% bottom panel
-    final double panelHeight = size.height * 0.35;
-
     return Stack(
       children: [
-        // Background video
         Positioned.fill(
           child: enableVideoBackground && _isVideoInitialized
               ? _buildVideoBackground()
-              : Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFf2b20a), Color(0xFFf34509)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
+              : imageWallpaper
+                  ? const AnimatedImageCarousel(
+                      imagePaths: [
+                        'assets/images/mobile/img1.png',
+                        'assets/images/mobile/img2.png',
+                        'assets/images/mobile/img3.jpg',
+                        'assets/images/mobile/img4.png',
+                        'assets/images/mobile/img5.png',
+                      ],
+                    )
+                  : Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFf2b20a), Color(0xFFf34509)],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                    ),
         ),
-
-        // Dark overlay for readability
-        if (enableVideoBackground)
+        if (enableVideoBackground || imageWallpaper)
           Positioned.fill(
             child: Container(
               color: Colors.black.withOpacity(0.45),
             ),
           ),
-
-        // Center welcome text (no button)
-        Align(
-          alignment: Alignment.center,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                commonText(
-                  text: LocalizationController.getInstance()
-                      .getTranslatedValue("Hi, $username"),
-                  fontSize: 14,
-                  color: Colors.white.withOpacity(0.9),
-                ),
-                const SizedBox(height: 4),
-                commonBoldText(
-                  text: LocalizationController.getInstance()
-                      .getTranslatedValue("Welcome to Planet Combo"),
-                  fontSize: 22,
-                  color: Colors.white,
-                )
-              ],
-            ),
-          ),
-        ),
-
-        // Bottom white panel
+        // Welcome text sits directly above the bottom menu panel with a
+        // 10px gap; both are anchored to the bottom edge.
         Align(
           alignment: Alignment.bottomCenter,
-          child: Container(
-            height:panelHeight,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    commonText(
+                      text: LocalizationController.getInstance()
+                          .getTranslatedValue("Hi, $username"),
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                    const SizedBox(height: 4),
+                    commonBoldText(
+                      text: LocalizationController.getInstance()
+                          .getTranslatedValue("Welcome to Planet Combo"),
+                      fontSize: 22,
+                      color: Colors.white,
+                    )
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              Container(
             width: double.infinity,
             decoration: BoxDecoration(
               color: Colors.white24,
@@ -1024,90 +1091,82 @@ class _DashboardState extends State<Dashboard>
                 ),
               ],
             ),
-            child: Padding(
+            child: SafeArea(
+              top: false,
+              child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               child: Column(
-                mainAxisSize: MainAxisSize.max,
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 12),
 
-                  // Horoscope Services full-width card
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const HoroscopeServices(),
+                  // Horoscope Services + Today Predictions inside one
+                  // full-width card, split 50/50 by a vertical centre
+                  // divider (50% primary). Each half is independently
+                  // tappable.
+                  Container(
+                    width: double.infinity,
+                    height: 62,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: primary.withOpacity(0.2)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
                         ),
-                      );
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      height: 62,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: primary.withOpacity(0.2)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildSplitCardHalf(
+                              iconPath: 'assets/svg/horoscope.svg',
+                              title: 'Horoscope Services',
+                              primary: primary,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const HoroscopeServices(),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 32,
+                            color: primary.withOpacity(0.5),
+                          ),
+                          Expanded(
+                            child: _buildSplitCardHalf(
+                              iconPath: 'assets/svg/today.svg',
+                              title: 'Today Predictions',
+                              primary: primary,
+                              onTap: _showTodayPredictionsComingSoon,
+                            ),
                           ),
                         ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Row(
-                          children: [
-                            SvgPicture.asset(
-                              'assets/svg/horoscope.svg',
-                              width: 28,
-                              height: 28,
-                              color: primary,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: commonBoldText(
-                                text:
-                                LocalizationController.getInstance()
-                                    .getTranslatedValue("Horoscope Services"),
-                                fontSize: 15,
-                              ),
-                            ),
-                            Container(
-                              padding:
-                              const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade600,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: commonBoldText(text:
-                                'NEW',
-                                color: Colors.white,
-                                fontSize: 9
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 8), // small gap between card and grid
 
-                  // Grid – now starts right under the card
-                  Flexible(
-                    fit: FlexFit.loose,
-                    child: GridView.count(
-                      padding: EdgeInsets.zero,              // <-- no extra padding
+                  // Grid – sizes itself to its content so the panel height
+                  // matches the inner widgets rather than a fixed fraction
+                  GridView.count(
+                      padding: EdgeInsets.zero,
                       crossAxisCount: 3,
                       mainAxisSpacing: 10,
                       crossAxisSpacing: 10,
                       childAspectRatio: 1.3,
-                      shrinkWrap: true,                      // <-- use only required height
-                      physics: const BouncingScrollPhysics(),
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       children: [
                         _buildMobileMenuTile(
                           title: "Payment",
@@ -1138,7 +1197,7 @@ class _DashboardState extends State<Dashboard>
                         _buildMobileMenuTile(
                           title: "How to Use",
                           iconPath: 'assets/svg/youtube.svg',
-                          isNew: true,
+                          isNew: false,
                           onTap: () {
                             Navigator.push(
                               context,
@@ -1186,13 +1245,52 @@ class _DashboardState extends State<Dashboard>
                         ),
                       ],
                     ),
-                  ),
                 ],
               ),
-            )
+            ),
+            ),
+          ),
+            ],
           ),
         ),
       ],
+    );
+  }
+
+  // One half of the full-width Horoscope / Today-Predictions card.
+  Widget _buildSplitCardHalf({
+    required String iconPath,
+    required String title,
+    required Color primary,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SvgPicture.asset(
+                iconPath,
+                width: 26,
+                height: 26,
+                color: primary,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: commonBoldText(
+                  text: LocalizationController.getInstance()
+                      .getTranslatedValue(title),
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1207,6 +1305,7 @@ class _DashboardState extends State<Dashboard>
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -1224,7 +1323,8 @@ class _DashboardState extends State<Dashboard>
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SvgPicture.asset(
                     iconPath,
@@ -1232,17 +1332,17 @@ class _DashboardState extends State<Dashboard>
                     height: 26,
                     color: primary,
                   ),
-                  const Spacer(),
+                  const SizedBox(height: 8),
                   Text(
                     LocalizationController.getInstance()
                         .getTranslatedValue(title),
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 4),
                 ],
               ),
             ),
@@ -1281,14 +1381,14 @@ class _DashboardState extends State<Dashboard>
         children: [
           SizedBox(
             width: MediaQuery.of(context).size.width,
-            height: 620,
+            height: 540,
             child: Stack(
               children: [
                 _buildMenuGrid(),
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           _buildLogoutButton(),
           _buildFooter(),
         ],
@@ -1323,14 +1423,19 @@ class _DashboardState extends State<Dashboard>
           ),
           actions: [
             if (enableVideoBackground && _isWeb)
-              IconButton(
-                icon: Icon(
-                  _isMuted ? Icons.volume_off : Icons.volume_up,
-                  color: Colors.white,
-                  size: 20,
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: Icon(
+                    _isMuted ? Icons.volume_off : Icons.volume_up,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  onPressed: _toggleMute,
+                  tooltip: _isMuted ? 'Unmute' : 'Mute',
                 ),
-                onPressed: _toggleMute,
-                tooltip: _isMuted ? 'Unmute' : 'Mute',
               ),
             GestureDetector(
               onTap: () => Navigator.push(
@@ -1380,6 +1485,18 @@ class _DashboardState extends State<Dashboard>
             ),
           ),
           actions: [
+            if (enableVideoBackground && !imageWallpaper)
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: Icon(
+                  _isMuted ? Icons.volume_off : Icons.volume_up,
+                  color: Colors.white,
+                  size: 16,
+                ),
+                onPressed: _toggleMute,
+                tooltip: _isMuted ? 'Unmute' : 'Mute',
+              ),
             GestureDetector(
               onTap: () => Navigator.push(
                   context,

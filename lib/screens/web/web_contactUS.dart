@@ -12,6 +12,7 @@ import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/screens/web/web_article.dart';
 import 'package:planetcombo/screens/web/web_aboutus.dart';
 import 'package:planetcombo/screens/web/web_home.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 Widget buildWebContactUs() {
   return const ContactPage();
@@ -72,12 +73,26 @@ class _ContactPageState extends State<ContactPage> {
         constraints: BoxConstraints(
           minHeight: MediaQuery.of(context).size.height,
         ),
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/web/article_bg.jpg'),
-            fit: BoxFit.cover,
-          ),
-        ),
+        // On mobile use a lightweight gradient: the bg JPG is heavy and
+        // unnecessary on a small screen. Web keeps the photographic
+        // background.
+        decoration: kIsWeb
+            ? const BoxDecoration(
+                image: DecorationImage(
+                  image: ResizeImage(
+                    AssetImage('assets/images/web/article_bg.jpg'),
+                    width: 1280,
+                  ),
+                  fit: BoxFit.cover,
+                ),
+              )
+            : const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF1a1a2e), Color(0xFF16213e)],
+                ),
+              ),
         child: Stack(
           children: [
             SingleChildScrollView(
@@ -90,25 +105,33 @@ class _ContactPageState extends State<ContactPage> {
                     const SizedBox(height: 20),
                     LayoutBuilder(
                       builder: (context, constraints) {
+                        // GoogleMap is a heavy native view that requires a
+                        // Maps API key to be configured in
+                        // AndroidManifest.xml — without it the activity
+                        // is torn down by the platform after a few
+                        // seconds and the app appears to "close". Only
+                        // render the map on web; mobile gets the
+                        // contact info section already shown above.
                         if (constraints.maxWidth > 900) {
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(0, 30, 0, 0),
-                                  child: MapSection(),
+                              if (kIsWeb)
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(0, 30, 0, 0),
+                                    child: MapSection(),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 20),
+                              if (kIsWeb) const SizedBox(width: 20),
                               Expanded(child: MessageForm()),
                             ],
                           );
                         } else {
                           return Column(
                             children: [
-                              MapSection(),
-                              const SizedBox(height: 20),
+                              if (kIsWeb) MapSection(),
+                              if (kIsWeb) const SizedBox(height: 20),
                               MessageForm(),
                               const SizedBox(height: 50), // Add space at bottom for mobile
                             ],
@@ -324,7 +347,7 @@ class _MessageFormState extends State<MessageForm> {
           ),
         );
       }
-      print('Error sending email: $e');
+      AppLogger.d('Error sending email: $e');
     } finally {
       if (mounted) {
         setState(() => _isSending = false);

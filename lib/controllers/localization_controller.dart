@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class LocalizationController extends GetxController {
   static LocalizationController? _instance;
@@ -20,8 +21,8 @@ class LocalizationController extends GetxController {
   }
 
   Future<void> getLanguage() async {
-    print("getLanguage()");
-    print(currentLanguage);
+    AppLogger.d("getLanguage()");
+    AppLogger.d(currentLanguage);
 
     if(currentLanguage == "ta") {
       isRTL=false;
@@ -38,13 +39,13 @@ class LocalizationController extends GetxController {
 
 
   Future load(String fileName) async {
-    print("FileName : $fileName");
+    AppLogger.d("FileName : $fileName");
     String jsonStringValues = await rootBundle.loadString(fileName);
-    print("we reacged");
+    AppLogger.d("we reacged");
     Map<String, dynamic> mappedJson = json.decode(jsonStringValues);
-    print("loded");
+    AppLogger.d("loded");
     languageValue = mappedJson.map((key, value) => MapEntry(key, value.toString()));
-    print("FileName Loaded : $fileName");
+    AppLogger.d("FileName Loaded : $fileName");
   }
 
   String getTranslatedValue(String key){

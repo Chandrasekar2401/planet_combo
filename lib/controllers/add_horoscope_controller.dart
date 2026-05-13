@@ -19,8 +19,10 @@ import 'package:planetcombo/controllers/applicationbase_controller.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:planetcombo/models/horoscope_list.dart';
+import 'package:planetcombo/models/pending_payment_list.dart';
 
 import '../screens/payments/payment_progress.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 
 class AddHoroscopeController extends GetxController {
@@ -182,7 +184,7 @@ class AddHoroscopeController extends GetxController {
 
   editHoroscope(HoroscopesList horoscope){
     refreshForm();
-    print(json.encode(horoscope));
+    AppLogger.d(json.encode(horoscope));
     addHoroscopeBirthSelectedDate = DateTime.now().obs;
     addHoroscopeBirthSelectedTime = TimeOfDay.now().obs;
     horoscopeName.text = horoscope.hname!;
@@ -351,7 +353,7 @@ class AddHoroscopeController extends GetxController {
 
   void refreshForm(){
     ///refresh Form
-    print('refresh the form works');
+    AppLogger.d('refresh the form works');
     hNativePhoto.value = '';
     imageFileList!.value =  <XFile>[];
 
@@ -461,7 +463,7 @@ class AddHoroscopeController extends GetxController {
 
   
   String? returnIntDate(DateTime? date){
-    print('return int Selected date is entered $date');
+    AppLogger.d('return int Selected date is entered $date');
     if(date != null){
       var selectedDate = DateFormat('ddMMyy000000').format(date);
       return selectedDate;
@@ -495,7 +497,7 @@ class AddHoroscopeController extends GetxController {
         "TCCODE": appLoadController.loggedUserData.value.tccode,
         "IPADDRESS": appLoadController.loggedUserData.value.ipAddress, // Include IP address in updates too
       };
-      print('the passing value $updateProfile');
+      AppLogger.d('the passing value $updateProfile');
       CustomDialog.showLoading(context, 'Please wait');
       var response = await APICallings.updateProfile(updateProfile: updateProfile, token: appLoadController.loggedUserData!.value.token!);
       CustomDialog.cancelLoading(context);
@@ -504,7 +506,7 @@ class AddHoroscopeController extends GetxController {
       }else if(response == '500'){
         CustomDialog.showAlert(context, 'Something went wrong Error Code : 500', false, 14);
       }
-      print('the received response of add horoscope $response');
+      AppLogger.d('the received response of add horoscope $response');
       return response;
     }
   }
@@ -539,7 +541,7 @@ class AddHoroscopeController extends GetxController {
           "TOKENYAHOO": appLoadController.loggedUserData.value.tokenyahoo ?? ""
         };
 
-        print('Adding profile with IP address: ${appLoadController.loggedUserData.value.ipAddress}');
+        AppLogger.d('Adding profile with IP address: ${appLoadController.loggedUserData.value.ipAddress}');
 
         CustomDialog.showLoading(context, 'Please wait');
         var response = await APICallings.addProfile(addProfile: addProfile);
@@ -571,12 +573,147 @@ class AddHoroscopeController extends GetxController {
   }
 
   String taxCalc(double tax1, double tax2, double tax3){
-    print('the passing total tax1 amount is ${tax1}');
-    print('the passing total tax2 amount is ${tax2}');
-    print('the passing total tax3 amount is ${tax3}');
+    AppLogger.d('the passing total tax1 amount is ${tax1}');
+    AppLogger.d('the passing total tax2 amount is ${tax2}');
+    AppLogger.d('the passing total tax3 amount is ${tax3}');
     double totalTax = tax1 + tax2 + tax3;
-    print('the total tax amount is ${totalTax}');
+    AppLogger.d('the total tax amount is ${totalTax}');
     return applicationBaseController.formatDecimalString(totalTax);
+  }
+
+  // For an edit of an unpaid horoscope: the update API only returns a
+  // status, not the payment payload. Pull the pending payment record for
+  // this hid (which carries amount / taxes / requestId) and show the
+  // same Pay Now / Pay Later dialog the add flow uses, so the user can
+  // pay immediately instead of having to find the record on the list
+  // afterwards.
+  Future<void> _showPaymentDialogForUnpaidHoroscope({
+    required BuildContext context,
+    required String dialogMessage,
+  }) async {
+    CustomDialog.showLoading(context, 'Please wait');
+    await applicationBaseController.getUserPendingPayments();
+    await applicationBaseController.getUserHoroscopeList();
+    if (!context.mounted) return;
+    CustomDialog.cancelLoading(context);
+
+    PendingPaymentList? payment;
+    for (final p in applicationBaseController.pendingPaymentsList) {
+      if (p.hid?.toString() == hid.value &&
+          p.requestType.toString() == '7' &&
+          p.isPaid != true &&
+          p.totalAmount != null &&
+          p.requestId != null) {
+        payment = p;
+        break;
+      }
+    }
+
+    if (payment == null) {
+      // Already paid, or backend returned no pending row — fall back to
+      // the original "updated successfully" alert that lands on the list.
+      CustomDialog.okActionAlert(
+          context, 'Your data has been updated successfully', 'OK', true, 14,
+          () {
+        applicationBaseController.updateHoroscopeUiList();
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HoroscopeServices()),
+              (Route<dynamic> route) => false,
+        );
+      });
+      return;
+    }
+
+    final jsonResponse = <String, dynamic>{
+      'data': <String, dynamic>{
+        'amount': payment.amount ?? 0.0,
+        'tax1_amount': payment.tax1Amount ?? 0.0,
+        'tax2_amount': payment.tax2Amount ?? 0.0,
+        'tax3_amount': payment.tax3Amount ?? 0.0,
+        'total_amount': payment.totalAmount,
+        'requestId': payment.requestId,
+      },
+    };
+    _showHoroscopePaymentDialog(
+      context: context,
+      jsonResponse: jsonResponse,
+      dialogMessage: dialogMessage,
+    );
+  }
+
+  // Shows the Pay Now / Pay Later dialog for an unpaid horoscope (works
+  // for both newly-added records and edits of existing unpaid records).
+  // Expects [jsonResponse] to be the parsed top-level JSON returned by
+  // the add/update API, containing data.amount, data.tax{1,2,3}_amount,
+  // data.total_amount and data.requestId.
+  //
+  // [dialogMessage] lets the caller phrase the message differently for
+  // add vs edit (e.g. "Your data has been saved..." vs "Your data has
+  // been updated...").
+  void _showHoroscopePaymentDialog({
+    required BuildContext context,
+    required Map<String, dynamic> jsonResponse,
+    required String dialogMessage,
+  }) {
+    applicationBaseController.paymentForHoroscope.value = true;
+    AppWidgets().multiTextAlignYesOrNoDialog(
+      iconUrl: 'assets/images/headletters.png',
+      context: context,
+      dialogMessage: dialogMessage,
+      subText1Key: 'Amount',
+      subText1Value: appLoadController.loggedUserData.value.ucurrency,
+      subText1Value1: applicationBaseController
+          .formatDecimalString(jsonResponse['data']['amount']),
+      subText2Key: 'Tax Amount',
+      subText2Value: appLoadController.loggedUserData.value.ucurrency,
+      subText2Value2: taxCalc(
+        jsonResponse['data']['tax1_amount'],
+        jsonResponse['data']['tax2_amount'],
+        jsonResponse['data']['tax3_amount'],
+      ),
+      subText3Key: 'Total Amount',
+      subText3Value: appLoadController.loggedUserData.value.ucurrency,
+      subText3Value3: applicationBaseController
+          .formatDecimalString(jsonResponse['data']['total_amount']),
+      cancelText: 'Pay Later',
+      okText: 'Pay Now',
+      cancelAction: () {
+        Navigator.pop(context);
+        applicationBaseController.updateHoroscopeUiList();
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HoroscopeServices()),
+          (Route<dynamic> route) => false,
+        );
+      },
+      okAction: () async {
+        // Dismiss the Pay Now / Pay Later dialog before initiating
+        // payment so cancellations don't strand the user on it.
+        Navigator.pop(context);
+        final currency =
+            appLoadController.loggedUserData.value.ucurrency!.toLowerCase();
+        if (currency == 'inr') {
+          paymentController.payByUpi(
+            appLoadController.loggedUserData.value.userid!,
+            jsonResponse['data']['requestId'],
+            jsonResponse['data']['total_amount'],
+            appLoadController.loggedUserData.value.token!,
+            'horoscope',
+            context,
+          );
+        } else {
+          paymentController.payByStripe(
+            appLoadController.loggedUserData.value.userid!,
+            jsonResponse['data']['requestId'],
+            jsonResponse['data']['total_amount'],
+            'horoscope',
+            appLoadController.loggedUserData.value.token!,
+            context,
+          );
+        }
+      },
+    );
   }
 
   void addNewHoroscope(context) async{
@@ -643,12 +780,12 @@ class AddHoroscopeController extends GetxController {
         "HSTATUS": "1",
         "HBIRTHORDER": birthOrder.value
       };
-      print('the passing value $addNewHoroscope');
+      AppLogger.d('the passing value $addNewHoroscope');
       CustomDialog.showLoading(context, 'Please wait');
      if(hid.value == '0'){
        var response = await APICallings.addNewHoroscope(addNewHoroscope: addNewHoroscope, token: appLoadController.loggedUserData!.value.token!);
        CustomDialog.cancelLoading(context);
-       print('the received response of add horoscope $response');
+       AppLogger.d('the received response of add horoscope $response');
        if(response != null){
          applicationBaseController.paymentForHoroscope.value = true;
          var jsonResponse = json.decode(response);
@@ -676,6 +813,12 @@ class AddHoroscopeController extends GetxController {
                );
              },
              okAction: () async{
+               // Dismiss the Pay Now / Pay Later dialog before initiating
+               // payment. The horoscope record is already saved on the
+               // backend, so if the user cancels payment the downstream
+               // flow takes them to the updated services list instead of
+               // leaving them stranded on this dialog.
+               Navigator.pop(context);
                if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'inr'){
                  paymentController.payByUpi(appLoadController.loggedUserData.value.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData!.value.token!,'horoscope', context);
                }else if(appLoadController.loggedUserData.value.ucurrency!.toLowerCase() == 'aed'){
@@ -691,18 +834,15 @@ class AddHoroscopeController extends GetxController {
        var response = await APICallings.updateHoroscope(updateHoroscope: addNewHoroscope, token: appLoadController.loggedUserData!.value.token!);
        CustomDialog.cancelLoading(context);
        if(response.success == true){
-         CustomDialog.okActionAlert(context, 'Your data has been updated successfully', 'OK', true, 14, () {
-           applicationBaseController.updateHoroscopeUiList();
-           CustomDialog.showLoading(context, 'Please wait');
-           Future.delayed(const Duration(seconds: 2), () {
-             CustomDialog.cancelLoading(context);
-             Navigator.pushAndRemoveUntil(
-               context,
-               MaterialPageRoute(builder: (context) => const HoroscopeServices()),
-                   (Route<dynamic> route) => false,
-             );
-           });
-         });
+         // Edit of an unpaid horoscope: the update API just returns a
+         // status, so look up the pending payment row for this hid and
+         // show the Pay Now / Pay Later dialog with its amount instead
+         // of the plain "updated successfully" alert.
+         await _showPaymentDialogForUnpaidHoroscope(
+           context: context,
+           dialogMessage:
+               'Your data has been updated. Please complete the payment to create your horoscope',
+         );
        }else{
          CustomDialog.showAlert(context, response.errorMessage.toString(), false, 14);
        }
@@ -725,7 +865,7 @@ class AddHoroscopeController extends GetxController {
     }
 
     // Create the multipart request
-    print('The post url is $url');
+    AppLogger.d('The post url is $url');
     var request = http.MultipartRequest('POST', Uri.parse(url));
 
     if (kIsWeb) {
@@ -766,11 +906,11 @@ class AddHoroscopeController extends GetxController {
 
     // Send the request and get the response
     var requestResponse = await request.send();
-      print('the passing request response is ${requestResponse.statusCode}');
+      AppLogger.d('the passing request response is ${requestResponse.statusCode}');
     requestResponse.stream.transform(utf8.decoder).listen((event) async{
       var jsonResponse = jsonDecode(event) as Map<String, dynamic>;
-      print('the received profile response is ${jsonResponse['Data']}');
-      print('the received profile response status code is ${requestResponse.statusCode}');
+      AppLogger.d('the received profile response is ${jsonResponse['Data']}');
+      AppLogger.d('the received profile response status code is ${requestResponse.statusCode}');
       if(requestResponse.statusCode == 200){
         SharedPreferences pref = await SharedPreferences.getInstance();
         await pref.setString('UserInfo', json.encode(jsonResponse['Data']));
@@ -796,7 +936,7 @@ class AddHoroscopeController extends GetxController {
           });
         });
       }else{
-        print('the failed response code is ${requestResponse.statusCode}');
+        AppLogger.d('the failed response code is ${requestResponse.statusCode}');
         CustomDialog.cancelLoading(context);
         CustomDialog.showAlert(context, 'Something went wrong ERROR CODE : ${requestResponse.statusCode}', false, 14);
       }
@@ -805,7 +945,7 @@ class AddHoroscopeController extends GetxController {
 
   Future<void> updateHoroscopeImageOnly(String hid) async {
     try {
-      print('Update horoscope image reached');
+      AppLogger.d('Update horoscope image reached');
 
       if (updateHoroscopeImage.value == null) {
         showFailedToast('No image selected');
@@ -828,7 +968,7 @@ class AddHoroscopeController extends GetxController {
 
         if (kIsWeb) {
           // Handle web image
-          print('Processing web image');
+          AppLogger.d('Processing web image');
           final bytes = await updateHoroscopeImage.value!.readAsBytes();
           multipartFile = http.MultipartFile.fromBytes(
             'file',
@@ -838,7 +978,7 @@ class AddHoroscopeController extends GetxController {
           );
         } else {
           // Handle mobile image
-          print('Processing mobile image');
+          AppLogger.d('Processing mobile image');
           multipartFile = await http.MultipartFile.fromPath(
             'file',
             updateHoroscopeImage.value!.path,
@@ -849,7 +989,7 @@ class AddHoroscopeController extends GetxController {
 
         request.files.add(multipartFile);
 
-        print('Sending request to: $url');
+        AppLogger.d('Sending request to: $url');
         final streamedResponse = await request.send().timeout(
           const Duration(minutes: 2),
           onTimeout: () {
@@ -858,8 +998,8 @@ class AddHoroscopeController extends GetxController {
         );
 
         final response = await http.Response.fromStream(streamedResponse);
-        print('Response status code: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        AppLogger.d('Response status code: ${response.statusCode}');
+        AppLogger.d('Response body: ${response.body}');
 
         resetImageValues();
 
@@ -872,12 +1012,12 @@ class AddHoroscopeController extends GetxController {
         }
 
       } catch (e) {
-        print('Error processing image: $e');
+        AppLogger.d('Error processing image: $e');
         throw 'Failed to process image: $e';
       }
 
     } catch (e) {
-      print('Error in updateHoroscopeImageOnly: $e');
+      AppLogger.d('Error in updateHoroscopeImageOnly: $e');
       showFailedToast('Error: $e');
     }
   }
@@ -1018,9 +1158,9 @@ class AddHoroscopeController extends GetxController {
           throw 'Connection timeout. Please check your internet connection.';
         },
       );
-       print('before the response call');
+       AppLogger.d('before the response call');
       final response = await http.Response.fromStream(streamedResponse);
-      print('after the responsesssssssssssssssss');
+      AppLogger.d('after the responsesssssssssssssssss');
       // Process response
       if (!context.mounted) return;
       if (response.statusCode == 200) {
@@ -1053,6 +1193,12 @@ class AddHoroscopeController extends GetxController {
                 );
               },
               okAction: () async{
+                // Dismiss the Pay Now / Pay Later dialog before initiating
+                // payment. The horoscope record is already saved on the
+                // backend, so if the user cancels payment the downstream
+                // flow takes them to the updated services list instead of
+                // leaving them stranded on this dialog.
+                Navigator.pop(context);
                 if(appLoadController.loggedUserData!.value.ucurrency!.toLowerCase() == 'inr'){
                   paymentController.payByUpi(appLoadController.loggedUserData.value!.userid!, jsonResponse['data']['requestId'], jsonResponse['data']['total_amount'], appLoadController.loggedUserData.value.token!,'horoscope', context);
                 }else if(appLoadController.loggedUserData!.value.ucurrency!.toLowerCase() == 'aed'){
@@ -1062,7 +1208,7 @@ class AddHoroscopeController extends GetxController {
                 }
               });
         }else{
-          _handleSuccess(context);
+          await _handleSuccess(context);
         }
       } else {
         throw 'Server returned status code: ${response.statusCode}';
@@ -1078,32 +1224,14 @@ class AddHoroscopeController extends GetxController {
 
 // Helper method for success handling
   Future<void> _handleSuccess(BuildContext context) async {
-    CustomDialog.okActionAlert(
-      context,
-      hid.value == '0' ? 'Horoscope added successfully' : 'Horoscope has been updated Successfully',
-      'OK',
-      true,
-      14,
-          () async {
-        try {
-          await applicationBaseController.getUserHoroscopeList();
-          CustomDialog.showLoading(context, 'Please wait');
-
-          await Future.delayed(const Duration(seconds: 2));
-
-          if (!context.mounted) return;
-          CustomDialog.cancelLoading(context);
-
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const HoroscopeServices()),
-                (Route<dynamic> route) => false,
-          );
-        } catch (e) {
-          CustomDialog.cancelLoading(context);
-          _handleError(context, 'Error updating horoscope list: $e');
-        }
-      },
+    // Edit-with-image path: only reached for unpaid horoscopes. Pull the
+    // pending payment row for this hid and show the Pay Now / Pay Later
+    // dialog so the user can pay immediately. Falls back to a plain
+    // success alert if no pending row is found.
+    await _showPaymentDialogForUnpaidHoroscope(
+      context: context,
+      dialogMessage:
+          'Your data has been updated. Please complete the payment to create your horoscope',
     );
   }
 

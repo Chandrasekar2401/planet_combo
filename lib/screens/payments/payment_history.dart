@@ -16,7 +16,10 @@ class PaymentHistory extends StatefulWidget {
 }
 
 class _PaymentHistoryState extends State<PaymentHistory> {
-  late List<bool> _expandedList;
+  // Tracks which payment cards are currently expanded by index. Using a
+  // set instead of a fixed-length list so we don't blow up when the user
+  // has more records than the previously hard-coded 20.
+  final Set<int> _expandedIndexes = <int>{};
 
   final ApplicationBaseController applicationBaseController =
   Get.put(ApplicationBaseController.getInstance(), permanent: true);
@@ -28,7 +31,6 @@ class _PaymentHistoryState extends State<PaymentHistory> {
   @override
   void initState() {
     super.initState();
-    _expandedList = List<bool>.generate(20, (index) => false);
     _loadData();
     _startAutoRefresh();
   }
@@ -116,11 +118,16 @@ class _PaymentHistoryState extends State<PaymentHistory> {
   Widget buildPaymentCard(int index, dynamic payment) {
     final paymentMethod = getPaymentMethod(payment.paymentChanel.toString());
     final methodColor = getMethodColor(paymentMethod);
+    final bool isExpanded = _expandedIndexes.contains(index);
 
     return GestureDetector(
       onTap: () {
         setState(() {
-          _expandedList[index] = !_expandedList[index];
+          if (isExpanded) {
+            _expandedIndexes.remove(index);
+          } else {
+            _expandedIndexes.add(index);
+          }
         });
       },
       child: AnimatedContainer(
@@ -170,7 +177,7 @@ class _PaymentHistoryState extends State<PaymentHistory> {
                     ),
                     borderRadius: BorderRadius.vertical(
                       top: const Radius.circular(20),
-                      bottom: _expandedList[index] ? Radius.zero : const Radius.circular(20),
+                      bottom: isExpanded ? Radius.zero : const Radius.circular(20),
                     ),
                   ),
                   child: Padding(
@@ -222,7 +229,7 @@ class _PaymentHistoryState extends State<PaymentHistory> {
                           ),
                         ),
                         Icon(
-                          _expandedList[index] ? Icons.expand_less : Icons.expand_more,
+                          isExpanded ? Icons.expand_less : Icons.expand_more,
                           color: Colors.black,
                           size: 20,
                         ),
@@ -336,7 +343,7 @@ class _PaymentHistoryState extends State<PaymentHistory> {
                       ],
                     ),
                   ),
-                  crossFadeState: _expandedList[index]
+                  crossFadeState: isExpanded
                       ? CrossFadeState.showSecond
                       : CrossFadeState.showFirst,
                   duration: const Duration(milliseconds: 300),
@@ -352,7 +359,7 @@ class _PaymentHistoryState extends State<PaymentHistory> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         flexibleSpace: Container(
           decoration: const BoxDecoration(
@@ -468,9 +475,14 @@ class _PaymentHistoryState extends State<PaymentHistory> {
 
       return RefreshIndicator(
         onRefresh: _loadData,
+        // Clamping physics avoids the iOS-style overscroll rubber-band
+        // that exposed the (light grey) scaffold background below the
+        // last card. Top padding 12 still lets the first card breathe,
+        // but no bottom padding now so the list ends flush with the
+        // last item.
         child: ListView.builder(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          physics: const ClampingScrollPhysics(),
+          padding: const EdgeInsets.only(top: 12),
           itemCount: applicationBaseController.paymentHistory.length,
           itemBuilder: (context, index) => buildPaymentCard(
             index,

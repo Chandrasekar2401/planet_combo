@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class IPAddressService {
   static Future<String?> getUserIPAddress() async {
@@ -36,12 +37,12 @@ class IPAddressService {
             }
 
             if (ipAddress != null && ipAddress.isNotEmpty) {
-              print('IP Address obtained from $serviceUrl: $ipAddress');
+              AppLogger.d('IP Address obtained from $serviceUrl: $ipAddress');
               return ipAddress;
             }
           }
         } catch (e) {
-          print('Error with $serviceUrl: $e');
+          AppLogger.d('Error with $serviceUrl: $e');
           continue; // Try next service
         }
       }
@@ -49,7 +50,7 @@ class IPAddressService {
       // If all services fail, return a default or null
       return null;
     } catch (e) {
-      print('Error getting IP address: $e');
+      AppLogger.d('Error getting IP address: $e');
       return null;
     }
   }
@@ -66,7 +67,7 @@ class IPAddressService {
         return data['ip'];
       }
     } catch (e) {
-      print('Alternative IP service error: $e');
+      AppLogger.d('Alternative IP service error: $e');
     }
     return null;
   }

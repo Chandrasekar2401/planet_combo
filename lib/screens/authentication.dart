@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:planetcombo/screens/dashboard.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class Authentication extends StatefulWidget {
   const Authentication({super.key});
@@ -25,7 +26,7 @@ class _SplashScreenState extends State<Authentication> {
       canCheckBiometrics = await auth.canCheckBiometrics;
     } catch (e) {
       canCheckBiometrics = false;
-      print('Error checking biometrics: $e');
+      AppLogger.d('Error checking biometrics: $e');
     }
 
     if (!mounted) return;
@@ -48,7 +49,7 @@ class _SplashScreenState extends State<Authentication> {
         localizedReason: 'Authenticate to access the app',
       );
     } catch (e) {
-      print('Error: $e');
+      AppLogger.d('Error: $e');
     }
 
     if (authenticated) {

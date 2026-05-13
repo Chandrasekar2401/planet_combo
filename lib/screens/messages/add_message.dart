@@ -92,14 +92,38 @@ class _AddMessagesState extends State<AddMessages> {
               SizedBox(height: 20),
               commonBoldText(text: 'Message'),
               SizedBox(height: 20),
-              PrimaryInputText(
-                  hintText: 'Type Your message',
-                  maxLines: 6,
-                  controller: userMessage,
-                  autoFocus: true,
-                  onValidate: (v) {
-                    return null;
-                  }
+              // Use a plain TextField (not TextFormField) so there's no
+              // internal FormFieldState that can desync from the
+              // controller after the IME action button is pressed.
+              // Configured for Android-safe multiline:
+              //   - TextInputType.multiline + textInputAction.newline:
+              //     the keyboard's Enter / "tick" inserts a newline
+              //     instead of firing Done and clearing focus.
+              //   - autocorrect/enableSuggestions off: each keystroke
+              //     commits to the controller immediately so nothing is
+              //     left in the IME's composing buffer to be dropped
+              //     when the keyboard closes via back-button.
+              TextField(
+                controller: userMessage,
+                autofocus: true,
+                maxLines: 6,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                autocorrect: false,
+                enableSuggestions: false,
+                textCapitalization: TextCapitalization.sentences,
+                style: const TextStyle(color: Colors.black),
+                decoration: InputDecoration(
+                  labelText: 'Type Your message',
+                  contentPadding: const EdgeInsets.all(16),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Colors.black54),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
               ),
               SizedBox(height: 20),
               Row(

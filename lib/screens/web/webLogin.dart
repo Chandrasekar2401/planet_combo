@@ -14,6 +14,7 @@ import 'package:planetcombo/common/constant.dart';
 import 'package:planetcombo/models/social_login.dart';
 import 'package:planetcombo/screens/dashboard.dart';
 import 'package:planetcombo/screens/profile/edit_profile.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class WebLogin extends StatefulWidget {
   const WebLogin({super.key});
@@ -80,8 +81,8 @@ class _WebLoginState extends State<WebLogin> {
           context,
         );
         dismissWebLoadingDialog(context);
-        // print('the response Profile from the User of google login ${_auth.currentUser!.photoURL!}');
-        // print('the response from the User of google login ${_auth.currentUser}');
+        // AppLogger.d('the response Profile from the User of google login ${_auth.currentUser!.photoURL!}');
+        // AppLogger.d('the response from the User of google login ${_auth.currentUser}');
         if (response == 'true') {
           await _handleSuccessfulLogin();
         } else if (response == 'false') {
@@ -94,7 +95,7 @@ class _WebLoginState extends State<WebLogin> {
       }
     } catch (e) {
       dismissWebLoadingDialog(context);
-      print("Error signing in: $e");
+      AppLogger.d("Error signing in: $e");
       CustomDialog.showAlert(context, 'An error occurred during sign-in. Please try again.', false, 16);
     }
   }

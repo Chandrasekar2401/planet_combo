@@ -14,6 +14,8 @@ import 'package:universal_html/html.dart' as html;
 import 'package:webview_flutter/webview_flutter.dart';
 import '../screens/dashboard.dart';
 import '../screens/payments/payment_progress.dart';
+import '../screens/services/horoscope_services.dart';
+import 'package:planetcombo/common/app_logger.dart';
 
 class PaymentController extends GetxController {
   static PaymentController? _instance;
@@ -44,9 +46,9 @@ class PaymentController extends GetxController {
         userId: userId,
       );
 
-      print(response!.body);
+      AppLogger.d(response!.body);
       var jsonBody = json.decode(response.body);
-      print('PayU Response: $jsonBody');
+      AppLogger.d('PayU Response: $jsonBody');
 
       if (jsonBody != null && jsonBody.containsKey('paymentUrl')) {
         // Ensure all required parameters are present
@@ -136,28 +138,91 @@ class PaymentController extends GetxController {
           </html>
         ''';
 
-          // Create WebView controller
-          final WebViewController controller = WebViewController()
+          // surl = success url, furl = failure/cancel url. Once PayU
+          // redirects to either, our backend handles the webhook and
+          // returns a non-renderable response (which is what was showing
+          // up as a blank/white page in the WebView). Detect those URLs
+          // in the navigation delegate and pop out of the WebView before
+          // the user ever sees the blank response.
+          final String surlHost = Uri.parse(jsonBody['surl']).host;
+          final String surlPath = Uri.parse(jsonBody['surl']).path;
+          final String furlHost = Uri.parse(jsonBody['furl']).host;
+          final String furlPath = Uri.parse(jsonBody['furl']).path;
+
+          // Use a result flag so we know whether the user actually went
+          // through a payment attempt (success / failure) or simply
+          // cancelled before submitting anything.
+          String? paymentOutcome; // 'success' | 'failed' | null
+
+          // Guard against popping the WebView twice (e.g. surl arrives just
+          // after the user-launched UPI flow also tries to pop).
+          bool webviewPopped = false;
+          void popWebviewOnce(String outcome) {
+            if (webviewPopped) return;
+            paymentOutcome = outcome;
+            webviewPopped = true;
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          }
+
+          late final WebViewController controller;
+          controller = WebViewController()
             ..setJavaScriptMode(JavaScriptMode.unrestricted)
             ..setBackgroundColor(const Color(0x00000000))
             ..setNavigationDelegate(
               NavigationDelegate(
-                onProgress: (int progress) {
-                  // You can show a loading indicator here if needed
-                },
-                onPageStarted: (String url) {
-                  // Page loading started
-                },
-                onPageFinished: (String url) {
-                  // Page finished loading
-                },
                 onWebResourceError: (WebResourceError error) {
-                  // Handle errors
-                  print("WebView error: ${error.description}");
+                  AppLogger.d("WebView error: ${error.description}");
                 },
                 onNavigationRequest: (NavigationRequest request) {
-                  // Note: For mobile, we won't handle success/failure here
-                  // Let the PaymentProgressPage handle the status checking
+                  final uri = Uri.tryParse(request.url);
+                  if (uri != null) {
+                    // PayU emits UPI deep links (upi://, phonepe://, tez://,
+                    // paytmmp://, intent://...) when the user picks a UPI
+                    // app. WebView itself can't resolve those schemes —
+                    // hand them off to the OS so the UPI chooser opens
+                    // GPay / PhonePe / Paytm / BHIM.
+                    final scheme = uri.scheme.toLowerCase();
+                    final isWebScheme = scheme == 'http' ||
+                        scheme == 'https' ||
+                        scheme == 'about' ||
+                        scheme == 'data' ||
+                        scheme == 'blob' ||
+                        scheme.isEmpty;
+                    if (!isWebScheme) {
+                      launchUrl(uri, mode: LaunchMode.externalApplication)
+                          .then((opened) {
+                        if (!opened) {
+                          showFailedToast(
+                              'No UPI app found. Install GPay, PhonePe, Paytm or BHIM and try again.');
+                          return;
+                        }
+                        // UPI app is now in foreground for the user. The
+                        // WebView is dead weight (PayU's web SDK is waiting
+                        // on a JS callback that never arrives via the
+                        // external app), so close it and hand off to
+                        // PaymentProgressPage — it will poll the backend
+                        // and show the same success-alert / redirect flow
+                        // the web QR path uses.
+                        popWebviewOnce('success');
+                      }).catchError((e) {
+                        showFailedToast(
+                            'Unable to open UPI app: ${e.toString()}');
+                        return false;
+                      });
+                      return NavigationDecision.prevent;
+                    }
+
+                    final isSurl = uri.host == surlHost && uri.path == surlPath;
+                    final isFurl = uri.host == furlHost && uri.path == furlPath;
+                    if (isSurl || isFurl) {
+                      // Pop the WebView Scaffold; the awaiting code below
+                      // will then continue with the right destination.
+                      popWebviewOnce(isSurl ? 'success' : 'failed');
+                      return NavigationDecision.prevent;
+                    }
+                  }
                   return NavigationDecision.navigate;
                 },
               ),
@@ -173,28 +238,7 @@ class PaymentController extends GetxController {
                   title: const Text('Payment'),
                   leading: IconButton(
                     icon: const Icon(Icons.close),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      // Navigate to PaymentProgressPage after closing WebView
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(
-                          builder: (_) => PaymentProgressPage(
-                            paymentType: paymentType,
-                            paymentReferenceNumber: txnId,
-                            onPaymentComplete: (String status) {
-                              if (status.toLowerCase() == 'completed' ||
-                                  status.toLowerCase() == 'success') {
-                                onPaymentSuccess({'status': 'success'});
-                              } else if (status.toLowerCase() == 'failed' ||
-                                  status.toLowerCase() == 'cancelled') {
-                                onPaymentFailure({'status': 'failed'});
-                              }
-                            },
-                          ),
-                        ),
-                            (Route<dynamic> route) => false,
-                      );
-                    },
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ),
                 body: SafeArea(
@@ -204,48 +248,62 @@ class PaymentController extends GetxController {
             ),
           );
 
-          // After WebView is dismissed, navigate to PaymentProgressPage
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (_) => PaymentProgressPage(
-                paymentType: paymentType,
-                paymentReferenceNumber: txnId,
-                onPaymentComplete: (String status) {
-                  if (status.toLowerCase() == 'completed' ||
-                      status.toLowerCase() == 'success') {
-                    onPaymentSuccess({'status': 'success'});
-                  } else if (status.toLowerCase() == 'failed' ||
-                      status.toLowerCase() == 'cancelled') {
-                    onPaymentFailure({'status': 'failed'});
-                  }
-                },
+          // After WebView is dismissed:
+          //  - If the user got far enough that PayU redirected to surl/furl,
+          //    open PaymentProgressPage (kept on top of Dashboard).
+          //  - Otherwise the user cancelled before submitting. For horoscope
+          //    payments the record is already created on the backend, so
+          //    route them to the services list (with the new record visible
+          //    and editable later) instead of leaving them on the add flow.
+          if (paymentOutcome != null) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PaymentProgressPage(
+                  paymentType: paymentType,
+                  paymentReferenceNumber: txnId,
+                  onPaymentComplete: (String status) {
+                    if (status.toLowerCase() == 'completed' ||
+                        status.toLowerCase() == 'success') {
+                      onPaymentSuccess({'status': 'success'});
+                    } else if (status.toLowerCase() == 'failed' ||
+                        status.toLowerCase() == 'cancelled') {
+                      onPaymentFailure({'status': 'failed'});
+                    }
+                  },
+                ),
               ),
-            ),
-                (Route<dynamic> route) => false,
-          );
+            );
+          } else if (paymentType == 'horoscope' && context.mounted) {
+            applicationBaseController.updateHoroscopeUiList();
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const HoroscopeServices()),
+              (Route<dynamic> route) => false,
+            );
+          }
         }
       } else {
         throw Exception("Invalid response from server.");
       }
     } catch (e) {
       CustomDialog.cancelLoading(context);
-      print("Error in PayU Payment: $e");
+      AppLogger.d("Error in PayU Payment: $e");
       CustomDialog.showAlert(context, "An error occurred. Please try again later.", false, 14);
     }
   }
 
   void onPaymentSuccess(dynamic response) {
-    print("Payment Success: $response");
+    AppLogger.d("Payment Success: $response");
     Get.snackbar("Success", "Payment Successful!", backgroundColor: Colors.green);
   }
 
   void onPaymentFailure(dynamic response) {
-    print("Payment Failure: $response");
+    AppLogger.d("Payment Failure: $response");
     Get.snackbar("Failed", "Payment Failed! Try Again.", backgroundColor: Colors.red);
   }
 
   void onPaymentCancel(Map? response) {
-    print("Payment Cancelled: $response");
+    AppLogger.d("Payment Cancelled: $response");
     Get.snackbar("Cancelled", "Payment Cancelled.", backgroundColor: Colors.orange);
   }
 
@@ -255,7 +313,7 @@ class PaymentController extends GetxController {
       CustomDialog.showLoading(context, 'Please wait');
 
       var response = await APICallings.payByPaypal(token: token, amount: amount, reqId: reqId, userId: userId);
-      print(response!.body);
+      AppLogger.d(response!.body);
       var jsonBody = json.decode(response.body);
       if (jsonBody['approvalUrl'] != null) {
         String approvalUrl = jsonBody['approvalUrl'];
@@ -274,7 +332,7 @@ class PaymentController extends GetxController {
       }
     } catch (e) {
       CustomDialog.cancelLoading(context);
-      print('Error in PayPal: $e');
+      AppLogger.d('Error in PayPal: $e');
       CustomDialog.showAlert(context, 'An error occurred. Please try again later.', false, 14);
     }
   }
@@ -283,7 +341,7 @@ class PaymentController extends GetxController {
     try {
       CustomDialog.showLoading(context, 'Please wait');
       var response = await APICallings.payByStripe(token: token, amount: amount, reqId: reqId, userId: userId);
-      print(response!.body);
+      AppLogger.d(response!.body);
       var jsonBody = json.decode(response.body);
       if (jsonBody['url'] != null) {
         String approvalUrl = jsonBody['url'];
@@ -300,7 +358,7 @@ class PaymentController extends GetxController {
       }
     } catch (e) {
       CustomDialog.cancelLoading(context);
-      print('Error in Stripe: $e');
+      AppLogger.d('Error in Stripe: $e');
       CustomDialog.showAlert(context, 'An error occurred. Please try again later.', false, 14);
     }
   }
